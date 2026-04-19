@@ -1,7 +1,5 @@
 # Privacy Policy - Ayonija
 
-**Effective Date:** [Add Date]
-
 Welcome to Ayonija (https://www.ayonija.com). Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your information.
 
 ## 1. Information We Collect
@@ -62,7 +60,7 @@ We may update this Privacy Policy. Changes will be posted on this page.
 ## 9. Contact Us
 
 If you have questions, contact us at:  
-[Your Email Here]
+
 
 ---
 
