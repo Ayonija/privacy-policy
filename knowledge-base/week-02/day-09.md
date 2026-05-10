@@ -1,0 +1,77 @@
+# Day 09 — Sliding Window: Advanced & Real-World Variants
+**Week 02 | Phase 1: DSA Mastery | Month 1**
+
+## Focus
+Tackle sliding window problems where the optimal window is non-obvious — including "boost window" and card-selection patterns.
+
+## DSA (2 hours)
+### Pattern: Sliding Window — Complement & Flip Thinking
+- Grumpy Bookstore Owner (boost window): instead of maximising the window directly, compute the baseline and maximise the *gain* from the boost window.
+- Maximum Points from Cards: taking k cards from the ends is equivalent to leaving n-k cards in the middle; minimise the middle window to maximise the ends.
+- Trigger condition: "you have a one-time modifier/boost" OR "select from both ends" — both reduce to a fixed sliding window on a transformed problem.
+- Time complexity: O(n) | Space complexity: O(1)
+
+### Problems
+| # | Problem | LC # | Difficulty | Pattern | Key Insight |
+|---|---------|------|------------|---------|-------------|
+| 1 | Max Consecutive Ones | 485 | Easy | Simple scan | No window needed — just track current streak and max streak; reset on 0 |
+| 2 | Grumpy Bookstore Owner | 1052 | Medium | Fixed Sliding Window (gain maximisation) | Always count non-grumpy minutes; then slide window of size `minutes` to find max extra from suppressing grumpiness |
+| 3 | Maximum Points You Can Obtain from Cards | 1423 | Medium | Fixed Sliding Window (complement) | Taking k cards from ends = leaving n-k in the middle; minimise the sum of the middle window of size n-k |
+
+### Code Skeleton
+```python
+# Grumpy Bookstore Owner (LC 1052)
+def max_satisfied(customers, grumpy, minutes):
+    base = sum(c for c, g in zip(customers, grumpy) if g == 0)
+    # baseline: always-satisfied customers
+    gain = window = sum(customers[i] * grumpy[i] for i in range(minutes))
+    for i in range(minutes, len(customers)):
+        window += customers[i] * grumpy[i]
+        window -= customers[i - minutes] * grumpy[i - minutes]
+        gain = max(gain, window)
+    return base + gain
+
+# Maximum Points from Cards (LC 1423)
+def max_score(cardPoints, k):
+    n = len(cardPoints)
+    window_size = n - k
+    window_sum = sum(cardPoints[:window_size])
+    min_middle = window_sum
+    for i in range(window_size, n):
+        window_sum += cardPoints[i] - cardPoints[i - window_size]
+        min_middle = min(min_middle, window_sum)
+    return sum(cardPoints) - min_middle
+```
+
+## System Design (1 hour)
+### Topic: Sliding Window in Real Systems — Rate Limiters & Monitoring
+- Fixed-window rate limiter: count requests per fixed time bucket (e.g., per minute); simple but has boundary burst problem.
+- Sliding-window rate limiter: maintain a deque of timestamps; evict expired entries; allows exactly k requests per any rolling window of size T.
+- Token bucket: replenish tokens at a fixed rate; allows bursts up to bucket capacity. Used by AWS API Gateway.
+- Monitoring: moving averages on metrics (CPU %, error rate) are sliding window sums — same algorithm, applied to time-series data.
+- Interview talking point: "If asked the difference between fixed-window and sliding-window rate limiters, answer: fixed-window can allow 2x the rate limit at bucket boundaries (e.g., 100 at 0:59 + 100 at 1:00); sliding-window guarantees at most k requests in any T-second period."
+
+## Assessment / Mock (—)
+### Activity: —
+
+## Behavioral (30 min)
+- STAR prompt: Give an example where you reframed a problem — instead of directly maximising what you wanted, you minimised what you didn't want — analogous to the complement window in LC 1423.
+- Leadership principle: Think Big
+
+## Flashcards
+
+| Q | A |
+|---|---|
+| How do you solve Maximum Points from Cards without simulating taking from ends? | Compute total sum; find minimum subarray sum of length n-k (the cards you leave); answer = total − min_middle |
+| What is the "gain window" in Grumpy Bookstore Owner? | The extra customers you gain if grumpiness is suppressed during a window of size `minutes`; you slide this window to find where it covers the most grumpy-lost customers |
+| What is the sliding-window rate limiter invariant? | At any moment, the deque contains only timestamps within the last T seconds; size of deque ≤ k |
+| How does the complement technique apply to sliding window problems? | When taking from both ends, equivalently minimise the middle segment; converts an irregular two-end selection into a simple single window |
+| What is the boundary burst problem in fixed-window rate limiters? | A client can send k requests just before a window boundary and k more just after, achieving 2k requests in a very short real-time span |
+
+## Checklist
+- [ ] Solved all problems (timed, no hints for first 20 min)
+- [ ] Wrote pattern skeleton from memory after reading it
+- [ ] Stated time + space complexity aloud for each solution
+- [ ] Completed system design component (if scheduled)
+- [ ] Reviewed flashcards
+- [ ] Logged unsolved problems to `knowledge-base/revision-log.md`
