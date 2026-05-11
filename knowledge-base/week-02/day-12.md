@@ -22,25 +22,40 @@ Master the fast/slow pointer (Floyd's algorithm) — detects cycles, finds midpo
 # Cycle detection (LC 141)
 def has_cycle(head):
     slow = fast = head
-    while fast and fast.next:
+    while fast and fast.next:   # fast.next check prevents crash on fast.next.next
         slow = slow.next
         fast = fast.next.next
-        if slow == fast:
+        if slow == fast:        # same node reference (pointer equality, not value)
             return True
     return False
 
-# Cycle entry (LC 142) — add after meeting point detection
+# Cycle entry (LC 142)
 def detect_cycle(head):
     slow = fast = head
     while fast and fast.next:
         slow, fast = slow.next, fast.next.next
         if slow == fast:
-            slow = head
+            slow = head         # reset one pointer to head
             while slow != fast:
-                slow, fast = slow.next, fast.next
-            return slow
+                slow, fast = slow.next, fast.next  # both advance one step
+            return slow         # meet at cycle entry node
     return None
 ```
+
+### Interview Tips
+
+- **State both guard conditions:** "`while fast and fast.next` — we check `fast` (could be None at list end) AND `fast.next` (would crash on `fast.next.next`). Both guards matter." Saying this proves you think about null-pointer safety.
+- **Pointer equality, not value equality:** `slow == fast` compares object references — they must point to the exact same node, not just nodes with equal values. Mentioning this separates candidates who understand references from those who don't.
+- **LC 142 — state the math:** "After the meeting point, the mathematical property gives: distance(head → cycle_entry) == distance(meeting_point → cycle_entry, going forward). So resetting one pointer to head and advancing both one step places them at the cycle entry." Interviewers won't ask you to prove it, but showing awareness of the property scores points.
+- **LC 234 three-step blueprint:** (1) find middle — fast/slow, (2) reverse second half in-place — three-pointer reversal, (3) compare half by half until one hits None. State all three before coding.
+- **Common mistake:** in LC 234, after finding mid with fast/slow, `slow.next` is the start of the second half — but for even-length lists the "second half" must start at `slow.next` (not `slow`). Trace a 4-node example to confirm.
+
+### Edge Cases to Trace Before Coding
+- LC 141: no cycle, single node → `fast` becomes None after 0 iterations; return False ✓
+- LC 141: tail points to head (full cycle) → fast catches slow after a few iterations ✓
+- LC 234: `[1]` → single node is a palindrome; fast immediately hits end, slow at head, second half is empty ✓
+- LC 234: `[1, 2]` → not palindrome; after fast/slow, slow is at node 1, reverse node 2, compare 1 ≠ 2 ✓
+- LC 142: no cycle → return None (while loop exits normally)
 
 ## System Design (1 hour)
 ### Topic: Horizontal Scaling — Stateless Architecture Patterns

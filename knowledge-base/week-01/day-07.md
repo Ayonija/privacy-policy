@@ -23,6 +23,7 @@ Consolidate two-pointer and sliding window patterns; identify gaps before advanc
 # Dutch National Flag (LC 75)
 def sort_colors(nums):
     low, mid, high = 0, 0, len(nums) - 1
+    # Invariant: [0, low) = 0s, [low, mid) = 1s, [high+1, n) = 2s
     while mid <= high:
         if nums[mid] == 0:
             nums[low], nums[mid] = nums[mid], nums[low]
@@ -31,16 +32,31 @@ def sort_colors(nums):
             mid += 1
         else:
             nums[mid], nums[high] = nums[high], nums[mid]
-            high -= 1  # do NOT increment mid here
+            high -= 1  # do NOT increment mid — the swapped value from high is unknown
 
 # Is Subsequence (LC 392)
 def is_subsequence(s, t):
-    i = 0
+    i = 0   # pointer into s (the pattern)
     for ch in t:
         if i < len(s) and ch == s[i]:
             i += 1
     return i == len(s)
 ```
+
+### Interview Tips
+
+- **Dutch National Flag — state the invariant:** "At every step: [0, low) contains 0s, [low, mid) contains 1s, [high+1, n) contains 2s, and [mid, high] is unknown." Interviewers at senior level expect you to name the invariant before writing code.
+- **Why NOT increment `mid` after swap with `high`:** the value swapped from `high` is unknown — it could be 0, 1, or 2. `mid` must re-examine it. This is the most common DNF bug in interviews.
+- **Review day strategy:** on review days, time yourself solving each problem from scratch without looking at prior solutions. If you can't produce a working solution in 15 minutes, add it to `revision-log.md`. Speed is a signal.
+- **Is Subsequence variant (follow-up for L5+):** "If there are millions of pattern strings to check against the same t, precompute for each position in t the next occurrence of each character — O(n·26) precompute, O(m) per query." State this proactively.
+- **Common mistake:** in Is Subsequence, checking `s` and `t` with two-pointer loops instead of the clean for-loop over `t` — both work but the for-loop is shorter and less error-prone.
+
+### Edge Cases to Trace Before Coding
+- LC 75: all 0s → `low = mid = 0`, all swaps go to back of "0s region"; `high` never moves; correct ✓
+- LC 75: `[1, 0, 2]` → mid starts at 0 (value 1), mid++; mid at 1 (value 0), swap low↔mid, low++ mid++; mid at 2 > high, done ✓
+- LC 392: empty `s` → is a subsequence of anything (vacuously true); i stays 0, return `0 == 0` ✓
+- LC 392: `s` longer than `t` → impossible; i never reaches `len(s)`, return False ✓
+- LC 1208: `maxCost = 0` → only windows where all characters are identical are valid
 
 ## System Design (1 hour)
 ### Topic: Big-O & RAM Model — Week 1 Wrap-Up
@@ -64,7 +80,7 @@ def is_subsequence(s, t):
 | How do you check if s is a subsequence of t in O(n)? | Two pointers: i scans s, j scans t; increment i only when t[j] == s[i]; return i == len(s) |
 | In Dutch National Flag, why do you NOT increment mid after swapping with high? | The element swapped from high is unknown — it could be 0, 1, or 2, so mid must re-examine it |
 | What is the window invariant in Get Equal Substrings Within Budget? | Sum of abs(s[i]−t[i]) over the window ≤ maxCost; shrink left when it exceeds the budget |
-| Name the five problems covered this week and their patterns. | LC 125 Two Pointers, LC 167 Two Pointers, LC 15 Two Pointers+Sort, LC 11 Greedy Shrink, LC 16 Two Pointers+Sort, LC 3 Variable Window, LC 209 Variable Window, LC 643 Fixed Window, LC 424 Window+Freq, LC 567 Fixed+Freq, LC 977 Fill-from-back, LC 904 k-Distinct, LC 1004 Zero-count, LC 26 Slow/Fast, LC 438 Anagram, LC 713 Product, LC 392 Subseq, LC 75 DNF, LC 1208 Budget |
+| What are the three pointer regions in Dutch National Flag and what invariant does each maintain? | `[0, low)` = confirmed 0s; `[low, mid)` = confirmed 1s; `[high+1, n)` = confirmed 2s; `[mid, high]` = unexplored territory |
 | What is the key difference between a subsequence and a substring? | Substring: contiguous characters; Subsequence: any characters in order, gaps allowed |
 
 ## Checklist

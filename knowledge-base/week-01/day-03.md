@@ -24,13 +24,27 @@ def sliding_window_variable(arr, target):
     window_state = 0  # e.g. current sum or freq map
     best = float('inf')
     for right in range(len(arr)):
-        window_state += arr[right]           # expand
-        while window_state >= target:        # contract condition
+        window_state += arr[right]           # expand window
+        while window_state >= target:        # shrink while condition holds
             best = min(best, right - left + 1)
             window_state -= arr[left]
             left += 1
     return best if best != float('inf') else 0
 ```
+
+### Interview Tips
+
+- **State the window invariant before coding:** "My window [left, right] always satisfies [condition]. I expand right on every step and shrink left only when [violation]." This one sentence proves to the interviewer you understand the algorithm.
+- **`while` vs `if` for the shrink:** for minimum-window problems use `while` (keep shrinking as long as valid); for maximum-window problems where you just need to keep moving, `if` is often enough — mixing these up is a top-5 sliding window interview bug.
+- **Brute force to state:** "I could check all O(n²) subarrays and sum each — O(n²) or O(n³). Sliding window maintains a running sum in O(1) per step."
+- **Common mistake:** in LC 209 (Minimum Size Subarray Sum), computing `right - left + 1` *after* `left += 1` instead of before — the window size must be recorded while [left, right] is still the valid window.
+- **Alternative approach for LC 3:** use a char→index map instead of a set to jump `left` directly to `last_seen[char] + 1` instead of incrementing one by one — still O(n) but avoids inner loop.
+
+### Edge Cases to Trace Before Coding
+- LC 121 (Stock): monotonically decreasing prices → profit is 0; handle by returning `max(0, best_profit)`
+- LC 3 (No Repeating): all same character (e.g., `"aaa"`) → window never expands past 1; answer is 1
+- LC 209 (Min Subarray Sum): no valid subarray (sum of entire array < target) → return 0
+- Empty array → return 0 for all three problems
 
 ## System Design (1 hour)
 ### Topic: Big-O in Practice — Reading Complexity From Code

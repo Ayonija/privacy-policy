@@ -34,13 +34,36 @@ def is_valid(s):
 
 # Decode String (LC 394) — skeleton
 def decode_string(s):
-    stack = []   # stores (current_string, repeat_count)
+    stack = []   # stores (curr_str_before_bracket, repeat_count)
     curr_str, curr_num = "", 0
     for ch in s:
-        # handle digit, '[', ']', letter
-        pass
+        if ch.isdigit():
+            curr_num = curr_num * 10 + int(ch)   # handles multi-digit counts like "12"
+        elif ch == '[':
+            stack.append((curr_str, curr_num))   # save state; reset for inner decode
+            curr_str, curr_num = "", 0
+        elif ch == ']':
+            prev_str, num = stack.pop()
+            curr_str = prev_str + num * curr_str  # prepend saved prefix
+        else:
+            curr_str += ch
     return curr_str
 ```
+
+### Interview Tips
+
+- **State the LIFO principle first:** "A stack is the right choice when the most recently seen item must be resolved before earlier items — LIFO order naturally models nesting and matching." Say this before touching any code.
+- **Empty stack check before peeking:** always guard `if not stack or stack[-1] != ...` — accessing `stack[-1]` on an empty list throws an IndexError. This guard catches unbalanced closing brackets.
+- **LC 394 (Decode String) — explain the two-stack approach:** "I save the current string and the repeat count when I see `[`, and restore them when I see `]`. The stack handles arbitrary nesting depth."
+- **Multi-digit numbers in LC 394:** `"12[a]"` → the `isdigit` branch must accumulate: `curr_num = curr_num * 10 + int(ch)`. Forgetting this gives wrong results for counts > 9.
+- **Common mistake:** in LC 150 (Evaluate RPN), division must be truncated toward zero in Python — use `int(a / b)` not `a // b`. Python's `//` floors toward negative infinity, but the problem requires truncation toward zero (e.g., `-7 // 2 == -4` in Python, but the answer should be `-3`).
+
+### Edge Cases to Trace Before Coding
+- LC 20: empty string `""` → stack is empty at end; return `True` ✓
+- LC 20: opening brackets only `"((("` → stack non-empty at end; return `False` ✓
+- LC 20: `"]"` → match dict lookup succeeds, but `not stack` is True; return `False` ✓
+- LC 150: `["2", "1", "+", "3", "*"]` → `(2+1)*3 = 9`; trace step by step to confirm stack state
+- LC 394: `"3[a]2[bc]"` → `"aaabcbc"`; `"3[a2[c]]"` → `"accaccacc"` (nested)
 
 ## System Design (1 hour)
 ### Topic: CAP Theorem — Introduction

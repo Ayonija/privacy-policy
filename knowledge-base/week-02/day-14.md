@@ -24,29 +24,44 @@ Solidify all linked list patterns from Days 11–13; identify the remove-nth and
 def remove_nth_from_end(head, n):
     dummy = ListNode(0, head)
     fast = slow = dummy
-    for _ in range(n + 1):   # advance fast n+1 steps
+    for _ in range(n + 1):   # advance fast n+1 steps — leaves 1-node gap between slow and fast
         fast = fast.next
-    while fast:
+    while fast:               # advance both until fast is None
         fast, slow = fast.next, slow.next
-    slow.next = slow.next.next
+    slow.next = slow.next.next  # slow is now at the node BEFORE the target
     return dummy.next
 
 # Remove duplicates II (LC 82)
 def delete_duplicates(head):
     dummy = ListNode(0, head)
-    prev = dummy
+    prev = dummy   # prev stops before any duplicate run
     curr = head
     while curr:
         if curr.next and curr.val == curr.next.val:
             val = curr.val
-            while curr and curr.val == val:
+            while curr and curr.val == val:  # skip ALL nodes with this value
                 curr = curr.next
-            prev.next = curr
+            prev.next = curr   # prev jumps over the entire duplicate run
         else:
-            prev = curr
+            prev = curr        # non-duplicate: advance prev normally
             curr = curr.next
     return dummy.next
 ```
+
+### Interview Tips
+
+- **The n+1 gap trick:** "I advance `fast` by `n+1` steps from the dummy head (not n) so that when `fast` is None, `slow` is at the node *before* the one I want to delete — allowing `slow.next = slow.next.next`." Draw this on the whiteboard if possible.
+- **Why dummy head is essential for LC 19:** if `n` equals the list length, the node to remove is the head — without a dummy, you'd crash accessing `slow.next.next`. Dummy makes the head removal identical to any other node removal.
+- **LC 82 vs LC 83 (Remove Duplicates I):** LC 83 keeps one copy of each duplicate; LC 82 removes ALL copies. The key difference: LC 82's `prev` pointer *doesn't advance* when it encounters a duplicate run; it only advances on non-duplicate nodes.
+- **Common mistake in LC 82:** checking `curr.val == curr.next.val` without guarding `curr.next is not None` — accessing `curr.next.val` when `curr.next` is None throws an error. Always check `curr.next` first.
+- **Brute force for LC 876 (Middle):** count nodes, then traverse again to the midpoint — O(2n). Fast/slow finds the middle in one pass O(n).
+
+### Edge Cases to Trace Before Coding
+- LC 19: `n` equals list length → remove head; dummy prevents crash; `slow` stays at dummy after n+1 advance ✓
+- LC 19: single-node list, `n = 1` → remove head; dummy.next becomes None ✓
+- LC 82: list with all same values `[1,1,1]` → entire list is a duplicate run; `prev` stays at dummy; `prev.next = None`; return `dummy.next = None` ✓
+- LC 82: no duplicates → `curr.next` is always different from `curr`; `prev` advances every step; list returned unchanged ✓
+- LC 876: even-length list → slow ends at the second middle node (as per problem definition)
 
 ## System Design (1 hour)
 ### Topic: Load Balancers — Layer 4 vs. Layer 7

@@ -22,16 +22,16 @@ Integrate two-pointer and sliding window into mixed-context problems to build pa
 ```python
 # Remove Duplicates (LC 26) — slow/fast two pointers
 def remove_duplicates(nums):
-    slow = 0
+    slow = 0   # slow = last confirmed unique element's index
     for fast in range(1, len(nums)):
-        if nums[fast] != nums[slow]:
+        if nums[fast] != nums[slow]:   # new unique element found
             slow += 1
             nums[slow] = nums[fast]
-    return slow + 1
+    return slow + 1   # count = last unique index + 1
 
 # Subarray Product < K (LC 713)
 def num_subarray_product_less_than_k(nums, k):
-    if k <= 1:
+    if k <= 1:    # all positive ints ≥ 1, so no subarray product can be < 1
         return 0
     product, left, count = 1, 0, 0
     for right in range(len(nums)):
@@ -39,9 +39,24 @@ def num_subarray_product_less_than_k(nums, k):
         while product >= k:
             product //= nums[left]
             left += 1
-        count += right - left + 1  # all subarrays ending at right
+        count += right - left + 1  # subarrays ending at right with start in [left..right]
     return count
 ```
+
+### Interview Tips
+
+- **The counting formula `right - left + 1`:** explain it explicitly — "For each `right`, every subarray starting anywhere from `left` to `right` and ending at `right` is valid. That's `right - left + 1` subarrays." This is a reusable technique across many problems.
+- **Early return `k <= 1` for LC 713:** state it at the top and explain why — "All array elements are positive (≥ 1), so the minimum product of any single element is 1, which is not strictly less than 1. If k ≤ 1, the answer is always 0." Showing you read constraints is a green flag.
+- **LC 438 (Find All Anagrams) vs LC 567 (Permutation in String):** these are essentially the same problem — LC 567 returns bool (is there any anagram?), LC 438 returns all starting indices. Use the same `matches` counter technique; this family of problems appears repeatedly.
+- **Common mistake:** in LC 26 (Remove Duplicates), returning `slow` instead of `slow + 1` — `slow` is the *index* of the last unique element, but the *count* is `slow + 1`.
+- **Brute force for LC 713:** O(n²) scanning all subarrays and computing product each time (even O(n³) if not careful) — sliding window is O(n) with window product tracked incrementally.
+
+### Edge Cases to Trace Before Coding
+- LC 26: single element array → `slow = 0`, `fast` loop doesn't run, return 1 ✓
+- LC 26: all elements identical → `slow` stays at 0, return 1 ✓
+- LC 713: `k = 1` → return 0 (handled by early return)
+- LC 713: single element `< k` → count = 1 after one iteration ✓
+- LC 438: `len(p) > len(s)` → impossible to find anagram, result is empty list
 
 ## System Design (1 hour)
 ### Topic: Big-O — Counting Output Size

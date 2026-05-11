@@ -80,10 +80,19 @@ def max_points(points):
 
 ---
 
+### Interview Tips
+
+- **LC 299 (Bulls & Cows) — narrate two passes:** "Pass 1 counts exact matches (bulls). Pass 2 counts positional mismatches that share a character — cows = overlap between secret's non-bull freq map and guess's non-bull freq map." Interviewers test that you don't accidentally double-count bulls as cows.
+- **LC 149 (Max Points) — why GCD normalisation:** "Two slopes are the same if and only if `(dy/dx)` is equal as a fraction. I represent the slope as `(dy // gcd, dx // gcd)` with `dx` normalised to positive, so identical slopes hash to identical tuples — no floating-point precision loss."
+- **LC 149 — the `+1` for the origin:** "The slope map counts *other* points collinear with origin `i`. The answer for that origin is `max_count + 1` (include `i` itself)." Forgetting `+1` is the most common LC 149 bug.
+- **Custom Sort String alternative:** instead of `sorted`, use a counting approach — count chars in `order` that appear in `s`, output in order order, then append remaining chars. O(n + |order|) vs O(n log n) for sort — offer both.
+- **Common mistake in LC 299:** counting a bull position's character in the cow frequency maps — the two-pass approach avoids this by only adding non-bull positions to the freq maps.
+
 ### Edge Cases to Trace Before Coding
-- LC 299: `secret = "1122"`, `guess = "2211"` — bulls = 0, cows = 4
-- LC 791: chars in `order` that don't appear in `s` — safe to include in priority map
-- LC 149: duplicate points → same point has slope (0,0) or infinity — count duplicates separately as they lie on every line
+- LC 299: `secret = "1122"`, `guess = "2211"` — bulls = 0, cows = 4; trace pass 1 and pass 2 explicitly
+- LC 791: chars in `order` that don't appear in `s` — safe to include in priority map; `priority.get(c, len(order))` defaults to end position ✓
+- LC 149: all points identical → every pair has slope (0, 0) (or vertical); must handle: `gcd(0, 0)` is 0 — guard: if `dy == dx == 0`, skip (same point) or handle duplicates separately
+- LC 149: exactly 1 or 2 points → early return avoids division edge cases; any 2 points always define a line
 
 ---
 

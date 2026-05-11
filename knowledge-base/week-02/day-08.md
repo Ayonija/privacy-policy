@@ -26,9 +26,9 @@ def four_sum(nums, target):
     result = []
     n = len(nums)
     for i in range(n - 3):
-        if i > 0 and nums[i] == nums[i-1]: continue
+        if i > 0 and nums[i] == nums[i-1]: continue       # skip dup fixed i
         for j in range(i + 1, n - 2):
-            if j > i + 1 and nums[j] == nums[j-1]: continue
+            if j > i + 1 and nums[j] == nums[j-1]: continue  # skip dup fixed j
             left, right = j + 1, n - 1
             while left < right:
                 s = nums[i] + nums[j] + nums[left] + nums[right]
@@ -48,16 +48,31 @@ def interval_intersection(A, B):
     i = j = 0
     result = []
     while i < len(A) and j < len(B):
-        lo = max(A[i][0], B[j][0])
-        hi = min(A[i][1], B[j][1])
-        if lo <= hi:
+        lo = max(A[i][0], B[j][0])   # overlap start = later of two starts
+        hi = min(A[i][1], B[j][1])   # overlap end = earlier of two ends
+        if lo <= hi:                  # actual overlap exists
             result.append([lo, hi])
-        if A[i][1] < B[j][1]:
+        if A[i][1] < B[j][1]:        # advance the interval that ends sooner
             i += 1
         else:
             j += 1
     return result
 ```
+
+### Interview Tips
+
+- **4Sum duplicate-skip guard difference:** for the fixed `i` index use `i > 0`; for the fixed `j` index use `j > i + 1` (not `j > 0`). Using the wrong guard is the most common 4Sum bug. Explain why: j resets to `i+1` each outer iteration.
+- **Integer overflow in k-sum:** with 32-bit integers, `nums[i] + nums[j] + nums[left] + nums[right]` can overflow if values are large — in Java/C++ cast to `long`. In Python this is handled automatically; mention it to show language awareness.
+- **Interval intersection formula:** "Two intervals [a,b] and [c,d] overlap iff `max(a,c) ≤ min(b,d)`. If this holds, their intersection is exactly `[max(a,c), min(b,d)]`." Stating this formula before drawing will impress interviewers.
+- **Brute force for 4Sum:** O(n⁴) checking all quadruples → sorting + two nested loops + two pointers = O(n³). Always ask the interviewer for expected n to know if O(n³) is acceptable.
+- **Common mistake:** in Move Zeroes, swapping every non-zero with the slow-pointer position when you could just overwrite non-zeros left-to-right and fill zeros at the end — both O(n) but fewer writes.
+
+### Edge Cases to Trace Before Coding
+- LC 18 (4Sum): fewer than 4 elements → return `[]`; all same element (e.g., `[0,0,0,0]`, target=0) → one result `[[0,0,0,0]]`
+- LC 18: target is very large or negative → sorting handles negative numbers correctly
+- LC 986: one list is empty → while loop condition is false immediately, return `[]`
+- LC 986: intervals touch at a single point (e.g., `[1,2]` and `[2,3]`) → `lo=2, hi=2`, `lo <= hi` so `[2,2]` is a valid intersection
+- LC 283 (Move Zeroes): all zeros → slow never advances, all writes are to the same position (no-op)
 
 ## System Design (1 hour)
 ### Topic: Big-O Revisit — When O(n³) is Acceptable

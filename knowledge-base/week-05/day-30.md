@@ -47,6 +47,21 @@ def find132pattern(nums):
     return False
 ```
 
+### Interview Tips
+
+- **LC 316 (Remove Duplicate Letters) — explain the three conditions for popping:** "I pop `stack[-1]` only when ALL THREE hold: (1) the new char `ch` is smaller than top, (2) the top character appears later in the string (`last[top] > i` — can still be added), (3) the top is not already committed (checked via `in_stack`). Missing any condition gives incorrect results."
+- **LC 456 (132 Pattern) — explain the right-to-left scan:** "I scan right to left because I know nums[j] (the maximum) first. The stack holds candidates for nums[k] (the '2' — smaller than j but larger than i). Whenever I pop a value from the stack (because current is larger), that popped value becomes my best candidate for nums[k]."
+- **LC 316 — `in_stack` set purpose:** "The set tracks which characters are already in the stack. If `ch in in_stack`, I skip — adding it again would create a duplicate in the result."
+- **Month 1 synthesis tip:** you should now be able to look at a problem description and in 30 seconds decide: two-pointer, sliding window, or stack. Practice this pattern-recognition reflex — it's the core skill being tested in a real OA.
+- **Common mistake in LC 316:** using `last[stack[-1]] >= i` instead of `> i` — at `i`, we're processing the character at that index, so `last[stack[-1]] > i` means there's still a future occurrence; `>=` would incorrectly block popping when the last occurrence is the current position.
+
+### Edge Cases to Trace Before Coding
+- LC 316: single unique character (e.g., `"aaaa"`) → only one 'a' in result; `in_stack` prevents duplicates ✓
+- LC 316: already sorted string (e.g., `"abc"`) → no pops ever; result is the unique characters in their original order ✓
+- LC 456: monotonically increasing array → no valid 132 pattern; `third` never exceeds `-inf`; return False ✓
+- LC 456: `nums.length < 3` → impossible to have i < j < k; return False immediately (add guard)
+- LC 1021: `"(()())(())"` → depth tracker correctly outputs only inner characters
+
 ## System Design (1 hour)
 ### Topic: Month 1 System Design Synthesis — Big-O → Scaling → CAP
 - **Month 1 system design arc:** Big-O + RAM model → Vertical/Horizontal scaling → Load balancers (L4 vs L7, algorithms, health checks) → CAP theorem (CP vs AP) → Consistency models (strong, causal, eventual) → PACELC → Real systems (Zookeeper, Cassandra, DynamoDB, Spanner).

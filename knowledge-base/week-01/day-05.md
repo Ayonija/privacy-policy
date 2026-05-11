@@ -26,7 +26,7 @@ def sorted_squares(nums):
     n = len(nums)
     result = [0] * n
     left, right, pos = 0, n - 1, n - 1
-    while left <= right:
+    while left <= right:   # NOTE: <= not < because we need the last element too
         if abs(nums[left]) > abs(nums[right]):
             result[pos] = nums[left] ** 2
             left += 1
@@ -45,11 +45,25 @@ def at_most_k_distinct(arr, k):
         while len(freq) > k:
             freq[arr[left]] -= 1
             if freq[arr[left]] == 0:
-                del freq[arr[left]]
+                del freq[arr[left]]   # must delete, not just set to 0, or len(freq) is wrong
             left += 1
         result = max(result, right - left + 1)
     return result
 ```
+
+### Interview Tips
+
+- **5-second pattern classifier:** Is the array sorted, and does the answer depend only on the two endpoint values? → Two pointers. Does the answer depend on something *inside* the window (counts, sums, distinct values)? → Sliding window. Practice this classification reflex until it's automatic.
+- **LC 977 key insight to state:** "Largest squares always come from either the leftmost or rightmost element — we compare both ends and fill the result array from the back." Say the word "from the back" — interviewers listen for this.
+- **Critical bug prevention for LC 904:** when removing from the freq map, `del freq[key]` (not just `freq[key] = 0`) is mandatory — otherwise `len(freq)` stays wrong and you'll never shrink the window correctly.
+- **Brute force for LC 904:** O(n²) checking every subarray with a set — sliding window is O(n).
+- **Common mistake:** using `left <= right` in LC 977's while loop — since we fill `pos` from back and `left` and `right` can meet on the last valid pair, `left <= right` is needed (not `left < right`).
+
+### Edge Cases to Trace Before Coding
+- LC 977: all negative numbers (e.g., `[-4,-3,-2]`) → sorted squares are `[4,9,16]` filled from back correctly
+- LC 977: single element → left == right, one iteration, result is `[elem²]`
+- LC 904: single fruit type (`k=1`) → longest run of the same fruit
+- LC 1004 (Max Consecutive Ones III): `k = 0` → answer is the longest existing run of 1s; `k ≥ n` → answer is `n`
 
 ## System Design (1 hour)
 ### Topic: Big-O — Analysing Real Code Patterns

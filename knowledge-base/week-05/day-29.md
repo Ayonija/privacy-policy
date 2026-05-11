@@ -54,6 +54,21 @@ def remove_k_digits(num, k):
     pass
 ```
 
+### Interview Tips
+
+- **LC 907 (Sum of Subarray Minimums) — state the contribution approach:** "Instead of iterating over all O(n²) subarrays, I count how many subarrays each element is the minimum of. For element at index i, that count = `left[i] * right[i]`. This reduces to O(n) with two monotonic stack passes."
+- **Strict vs non-strict comparison for duplicate minimums:** "For the left boundary, I use `>=` (strict) so that equal elements on the left are counted as 'closer'. For the right boundary, I use `>` (non-strict). This ensures each subarray with a repeated minimum is counted exactly once." This is a senior-level detail that most candidates miss.
+- **LC 402 (Remove K Digits) — three post-loop steps:** "After the main loop: (1) if `k > 0`, trim `k` characters from the right of the stack (loop used up all chances to pop). (2) Strip leading zeros using `lstrip('0')`. (3) If empty, return `'0'`." Missing any step gives a wrong answer on edge cases.
+- **Brute force for LC 907:** O(n²) checking all subarrays and calling `min()` each time — O(n³) total. Contribution counting with monotonic stack is O(n).
+- **Common mistake in LC 402:** forgetting `stack[-1] > digit` in the while condition (not `>=`) — equal digits should NOT be popped since popping equals doesn't make the number smaller.
+
+### Edge Cases to Trace Before Coding
+- LC 682: `"C"` as the first operation → stack is empty; problem guarantees this won't happen, but mention it shows constraint awareness
+- LC 907: single-element array → `left[0] = 1`, `right[0] = 1`, contribution = `arr[0] * 1 * 1`; correct ✓
+- LC 907: all same elements `[3, 3, 3]` → duplicate handling with strict/non-strict is critical
+- LC 402: `k = 0` → no digits to remove; return `num` as-is
+- LC 402: `num = "10"`, `k = 2` → pop both digits; empty stack; return `"0"` ✓
+
 ## System Design (1 hour)
 ### Topic: CAP in Real Systems — Zookeeper, Cassandra, DynamoDB
 - **Zookeeper (CP):** used for distributed coordination — leader election, distributed locks, configuration management; refuses reads during a partition to prevent stale config data; clients must retry.

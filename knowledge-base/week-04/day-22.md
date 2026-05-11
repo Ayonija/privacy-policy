@@ -30,16 +30,34 @@ def daily_temperatures(temperatures):
         stack.append(i)
     return result
 
-# Next Greater Element II — circular (LC 503) skeleton
+# Next Greater Element II — circular (LC 503)
 def next_greater_elements(nums):
     n = len(nums)
     result = [-1] * n
-    stack = []  # stores indices
-    for i in range(2 * n):
-        # use i % n to wrap around
-        pass
+    stack = []  # stores indices; values are in decreasing order
+    for i in range(2 * n):   # iterate twice to simulate circular array
+        while stack and nums[stack[-1]] < nums[i % n]:
+            idx = stack.pop()
+            result[idx] = nums[i % n]   # first greater element found
+        if i < n:
+            stack.append(i)   # only push indices from first pass
     return result
 ```
+
+### Interview Tips
+
+- **Monotonic stack amortised O(n):** "Each element is pushed at most once and popped at most once — total work is O(n) even though the while loop is nested." State this proof; interviewers at FAANG will probe for it.
+- **Always store indices, not values:** "I store indices in the stack so I can compute the distance (e.g., `i - idx` in Daily Temperatures) and to handle circular wrapping with `i % n`." Storing values instead of indices is the single most common monotonic stack mistake.
+- **Circular array trick:** "I iterate `range(2 * n)` and use `i % n` to wrap around. In the second pass (`i >= n`), I don't push new indices — I only resolve pending elements whose NGE comes from 'wrapping around'."
+- **Brute force baseline:** O(n²) for each element, scan right (and wrap) until a greater element is found → monotonic stack is O(n).
+- **Common mistake:** in LC 496 (NGE I), building the NGE map from `nums1` instead of `nums2` — you must precompute NGEs for *all* elements of `nums2`, then look up `nums1` elements in the map.
+
+### Edge Cases to Trace Before Coding
+- LC 739 (Daily Temperatures): monotonically decreasing temperatures → stack fills up, nothing gets popped during the loop; all results stay 0 ✓
+- LC 739: monotonically increasing → each new temperature pops all previous; results are all 1 except the last (which stays 0) ✓
+- LC 503: single element array `[5]` → nothing is greater than itself; result is `[-1]`
+- LC 503: all same elements `[3, 3, 3]` → no element has a greater neighbor; result is `[-1, -1, -1]`
+- LC 496: element in `nums1` that doesn't appear in `nums2` → per constraints this won't happen, but the HashMap default of -1 handles it
 
 ## System Design (1 hour)
 ### Topic: CAP — Consistency Deep Dive

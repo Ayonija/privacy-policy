@@ -26,11 +26,25 @@ def container_with_most_water(height):
         area = min(height[left], height[right]) * (right - left)
         max_area = max(max_area, area)
         if height[left] < height[right]:
-            left += 1
+            left += 1   # shorter side limits the area; moving it is the only way to possibly improve
         else:
             right -= 1
     return max_area
 ```
+
+### Interview Tips
+
+- **Prove the greedy argument out loud:** "Moving the taller pointer can only decrease width and can't increase the limiting height, so area can only shrink. Therefore we always move the shorter pointer." Interviewers at L5+ expect you to justify the greedy choice, not just state it.
+- **Brute force baseline:** O(n²) is checking every pair `(i, j)` — state this before explaining the O(n) approach so the interviewer sees you understand what you're improving.
+- **3Sum Closest communication tip:** initialise `closest` with the first three elements, not `float('inf')`, to avoid issues with the `abs()` comparison initialisation.
+- **Common mistake:** in Container With Most Water, updating `max_area` inside the `if` branch rather than unconditionally — you must record the area *before* moving any pointer.
+- **Alternative approach for Reverse String:** the two-pointer swap is O(1) space; mention that Python's `s.reverse()` does the same but isn't allowed in-place questions.
+
+### Edge Cases to Trace Before Coding
+- `height` has only 2 elements → still works; one iteration captures the only possible area
+- All heights equal → any pointer movement is valid; result is correctly computed
+- 3Sum Closest: array with exactly 3 elements → return their sum immediately (no choice exists)
+- Negative numbers in 3Sum Closest → sorting + two-pointer handles negatives naturally
 
 ## System Design (1 hour)
 ### Topic: RAM Model — Memory Hierarchy Basics

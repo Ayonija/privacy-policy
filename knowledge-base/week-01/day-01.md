@@ -22,15 +22,30 @@ Build the two-pointer mental model — the most reusable O(n) technique for sort
 def two_pointers_template(arr):
     left, right = 0, len(arr) - 1
     while left < right:
-        # evaluate arr[left] and arr[right]
-        if move_left_condition:
-            left += 1
-        elif move_right_condition:
-            right -= 1
+        current = arr[left] + arr[right]   # example: pair sum
+        if current < target:
+            left += 1   # need larger value
+        elif current > target:
+            right -= 1  # need smaller value
         else:
-            # found answer
-            pass
+            # found answer — record, then skip duplicates
+            left += 1
+            right -= 1
 ```
+
+### Interview Tips
+
+- **State brute force first:** "The naive approach is O(n²) nested loops checking every pair — two pointers reduces this to O(n) by exploiting sorted order." Say this aloud before touching code.
+- **Classify in under 60 seconds:** ask yourself — is the array sorted? Am I looking for a pair/triplet? Both yes → reach for two pointers.
+- **Narrate pointer movement direction:** before each iteration say "left moves right because sum is too small" — interviewers credit communication as heavily as correctness.
+- **Duplicate skipping in 3Sum:** always sort first; skip `nums[i] == nums[i-1]` at the fixed index AND skip equal moves inside the inner while loop. Missing either one is the most common 3Sum bug.
+- **Common mistake:** using `left <= right` instead of `left < right` for pair problems — when pointers meet, pairing an element with itself is invalid for most pair-sum problems.
+
+### Edge Cases to Trace Before Coding
+- Empty array or single element → return immediately (no valid pair)
+- All same elements (e.g., `[2, 2, 2]` for 3Sum) → must de-dup correctly without skipping valid triplets
+- Negative numbers in 3Sum → sorting handles them naturally; two-pointer still works
+- Overflow: `nums[i] + nums[j]` with large integers → cast to `long` in Java/C++ (Python is safe)
 
 ## System Design (1 hour)
 ### Topic: Big-O Notation & the RAM Model

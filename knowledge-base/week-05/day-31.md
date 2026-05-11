@@ -82,10 +82,18 @@ def min_window(s, t):
 
 ---
 
+### Interview Tips
+
+- **State the key-choice insight for Group Anagrams:** "The insight is choosing the canonical key — sorting the characters gives the same key for all anagrams. An alternative is a 26-tuple character count (avoids O(k log k) sorting, gives O(k) per string)." Offer both; use tuple for speed.
+- **Streak-start optimization for LC 128:** "I check `num - 1 not in set` to ensure I only start a streak at its true beginning. This prevents revisiting the same streak from every member, keeping the algorithm O(n) instead of O(n²)."
+- **LC 76 (Min Window) — state the `have vs need` invariant:** "I maintain `need` (target char frequencies) and a `have` counter (how many distinct chars in the window meet their required frequency). The window is valid when `have == len(need)`."
+- **Common mistake in LC 76:** using `len(set(t))` as `required` correctly handles repeated chars in t (e.g., `t = "aa"` needs frequency 2 of 'a', not just presence). But using `len(t)` instead of `len(set(t))` overcounts — always use `len(need)` (the frequency map length).
+- **Brute force for all three:** LC 49 O(n·k·log k) sorting all strings; LC 128 O(n²) nested loops; LC 76 O(n²) all substrings — HashMaps reduce all three significantly.
+
 ### Edge Cases to Trace Before Coding
 - Group Anagrams: empty string `""` is its own group (sorted `""` = `""`)
 - Longest Consecutive: duplicates in input — `set()` removes them before iteration
-- Min Window: `t` has duplicate chars (e.g., `t="aa"`) — need count 2, not 1
+- Min Window: `t` has duplicate chars (e.g., `t="aa"`) — need count 2, not 1; `have` only increments when window count exactly reaches need count
 
 ---
 

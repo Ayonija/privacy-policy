@@ -22,8 +22,9 @@ Tackle sliding window problems where the optimal window is non-obvious — inclu
 ```python
 # Grumpy Bookstore Owner (LC 1052)
 def max_satisfied(customers, grumpy, minutes):
+    # Step 1: baseline — always-satisfied customers (where grumpy[i] == 0)
     base = sum(c for c, g in zip(customers, grumpy) if g == 0)
-    # baseline: always-satisfied customers
+    # Step 2: slide a window of size `minutes` to maximise extra gained from suppression
     gain = window = sum(customers[i] * grumpy[i] for i in range(minutes))
     for i in range(minutes, len(customers)):
         window += customers[i] * grumpy[i]
@@ -34,7 +35,9 @@ def max_satisfied(customers, grumpy, minutes):
 # Maximum Points from Cards (LC 1423)
 def max_score(cardPoints, k):
     n = len(cardPoints)
-    window_size = n - k
+    window_size = n - k    # cards we are NOT taking = middle window
+    if window_size == 0:   # taking all cards
+        return sum(cardPoints)
     window_sum = sum(cardPoints[:window_size])
     min_middle = window_sum
     for i in range(window_size, n):
@@ -42,6 +45,20 @@ def max_score(cardPoints, k):
         min_middle = min(min_middle, window_sum)
     return sum(cardPoints) - min_middle
 ```
+
+### Interview Tips
+
+- **The complement/reframe trick:** when you can't directly optimise the selection you want (k cards from both ends), reframe it as optimising the complement (leave n-k cards in the middle). Mention this reframing explicitly — it's the insight the interviewer is testing.
+- **Two-step structure for LC 1052:** "Step 1: compute baseline (sum of non-grumpy minutes). Step 2: slide a window to find maximum extra from the boost." Narrate both steps before coding — the interviewer wants to see structured thinking.
+- **Brute force for LC 1423:** O(k²) trying all splits between left-end count (0 to k) and right-end count (k-0 to 0) → complement window is O(n).
+- **Common mistake:** in LC 1423, including `window_size = 0` without a guard — `sum(cardPoints[:0])` is 0, which gives the right answer, but `range(0, n)` would re-process all cards and corrupt `min_middle`. Add the guard or trace carefully.
+- **Alternative for LC 1052:** instead of tracking `customers[i] * grumpy[i]`, directly subtract satisfied-during-boost from the full-satisfied count — same result, different framing.
+
+### Edge Cases to Trace Before Coding
+- LC 1052: `minutes >= len(customers)` → boost covers everything; answer = total customers (no baseline subtraction needed)
+- LC 1423: `k = n` → take all cards; return `sum(cardPoints)` (window_size = 0)
+- LC 1423: `k = 0` → take no cards; return 0 (window is the entire array, min_middle = total)
+- LC 485: all 1s → single scan returns `len(nums)`; all 0s → return 0
 
 ## System Design (1 hour)
 ### Topic: Sliding Window in Real Systems — Rate Limiters & Monitoring

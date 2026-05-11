@@ -24,25 +24,43 @@ Slot 1 close-out: verify pattern recognition speed, handle interval problems wit
 from collections import deque
 
 def longest_subarray(nums, limit):
-    max_d, min_d = deque(), deque()  # store indices
+    max_d = deque()  # indices in decreasing value order; front = current window max index
+    min_d = deque()  # indices in increasing value order; front = current window min index
     left = result = 0
+
     for right in range(len(nums)):
-        # maintain decreasing deque for max
+        # Expand: add right to both deques (maintaining monotonic property)
         while max_d and nums[max_d[-1]] <= nums[right]:
             max_d.pop()
         max_d.append(right)
-        # maintain increasing deque for min
+
         while min_d and nums[min_d[-1]] >= nums[right]:
             min_d.pop()
         min_d.append(right)
-        # shrink left if constraint violated
+
+        # Shrink: move left until max - min <= limit
         while nums[max_d[0]] - nums[min_d[0]] > limit:
             left += 1
-            if max_d[0] < left: max_d.popleft()
+            if max_d[0] < left: max_d.popleft()   # front expired
             if min_d[0] < left: min_d.popleft()
+
         result = max(result, right - left + 1)
     return result
 ```
+
+### Interview Tips
+
+- **Two deques, not one:** LC 1438 needs both max and min simultaneously — use two separate monotonic deques. Explain this choice before coding: "I need the window max and min in O(1), so I'll maintain a decreasing deque for max and an increasing deque for min."
+- **Always store indices, not values:** "I store indices so I can check if the front has fallen outside the current window [left, right] — if I stored values I'd lose this check." This is the single most important insight for any deque sliding window problem.
+- **Deque operation order:** expand first (pop back, then append right), then check constraint, then shrink. Getting the order wrong produces incorrect results.
+- **Brute force baseline:** O(n²) checking all subarrays and computing max-min with `max()` and `min()` each time (O(n) per call = O(n³) total) → two deques = O(n).
+- **Common mistake:** checking `if max_d[0] < left` instead of `while max_d[0] < left` — but since we add one element per step and shrink one at a time, `if` is actually sufficient here (at most one can expire per iteration). Both work, but be able to explain why.
+
+### Edge Cases to Trace Before Coding
+- `limit = 0` → only windows where all elements are equal are valid; answer = length of longest equal-value run
+- Single element → window size 1, always valid (max - min = 0 ≤ any limit ≥ 0)
+- All same elements → max_d and min_d both have same values; max - min = 0; entire array is valid
+- Strictly decreasing array with limit = 0 → every window > 1 is invalid; answer = 1
 
 ## System Design (1 hour)
 ### Topic: Big-O & RAM Model — Slot 1 Synthesis

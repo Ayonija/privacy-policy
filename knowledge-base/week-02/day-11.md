@@ -23,21 +23,38 @@ Build the iterative linked list reversal — the fundamental building block for 
 def reverse_list(head):
     prev, curr = None, head
     while curr:
-        next_node = curr.next
-        curr.next = prev
-        prev = curr
-        curr = next_node
-    return prev
+        next_node = curr.next   # SAVE next before overwriting
+        curr.next = prev        # reverse the pointer
+        prev = curr             # advance prev
+        curr = next_node        # advance curr
+    return prev   # prev is the new head when curr is None
 
 # Partial reversal (LC 92) — skeleton only
 def reverse_between(head, left, right):
     dummy = ListNode(0, head)
     prev = dummy
-    # 1. advance prev to node before position left
-    # 2. reverse right-left+1 nodes
-    # 3. stitch: pre.next = ... tail.next = ...
+    # Step 1: walk prev to node at position (left - 1)
+    for _ in range(left - 1):
+        prev = prev.next
+    # Step 2: reverse (right - left + 1) nodes starting at prev.next
+    # Step 3: stitch — prev.next = reversed_head; reversed_tail.next = remainder
     return dummy.next
 ```
+
+### Interview Tips
+
+- **Draw before coding:** draw 3–4 nodes as boxes with arrows, then draw what you want after reversal. Show this to the interviewer. Linked list problems have high visual debugging value.
+- **The three-pointer dance — say it out loud:** "1. Save next. 2. Reverse pointer. 3. Advance prev. 4. Advance curr." Verbalise all four steps; missing step 1 (saving next) is the most common reversal bug.
+- **Dummy head rule:** any problem that might modify the head node should start with `dummy = ListNode(0, head)` and return `dummy.next`. This eliminates all special-casing of the head.
+- **Brute force alternative:** collect all values in a list, reverse the sublist, rewrite values into nodes — O(n) time, O(n) space. The in-place approach is O(n) time, O(1) space. State both and say you'll implement the O(1) space version.
+- **Common mistake:** in LC 92, forgetting to save the node at position `left` as the "tail" of the reversed sublist before reversal — you need it to stitch `tail.next = node_after_right` at the end.
+
+### Edge Cases to Trace Before Coding
+- LC 206: empty list (`head = None`) → return `None`; `prev` starts at `None`, returns `None` ✓
+- LC 206: single node → loop runs once, `prev = head`, `curr = None`, return `head` ✓
+- LC 92: `left == right` → nothing to reverse; ensure your loop handles 0 reversals gracefully
+- LC 92: `left = 1` → the dummy head handles this; `prev = dummy`, so `prev.next` is the new reversed head ✓
+- LC 24 (Swap Pairs): odd-length list → last node has no pair; leave it unchanged
 
 ## System Design (1 hour)
 ### Topic: Vertical vs. Horizontal Scaling — Core Concepts

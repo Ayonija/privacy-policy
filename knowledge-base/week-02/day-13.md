@@ -33,15 +33,34 @@ def merge_two_lists(l1, l2):
     curr.next = l1 or l2
     return dummy.next
 
-# Sort list skeleton (LC 148)
+# Sort list (LC 148) — merge sort approach
 def sort_list(head):
     if not head or not head.next:
         return head
-    # 1. find midpoint, cut list in half
-    # 2. sort_list(left_half), sort_list(right_half)
-    # 3. merge results
-    pass
+    # Step 1: find midpoint and sever list
+    slow, fast = head, head.next   # fast starts at head.next to bias mid left
+    while fast and fast.next:
+        slow, fast = slow.next, fast.next.next
+    second = slow.next
+    slow.next = None   # sever: left half is head..slow, right half is second..
+    # Step 2 + 3: sort halves and merge
+    return merge_two_lists(sort_list(head), sort_list(second))
 ```
+
+### Interview Tips
+
+- **`curr.next = l1 or l2` — explain it:** "In Python, `l1 or l2` returns `l1` if it's not None, else `l2`. This attaches whichever list still has remaining nodes in one line." Interviewers appreciate concise, intentional idioms over verbose if-else.
+- **Why dummy head is always safe:** without dummy, you'd need special-casing to set the initial result head before the loop. With dummy, the first node attachment is identical to all subsequent ones — zero edge cases.
+- **Sort List — announce the approach first:** "Merge sort: (1) find middle with fast/slow, (2) sever at mid, (3) recursively sort both halves, (4) merge. Time O(n log n), space O(log n) for call stack — optimal for a linked list since we can't random-access for quicksort."
+- **Carry in Add Two Numbers — most common bug:** after the main while loop, if `carry == 1` append one final node. Trace `999 + 1` to verify.
+- **Common mistake:** in Sort List, initialising `fast = head` instead of `fast = head.next` — with `fast = head` on a 2-node list, `fast.next` is non-None so the loop runs an extra step and `slow` ends up past the midpoint.
+
+### Edge Cases to Trace Before Coding
+- LC 21: one or both inputs are empty → `l1 or l2` handles correctly; `while l1 and l2` skips immediately ✓
+- LC 2: both lists represent 0 → result is `[0]`; carry stays 0 throughout ✓
+- LC 2: `[9,9,9] + [9,9,9,9]` → most digits plus carry; ensure the longer list is still processed after shorter runs out
+- LC 148: single node → base case returns head immediately
+- LC 148: even vs odd length — trace `[4,2,1,3]` vs `[4,2,1,3,5]` to confirm mid is correct
 
 ## System Design (1 hour)
 ### Topic: Load Balancers — Types & Algorithms
