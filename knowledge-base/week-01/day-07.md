@@ -19,28 +19,36 @@ Consolidate two-pointer and sliding window patterns; identify gaps before advanc
 | 3 | Get Equal Substrings Within Budget | 1208 | Medium | Sliding Window (cost budget) | Cost = abs(s[i]-t[i]); find max window where total cost ≤ maxCost |
 
 ### Code Skeleton
-```python
-# Dutch National Flag (LC 75)
-def sort_colors(nums):
-    low, mid, high = 0, 0, len(nums) - 1
-    # Invariant: [0, low) = 0s, [low, mid) = 1s, [high+1, n) = 2s
-    while mid <= high:
-        if nums[mid] == 0:
-            nums[low], nums[mid] = nums[mid], nums[low]
-            low += 1; mid += 1
-        elif nums[mid] == 1:
-            mid += 1
-        else:
-            nums[mid], nums[high] = nums[high], nums[mid]
-            high -= 1  # do NOT increment mid — the swapped value from high is unknown
+```java
+class Solution {
+    // Dutch National Flag (LC 75)
+    public static void sortColors(int[] nums) {
+        int low = 0, mid = 0, high = nums.length - 1;
+        // Invariant: [0, low) = 0s, [low, mid) = 1s, [high+1, n) = 2s
+        while (mid <= high) {
+            if (nums[mid] == 0) {
+                int tmp = nums[low]; nums[low] = nums[mid]; nums[mid] = tmp;
+                low++; mid++;
+            } else if (nums[mid] == 1) {
+                mid++;
+            } else {
+                int tmp = nums[mid]; nums[mid] = nums[high]; nums[high] = tmp;
+                high--;  // do NOT increment mid — the swapped value from high is unknown
+            }
+        }
+    }
 
-# Is Subsequence (LC 392)
-def is_subsequence(s, t):
-    i = 0   # pointer into s (the pattern)
-    for ch in t:
-        if i < len(s) and ch == s[i]:
-            i += 1
-    return i == len(s)
+    // Is Subsequence (LC 392)
+    public static boolean isSubsequence(String s, String t) {
+        int i = 0;   // pointer into s (the pattern)
+        for (int j = 0; j < t.length(); j++) {
+            if (i < s.length() && t.charAt(j) == s.charAt(i)) {
+                i++;
+            }
+        }
+        return i == s.length();
+    }
+}
 ```
 
 ### Interview Tips
@@ -55,7 +63,7 @@ def is_subsequence(s, t):
 - LC 75: all 0s → `low = mid = 0`, all swaps go to back of "0s region"; `high` never moves; correct ✓
 - LC 75: `[1, 0, 2]` → mid starts at 0 (value 1), mid++; mid at 1 (value 0), swap low↔mid, low++ mid++; mid at 2 > high, done ✓
 - LC 392: empty `s` → is a subsequence of anything (vacuously true); i stays 0, return `0 == 0` ✓
-- LC 392: `s` longer than `t` → impossible; i never reaches `len(s)`, return False ✓
+- LC 392: `s` longer than `t` → impossible; i never reaches `s.length()`, return false ✓
 - LC 1208: `maxCost = 0` → only windows where all characters are identical are valid
 
 ## System Design (1 hour)

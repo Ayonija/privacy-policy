@@ -37,69 +37,76 @@ All words have the same length `L`. Slide a window of size `n×L`; instead of ch
 ---
 
 ### Code Skeleton
-```python
-# Count Number of Nice Subarrays (LC 1248)
-def number_of_subarrays(nums, k):
-    def at_most(goal):
-        count = left = curr = 0
-        for n in nums:
-            curr += n % 2   # 1 if odd, 0 if even
-            while curr > goal:
-                curr -= nums[left] % 2
-                left += 1
-            count += (right - left + 1)  # all subarrays ending at right
-        return count
-    # fix: use enumerate for right
-    def at_most_v2(goal):
-        count = left = curr = 0
-        for right in range(len(nums)):
-            curr += nums[right] % 2
-            while curr > goal:
-                curr -= nums[left] % 2
-                left += 1
-            count += right - left + 1
-        return count
-    return at_most_v2(k) - at_most_v2(k - 1)
+```java
+class Solution {
+    // Count Number of Nice Subarrays (LC 1248)
+    public static int numberOfSubarrays(int[] nums, int k) {
+        return atMost(nums, k) - atMost(nums, k - 1);
+    }
 
-# Longest Substring with At Least K Repeating Characters (LC 395)
-def longest_substring(s, k):
-    result = 0
-    for unique_target in range(1, 27):  # fix number of unique chars
-        freq = {}
-        left = at_least_k_count = unique_count = 0
-        for right in range(len(s)):
-            freq[s[right]] = freq.get(s[right], 0) + 1
-            if freq[s[right]] == 1: unique_count += 1
-            if freq[s[right]] == k: at_least_k_count += 1
-            while unique_count > unique_target:
-                freq[s[left]] -= 1
-                if freq[s[left]] == k - 1: at_least_k_count -= 1
-                if freq[s[left]] == 0: unique_count -= 1
-                left += 1
-            if unique_count == at_least_k_count:
-                result = max(result, right - left + 1)
-    return result
+    private static int atMost(int[] nums, int goal) {
+        if (goal < 0) return 0;
+        int count = 0, left = 0, curr = 0;
+        for (int right = 0; right < nums.length; right++) {
+            curr += nums[right] % 2;   // 1 if odd, 0 if even
+            while (curr > goal) {
+                curr -= nums[left] % 2;
+                left++;
+            }
+            count += right - left + 1;
+        }
+        return count;
+    }
 
-# Substring with Concatenation of All Words (LC 30) — skeleton
-from collections import Counter
-def find_substring(s, words):
-    if not s or not words: return []
-    word_len, n_words = len(words[0]), len(words)
-    window_len = word_len * n_words
-    need = Counter(words)
-    result = []
-    for offset in range(word_len):
-        # slide a window of n_words words, stepping by word_len
-        # have = Counter for current window words
-        # use left/right pointers at word granularity
-        pass
-    return result
+    // Longest Substring with At Least K Repeating Characters (LC 395)
+    public static int longestSubstring(String s, int k) {
+        int result = 0;
+        for (int uniqueTarget = 1; uniqueTarget <= 26; uniqueTarget++) {  // fix number of unique chars
+            Map<Character, Integer> freq = new HashMap<>();
+            int left = 0, atLeastKCount = 0, uniqueCount = 0;
+            for (int right = 0; right < s.length(); right++) {
+                char rc = s.charAt(right);
+                freq.put(rc, freq.getOrDefault(rc, 0) + 1);
+                if (freq.get(rc) == 1) uniqueCount++;
+                if (freq.get(rc) == k) atLeastKCount++;
+                while (uniqueCount > uniqueTarget) {
+                    char lc = s.charAt(left);
+                    if (freq.get(lc) == k) atLeastKCount--;
+                    if (freq.get(lc) == 1) uniqueCount--;
+                    freq.put(lc, freq.get(lc) - 1);
+                    left++;
+                }
+                if (uniqueCount == atLeastKCount) {
+                    result = Math.max(result, right - left + 1);
+                }
+            }
+        }
+        return result;
+    }
+
+    // Substring with Concatenation of All Words (LC 30) — skeleton
+    public static List<Integer> findSubstring(String s, String[] words) {
+        List<Integer> result = new ArrayList<>();
+        if (s == null || s.isEmpty() || words == null || words.length == 0) return result;
+        int wordLen = words[0].length(), nWords = words.length;
+        int windowLen = wordLen * nWords;
+        Map<String, Integer> need = new HashMap<>();
+        for (String w : words) need.put(w, need.getOrDefault(w, 0) + 1);
+        for (int offset = 0; offset < wordLen; offset++) {
+            // slide a window of n_words words, stepping by word_len
+            // have = counter for current window words
+            // use left/right pointers at word granularity
+            // TODO: implement
+        }
+        return result;
+    }
+}
 ```
 
 ---
 
 ### Edge Cases to Trace Before Coding
-- LC 1248: k=0 — `at_most(-1)` should return 0; handle in `at_most` by returning 0 for negative goal
+- LC 1248: k=0 — `atMost(-1)` should return 0; handle in `atMost` by returning 0 for negative goal
 - LC 395: k=1 — every substring is valid; answer = len(s)
 - LC 30: words with duplicates; s shorter than one word; words of length 1
 

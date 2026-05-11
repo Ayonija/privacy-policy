@@ -20,40 +20,50 @@ Implement queue/stack with opposite data structures and apply deque-based simula
 | 3 | Dota2 Senate | 649 | Medium | Greedy queue simulation | Two index queues; smaller index bans the other; winner re-queues at index + n to maintain round order |
 
 ### Code Skeleton
-```python
-# Implement Queue using Stacks (LC 232)
-class MyQueue:
-    def __init__(self):
-        self.in_stack = []
-        self.out_stack = []
+```java
+// Implement Queue using Stacks (LC 232)
+class MyQueue {
+    private Deque<Integer> inStack = new ArrayDeque<>();
+    private Deque<Integer> outStack = new ArrayDeque<>();
 
-    def push(self, x):
-        self.in_stack.append(x)
+    public void push(int x) {
+        inStack.addLast(x);
+    }
 
-    def _transfer(self):
-        if not self.out_stack:
-            while self.in_stack:
-                self.out_stack.append(self.in_stack.pop())
+    private void transfer() {
+        if (outStack.isEmpty()) {
+            while (!inStack.isEmpty()) {
+                outStack.addLast(inStack.pollLast());
+            }
+        }
+    }
 
-    def pop(self):
-        self._transfer()
-        return self.out_stack.pop()
+    public int pop() {
+        transfer();
+        return outStack.pollLast();
+    }
 
-    def peek(self):
-        self._transfer()
-        return self.out_stack[-1]
+    public int peek() {
+        transfer();
+        return outStack.peekLast();
+    }
 
-    def empty(self):
-        return not self.in_stack and not self.out_stack
+    public boolean empty() {
+        return inStack.isEmpty() && outStack.isEmpty();
+    }
+}
 
-# Dota2 Senate (LC 649) — skeleton
-from collections import deque
-def predict_party_victory(senate):
-    radiant = deque()
-    dire = deque()
-    # populate queues with indices
-    # while both non-empty: smaller index bans other, re-queues at index + n
-    pass
+// Dota2 Senate (LC 649) — skeleton
+class Solution {
+    public static String predictPartyVictory(String senate) {
+        Deque<Integer> radiant = new ArrayDeque<>();
+        Deque<Integer> dire = new ArrayDeque<>();
+        // populate queues with indices
+        // while both non-empty: smaller index bans other, re-queues at index + n
+        // TODO: implement
+        return "";
+    }
+}
 ```
 
 ## System Design (1 hour)

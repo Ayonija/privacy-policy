@@ -16,33 +16,48 @@ Handle node deletion, list splitting, and reverse-order arithmetic — less comm
 |---|---------|------|------------|---------|-------------|
 | 1 | Remove Linked List Elements | 203 | Easy | Dummy head + scan | Standard deletion scan; dummy prevents head-removal edge case |
 | 2 | Add Two Numbers II | 445 | Medium | Stack (or reverse) | Digits are stored most-significant first; push both lists onto stacks; pop and add with carry |
-| 3 | Split Linked List in Parts | 725 | Medium | Length + remainder distribution | `base, extra = divmod(length, k)`; first `extra` parts get `base+1` nodes; remaining get `base` |
+| 3 | Split Linked List in Parts | 725 | Medium | Length + remainder distribution | `base = length / k; extra = length % k`; first `extra` parts get `base+1` nodes; remaining get `base` |
 
 ### Code Skeleton
-```python
-# Add Two Numbers II (LC 445) — stack approach
-def add_two_numbers_ii(l1, l2):
-    s1, s2 = [], []
-    while l1: s1.append(l1.val); l1 = l1.next
-    while l2: s2.append(l2.val); l2 = l2.next
-    carry = 0
-    dummy = ListNode(0)
-    while s1 or s2 or carry:
-        val = carry
-        if s1: val += s1.pop()
-        if s2: val += s2.pop()
-        carry, val = divmod(val, 10)
-        node = ListNode(val)
-        node.next = dummy.next
-        dummy.next = node       # prepend to build result in correct order
-    return dummy.next
+```java
+import java.util.Deque;
+import java.util.ArrayDeque;
 
-# Split in Parts (LC 725) — skeleton
-def split_list_to_parts(head, k):
-    # 1. compute length
-    # 2. base, extra = divmod(length, k)
-    # 3. for each part: take base nodes (+ 1 if extra > 0); cut; store head
-    pass
+class ListNode {
+    int val;
+    ListNode next;
+    ListNode(int val) { this.val = val; }
+}
+
+class Solution {
+    // Add Two Numbers II (LC 445) — stack approach
+    public static ListNode addTwoNumbersII(ListNode l1, ListNode l2) {
+        Deque<Integer> s1 = new ArrayDeque<>(), s2 = new ArrayDeque<>();
+        while (l1 != null) { s1.push(l1.val); l1 = l1.next; }
+        while (l2 != null) { s2.push(l2.val); l2 = l2.next; }
+        int carry = 0;
+        ListNode dummy = new ListNode(0);
+        while (!s1.isEmpty() || !s2.isEmpty() || carry != 0) {
+            int val = carry;
+            if (!s1.isEmpty()) val += s1.pop();
+            if (!s2.isEmpty()) val += s2.pop();
+            carry = val / 10;
+            val = val % 10;
+            ListNode node = new ListNode(val);
+            node.next = dummy.next;
+            dummy.next = node;       // prepend to build result in correct order
+        }
+        return dummy.next;
+    }
+
+    // Split in Parts (LC 725) — skeleton
+    public static ListNode[] splitListToParts(ListNode head, int k) {
+        // 1. compute length
+        // 2. base = length / k; extra = length % k
+        // 3. for each part: take base nodes (+ 1 if extra > 0); cut; store head
+        return new ListNode[k]; // TODO: implement
+    }
+}
 ```
 
 ## System Design (1 hour)

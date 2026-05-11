@@ -35,41 +35,56 @@ Maximum Frequency Stack (LC 895) extends this: maintain a HashMap of `freq → s
 ---
 
 ### Code Skeleton
-```python
-# Top K Frequent Elements — bucket sort (LC 347)
-def top_k_frequent(nums, k):
-    freq = {}
-    for n in nums:
-        freq[n] = freq.get(n, 0) + 1
-    buckets = [[] for _ in range(len(nums) + 1)]
-    for num, count in freq.items():
-        buckets[count].append(num)
-    result = []
-    for i in range(len(buckets) - 1, 0, -1):
-        result.extend(buckets[i])
-        if len(result) >= k:
-            return result[:k]
-    return result
+```java
+class Solution {
+    // Top K Frequent Elements — bucket sort (LC 347)
+    public static int[] topKFrequent(int[] nums, int k) {
+        Map<Integer, Integer> freq = new HashMap<>();
+        for (int n : nums) {
+            freq.put(n, freq.getOrDefault(n, 0) + 1);
+        }
+        List<List<Integer>> buckets = new ArrayList<>();
+        for (int i = 0; i <= nums.length; i++) buckets.add(new ArrayList<>());
+        for (Map.Entry<Integer, Integer> e : freq.entrySet()) {
+            buckets.get(e.getValue()).add(e.getKey());
+        }
+        List<Integer> result = new ArrayList<>();
+        for (int i = buckets.size() - 1; i > 0; i--) {
+            result.addAll(buckets.get(i));
+            if (result.size() >= k) {
+                int[] arr = new int[k];
+                for (int j = 0; j < k; j++) arr[j] = result.get(j);
+                return arr;
+            }
+        }
+        int[] arr = new int[result.size()];
+        for (int j = 0; j < arr.length; j++) arr[j] = result.get(j);
+        return arr;
+    }
+}
 
-# Maximum Frequency Stack (LC 895)
-class FreqStack:
-    def __init__(self):
-        self.freq = {}          # val → current frequency
-        self.group = {}         # freq → stack of values with that freq
-        self.max_freq = 0
+// Maximum Frequency Stack (LC 895)
+class FreqStack {
+    private Map<Integer, Integer> freq = new HashMap<>();          // val → current frequency
+    private Map<Integer, Deque<Integer>> group = new HashMap<>();  // freq → stack of values with that freq
+    private int maxFreq = 0;
 
-    def push(self, val):
-        self.freq[val] = self.freq.get(val, 0) + 1
-        f = self.freq[val]
-        self.max_freq = max(self.max_freq, f)
-        self.group.setdefault(f, []).append(val)
+    public void push(int val) {
+        freq.put(val, freq.getOrDefault(val, 0) + 1);
+        int f = freq.get(val);
+        maxFreq = Math.max(maxFreq, f);
+        group.computeIfAbsent(f, k -> new ArrayDeque<>()).addLast(val);
+    }
 
-    def pop(self):
-        val = self.group[self.max_freq].pop()
-        self.freq[val] -= 1
-        if not self.group[self.max_freq]:
-            self.max_freq -= 1
-        return val
+    public int pop() {
+        int val = group.get(maxFreq).pollLast();
+        freq.put(val, freq.get(val) - 1);
+        if (group.get(maxFreq).isEmpty()) {
+            maxFreq--;
+        }
+        return val;
+    }
+}
 ```
 
 ---

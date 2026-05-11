@@ -38,73 +38,103 @@ Fill in empty cells ('.') so every row, column, and 3×3 box contains digits 1�
 ---
 
 ### Code Skeleton
-```python
-# Combinations (LC 77)
-def combine(n, k):
-    result = []
-    def backtrack(start, path):
-        if len(path) == k:
-            result.append(path[:])
-            return
-        # Prune: need (k - len(path)) more elements; only n - i + 1 available
-        for i in range(start, n - (k - len(path)) + 2):
-            path.append(i)
-            backtrack(i + 1, path)
-            path.pop()
-    backtrack(1, [])
-    return result
+```java
+import java.util.*;
 
-# Combination Sum (LC 39)
-def combinationSum(candidates, target):
-    result = []
-    def backtrack(start, path, remaining):
-        if remaining == 0:
-            result.append(path[:])
-            return
-        for i in range(start, len(candidates)):
-            c = candidates[i]
-            if c > remaining:
-                break   # candidates sorted; no point continuing
-            path.append(c)
-            backtrack(i, path, remaining - c)   # i not i+1: allow reuse
-            path.pop()
-    candidates.sort()   # sort to enable early break
-    backtrack(0, [], target)
-    return result
+// Combinations (LC 77)
+class Solution {
+    public List<List<Integer>> combine(int n, int k) {
+        List<List<Integer>> result = new ArrayList<>();
+        backtrack(n, k, 1, new ArrayList<>(), result);
+        return result;
+    }
 
-# Sudoku Solver (LC 37)
-def solveSudoku(board):
-    rows = [set() for _ in range(9)]
-    cols = [set() for _ in range(9)]
-    boxes = [set() for _ in range(9)]
+    private void backtrack(int n, int k, int start, List<Integer> path, List<List<Integer>> result) {
+        if (path.size() == k) {
+            result.add(new ArrayList<>(path));
+            return;
+        }
+        // Prune: need (k - path.size()) more elements; only n - i + 1 available
+        for (int i = start; i <= n - (k - path.size()) + 1; i++) {
+            path.add(i);
+            backtrack(n, k, i + 1, path, result);
+            path.remove(path.size() - 1);
+        }
+    }
+}
 
-    # Initialize constraint sets
-    for r in range(9):
-        for c in range(9):
-            if board[r][c] != '.':
-                d = board[r][c]
-                rows[r].add(d)
-                cols[c].add(d)
-                boxes[(r // 3) * 3 + c // 3].add(d)
+// Combination Sum (LC 39)
+class Solution {
+    public List<List<Integer>> combinationSum(int[] candidates, int target) {
+        List<List<Integer>> result = new ArrayList<>();
+        Arrays.sort(candidates); // sort to enable early break
+        backtrack(candidates, target, 0, new ArrayList<>(), result);
+        return result;
+    }
 
-    def backtrack():
-        # Find next empty cell
-        for r in range(9):
-            for c in range(9):
-                if board[r][c] == '.':
-                    box_id = (r // 3) * 3 + c // 3
-                    for d in '123456789':
-                        if d not in rows[r] and d not in cols[c] and d not in boxes[box_id]:
-                            board[r][c] = d
-                            rows[r].add(d); cols[c].add(d); boxes[box_id].add(d)
-                            if backtrack():
-                                return True
-                            board[r][c] = '.'
-                            rows[r].discard(d); cols[c].discard(d); boxes[box_id].discard(d)
-                    return False   # no digit works → backtrack
-        return True   # no empty cell → solved
+    private void backtrack(int[] candidates, int remaining, int start, List<Integer> path, List<List<Integer>> result) {
+        if (remaining == 0) {
+            result.add(new ArrayList<>(path));
+            return;
+        }
+        for (int i = start; i < candidates.length; i++) {
+            int c = candidates[i];
+            if (c > remaining) break; // candidates sorted; no point continuing
+            path.add(c);
+            backtrack(candidates, remaining - c, i, path, result); // i not i+1: allow reuse
+            path.remove(path.size() - 1);
+        }
+    }
+}
 
-    backtrack()
+// Sudoku Solver (LC 37)
+class Solution {
+    public void solveSudoku(char[][] board) {
+        Set<Character>[] rows = new HashSet[9];
+        Set<Character>[] cols = new HashSet[9];
+        Set<Character>[] boxes = new HashSet[9];
+        for (int i = 0; i < 9; i++) {
+            rows[i] = new HashSet<>();
+            cols[i] = new HashSet<>();
+            boxes[i] = new HashSet<>();
+        }
+
+        // Initialize constraint sets
+        for (int r = 0; r < 9; r++) {
+            for (int c = 0; c < 9; c++) {
+                if (board[r][c] != '.') {
+                    char d = board[r][c];
+                    rows[r].add(d);
+                    cols[c].add(d);
+                    boxes[(r / 3) * 3 + c / 3].add(d);
+                }
+            }
+        }
+        backtrack(board, rows, cols, boxes);
+    }
+
+    private boolean backtrack(char[][] board, Set<Character>[] rows, Set<Character>[] cols, Set<Character>[] boxes) {
+        // Find next empty cell
+        for (int r = 0; r < 9; r++) {
+            for (int c = 0; c < 9; c++) {
+                if (board[r][c] == '.') {
+                    int boxId = (r / 3) * 3 + c / 3;
+                    for (char d = '1'; d <= '9'; d++) {
+                        if (!rows[r].contains(d) && !cols[c].contains(d) && !boxes[boxId].contains(d)) {
+                            board[r][c] = d;
+                            rows[r].add(d); cols[c].add(d); boxes[boxId].add(d);
+                            if (backtrack(board, rows, cols, boxes)) return true;
+                            board[r][c] = '.';
+                            rows[r].remove(d); cols[c].remove(d); boxes[boxId].remove(d);
+                        }
+                    }
+                    return false; // no digit works → backtrack
+                }
+            }
+        }
+        return true; // no empty cell → solved
+    }
+}
 ```
 
 ---
@@ -194,21 +224,22 @@ For most systems, exactly-once is complex and expensive. Instead: at-least-once 
 
 **Kafka consumer offset commit strategies:**
 
-```python
-# At-most-once: commit BEFORE processing
-consumer.poll()
-consumer.commit_sync()   # commit first
-process(messages)        # if crash here: message lost
+```java
+// At-most-once: commit BEFORE processing
+consumer.poll();
+consumer.commitSync();   // commit first
+process(messages);       // if crash here: message lost
 
-# At-least-once: commit AFTER processing
-consumer.poll()
-process(messages)        # if crash here: message re-delivered on restart
-consumer.commit_sync()   # commit after
+// At-least-once: commit AFTER processing
+consumer.poll();
+process(messages);       // if crash here: message re-delivered on restart
+consumer.commitSync();   // commit after
 
-# Exactly-once: atomic process + commit (Kafka transactions)
-with transaction:
-    process_and_write_to_output(messages)
-    commit_offset(consumer_group, partition, offset)
+// Exactly-once: atomic process + commit (Kafka transactions)
+// try (transaction) {
+//     processAndWriteToOutput(messages);
+//     commitOffset(consumerGroup, partition, offset);
+// }
 ```
 
 **Interview talking point:** "For our payment processing pipeline, we use at-least-once delivery with database idempotency rather than Kafka's exactly-once transactions. Each payment message carries a UUID; before charging the customer, we do an INSERT ... ON CONFLICT DO NOTHING on the `processed_payments` table. If the consumer crashes and re-processes the same message, the idempotency check prevents double-charging. This is simpler than Kafka transactions and achieves the same effective guarantee with lower latency."

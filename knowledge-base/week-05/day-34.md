@@ -32,64 +32,85 @@ HashMap alone gives O(1) get/put but not O(1) ordered access (min, max, LRU evic
 ---
 
 ### Code Skeleton
-```python
-# LRU Cache (LC 146)
-class LRUCache:
-    def __init__(self, capacity):
-        self.cap = capacity
-        self.cache = {}   # key → node
-        # doubly linked list with dummy head (MRU side) and tail (LRU side)
-        self.head, self.tail = Node(0,0), Node(0,0)
-        self.head.next, self.tail.prev = self.tail, self.head
+```java
+// LRU Cache (LC 146)
+class LRUCache {
+    private class Node {
+        int key, val;
+        Node prev, next;
+        Node(int key, int val) { this.key = key; this.val = val; }
+    }
 
-    def _remove(self, node):
-        node.prev.next, node.next.prev = node.next, node.prev
+    private int cap;
+    private Map<Integer, Node> cache = new HashMap<>();   // key → node
+    // doubly linked list with dummy head (MRU side) and tail (LRU side)
+    private Node head = new Node(0, 0), tail = new Node(0, 0);
 
-    def _insert_front(self, node):
-        node.next, node.prev = self.head.next, self.head
-        self.head.next.prev = node
-        self.head.next = node
+    public LRUCache(int capacity) {
+        this.cap = capacity;
+        head.next = tail;
+        tail.prev = head;
+    }
 
-    def get(self, key):
-        if key not in self.cache: return -1
-        self._remove(self.cache[key])
-        self._insert_front(self.cache[key])
-        return self.cache[key].val
+    private void remove(Node node) {
+        node.prev.next = node.next;
+        node.next.prev = node.prev;
+    }
 
-    def put(self, key, val):
-        if key in self.cache: self._remove(self.cache[key])
-        node = Node(key, val)
-        self.cache[key] = node
-        self._insert_front(node)
-        if len(self.cache) > self.cap:
-            lru = self.tail.prev
-            self._remove(lru)
-            del self.cache[lru.key]
+    private void insertFront(Node node) {
+        node.next = head.next;
+        node.prev = head;
+        head.next.prev = node;
+        head.next = node;
+    }
 
-# Insert Delete GetRandom O(1) (LC 380)
-import random
-class RandomizedSet:
-    def __init__(self):
-        self.val_to_idx = {}
-        self.vals = []
+    public int get(int key) {
+        if (!cache.containsKey(key)) return -1;
+        remove(cache.get(key));
+        insertFront(cache.get(key));
+        return cache.get(key).val;
+    }
 
-    def insert(self, val):
-        if val in self.val_to_idx: return False
-        self.val_to_idx[val] = len(self.vals)
-        self.vals.append(val)
-        return True
+    public void put(int key, int val) {
+        if (cache.containsKey(key)) remove(cache.get(key));
+        Node node = new Node(key, val);
+        cache.put(key, node);
+        insertFront(node);
+        if (cache.size() > cap) {
+            Node lru = tail.prev;
+            remove(lru);
+            cache.remove(lru.key);
+        }
+    }
+}
 
-    def remove(self, val):
-        if val not in self.val_to_idx: return False
-        idx = self.val_to_idx[val]
-        last = self.vals[-1]
-        self.vals[idx], self.val_to_idx[last] = last, idx
-        self.vals.pop()
-        del self.val_to_idx[val]
-        return True
+// Insert Delete GetRandom O(1) (LC 380)
+class RandomizedSet {
+    private Map<Integer, Integer> valToIdx = new HashMap<>();
+    private List<Integer> vals = new ArrayList<>();
 
-    def getRandom(self):
-        return random.choice(self.vals)
+    public boolean insert(int val) {
+        if (valToIdx.containsKey(val)) return false;
+        valToIdx.put(val, vals.size());
+        vals.add(val);
+        return true;
+    }
+
+    public boolean remove(int val) {
+        if (!valToIdx.containsKey(val)) return false;
+        int idx = valToIdx.get(val);
+        int last = vals.get(vals.size() - 1);
+        vals.set(idx, last);
+        valToIdx.put(last, idx);
+        vals.remove(vals.size() - 1);
+        valToIdx.remove(val);
+        return true;
+    }
+
+    public int getRandom() {
+        return vals.get((int)(Math.random() * vals.size()));
+    }
+}
 ```
 
 ---

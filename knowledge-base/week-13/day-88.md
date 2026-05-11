@@ -38,68 +38,89 @@ Insert +, −, × between digits of a string to reach target. Backtracking: at e
 ---
 
 ### Code Skeleton
-```python
-# Word Search (LC 79)
-def exist(board, word):
-    m, n = len(board), len(board[0])
-    def dfs(r, c, k):
-        if k == len(word):
-            return True
-        if r < 0 or r >= m or c < 0 or c >= n or board[r][c] != word[k]:
-            return False
-        temp = board[r][c]
-        board[r][c] = '#'   # mark visited
-        found = (dfs(r+1,c,k+1) or dfs(r-1,c,k+1) or
-                 dfs(r,c+1,k+1) or dfs(r,c-1,k+1))
-        board[r][c] = temp   # restore
-        return found
-    for r in range(m):
-        for c in range(n):
-            if dfs(r, c, 0):
-                return True
-    return False
+```java
+import java.util.*;
 
-# Letter Tile Possibilities (LC 1079)
-def numTilePossibilities(tiles):
-    from collections import Counter
-    count = Counter(tiles)
-    def backtrack():
-        total = 0
-        for ch in count:
-            if count[ch] > 0:
-                total += 1          # this sequence (of any length) is valid
-                count[ch] -= 1
-                total += backtrack()
-                count[ch] += 1
-        return total
-    return backtrack()
+// Word Search (LC 79)
+class Solution {
+    public boolean exist(char[][] board, String word) {
+        int m = board.length, n = board[0].length;
+        for (int r = 0; r < m; r++) {
+            for (int c = 0; c < n; c++) {
+                if (dfs(board, r, c, word, 0, m, n)) return true;
+            }
+        }
+        return false;
+    }
 
-# Expression Add Operators (LC 282)
-def addOperators(num, target):
-    result = []
-    def backtrack(index, path, eval_val, prev_mult):
-        if index == len(num):
-            if eval_val == target:
-                result.append(path)
-            return
-        for end in range(index + 1, len(num) + 1):
-            token = num[index:end]
-            if len(token) > 1 and token[0] == '0':   # no leading zeros
-                break
-            curr = int(token)
-            if index == 0:
-                backtrack(end, token, curr, curr)
-            else:
-                # Add
-                backtrack(end, path + '+' + token, eval_val + curr, curr)
-                # Subtract
-                backtrack(end, path + '-' + token, eval_val - curr, -curr)
-                # Multiply: undo last addition, re-apply with multiplication
-                backtrack(end, path + '*' + token,
-                          eval_val - prev_mult + prev_mult * curr,
-                          prev_mult * curr)
-    backtrack(0, '', 0, 0)
-    return result
+    private boolean dfs(char[][] board, int r, int c, String word, int k, int m, int n) {
+        if (k == word.length()) return true;
+        if (r < 0 || r >= m || c < 0 || c >= n || board[r][c] != word.charAt(k)) return false;
+        char temp = board[r][c];
+        board[r][c] = '#'; // mark visited
+        boolean found = dfs(board, r+1, c, word, k+1, m, n)
+                     || dfs(board, r-1, c, word, k+1, m, n)
+                     || dfs(board, r, c+1, word, k+1, m, n)
+                     || dfs(board, r, c-1, word, k+1, m, n);
+        board[r][c] = temp; // restore
+        return found;
+    }
+}
+
+// Letter Tile Possibilities (LC 1079)
+class Solution {
+    public int numTilePossibilities(String tiles) {
+        int[] count = new int[26];
+        for (char c : tiles.toCharArray()) count[c - 'A']++;
+        return backtrack(count);
+    }
+
+    private int backtrack(int[] count) {
+        int total = 0;
+        for (int i = 0; i < 26; i++) {
+            if (count[i] > 0) {
+                total += 1; // this sequence (of any length) is valid
+                count[i]--;
+                total += backtrack(count);
+                count[i]++;
+            }
+        }
+        return total;
+    }
+}
+
+// Expression Add Operators (LC 282)
+class Solution {
+    public List<String> addOperators(String num, int target) {
+        List<String> result = new ArrayList<>();
+        backtrack(num, target, 0, "", 0, 0, result);
+        return result;
+    }
+
+    private void backtrack(String num, int target, int index, String path, long evalVal, long prevMult, List<String> result) {
+        if (index == num.length()) {
+            if (evalVal == target) result.add(path);
+            return;
+        }
+        for (int end = index + 1; end <= num.length(); end++) {
+            String token = num.substring(index, end);
+            if (token.length() > 1 && token.charAt(0) == '0') break; // no leading zeros
+            long curr = Long.parseLong(token);
+            if (index == 0) {
+                backtrack(num, target, end, token, curr, curr, result);
+            } else {
+                // Add
+                backtrack(num, target, end, path + "+" + token, evalVal + curr, curr, result);
+                // Subtract
+                backtrack(num, target, end, path + "-" + token, evalVal - curr, -curr, result);
+                // Multiply: undo last addition, re-apply with multiplication
+                backtrack(num, target, end, path + "*" + token,
+                          evalVal - prevMult + prevMult * curr,
+                          prevMult * curr, result);
+            }
+        }
+    }
+}
 ```
 
 ---

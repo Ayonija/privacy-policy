@@ -20,25 +20,38 @@ Apply monotonic stack to fleet-merging and range-based aggregation problems — 
 | 3 | Sum of Subarray Ranges | 2104 | Medium | Monotonic stack (contribution technique) | Sum of ranges = sum of subarray maxima − sum of subarray minima; each computed in O(n) with two monotonic stack passes |
 
 ### Code Skeleton
-```python
-# Car Fleet (LC 853)
-def car_fleet(target, position, speed):
-    cars = sorted(zip(position, speed), reverse=True)
-    stack = []
-    for pos, spd in cars:
-        time = (target - pos) / spd
-        if not stack or time > stack[-1]:
-            stack.append(time)
-        # else: this car catches up — joins the leading fleet, don't push
-    return len(stack)
+```java
+class Solution {
+    // Car Fleet (LC 853)
+    public static int carFleet(int target, int[] position, int[] speed) {
+        int n = position.length;
+        int[][] cars = new int[n][2];
+        for (int i = 0; i < n; i++) {
+            cars[i][0] = position[i];
+            cars[i][1] = speed[i];
+        }
+        Arrays.sort(cars, (a, b) -> b[0] - a[0]); // sort by position descending
+        Deque<Double> stack = new ArrayDeque<>();
+        for (int[] car : cars) {
+            double time = (double)(target - car[0]) / car[1];
+            if (stack.isEmpty() || time > stack.peekLast()) {
+                stack.addLast(time);
+            }
+            // else: this car catches up — joins the leading fleet, don't push
+        }
+        return stack.size();
+    }
 
-# Sum of Subarray Ranges (LC 2104) — skeleton
-def sub_array_ranges(nums):
-    # sum_of_ranges = sum_of_subarray_maxima - sum_of_subarray_minima
-    # use two monotonic stack passes (one increasing, one decreasing)
-    # for each element: count subarrays where it is the min/max
-    # contribution = element_value * left_count * right_count
-    pass
+    // Sum of Subarray Ranges (LC 2104) — skeleton
+    public static long subArrayRanges(int[] nums) {
+        // sum_of_ranges = sum_of_subarray_maxima - sum_of_subarray_minima
+        // use two monotonic stack passes (one increasing, one decreasing)
+        // for each element: count subarrays where it is the min/max
+        // contribution = element_value * left_count * right_count
+        // TODO: implement
+        return 0;
+    }
+}
 ```
 
 ## System Design (1 hour)

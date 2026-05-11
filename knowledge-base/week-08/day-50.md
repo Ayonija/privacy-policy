@@ -45,77 +45,98 @@ Classic rerooting technique. Two DFS passes on an unweighted undirected tree:
 ---
 
 ### Code Skeleton
-```python
-class TreeNode:
-    def __init__(self, val=0, left=None, right=None):
-        self.val = val; self.left = left; self.right = right
+```java
+import java.util.*;
 
-# Subtree of Another Tree (LC 572)
-def isSubtree(root, subRoot):
-    def isSameTree(s, t):
-        if not s and not t: return True
-        if not s or not t:  return False
-        return s.val == t.val and isSameTree(s.left, t.left) and isSameTree(s.right, t.right)
-    if not root: return False
-    if isSameTree(root, subRoot): return True
-    return isSubtree(root.left, subRoot) or isSubtree(root.right, subRoot)
+class TreeNode { int val; TreeNode left, right; TreeNode(int val) { this.val = val; } }
 
-# All Nodes Distance K (LC 863)
-from collections import defaultdict, deque
-def distanceK(root, target, k):
-    # Phase 1: add parent pointers via DFS
-    parent = {}
-    def add_parents(node, par):
-        if not node: return
-        parent[node] = par
-        add_parents(node.left, node)
-        add_parents(node.right, node)
-    add_parents(root, None)
+class Solution {
+    // Subtree of Another Tree (LC 572)
+    public static boolean isSubtree(TreeNode root, TreeNode subRoot) {
+        if (root == null) return false;
+        if (isSameTree(root, subRoot)) return true;
+        return isSubtree(root.left, subRoot) || isSubtree(root.right, subRoot);
+    }
+    private static boolean isSameTree(TreeNode s, TreeNode t) {
+        if (s == null && t == null) return true;
+        if (s == null || t == null)  return false;
+        return s.val == t.val && isSameTree(s.left, t.left) && isSameTree(s.right, t.right);
+    }
 
-    # Phase 2: BFS from target for exactly k steps
-    visited = {target}
-    queue = deque([target])
-    dist = 0
-    while queue and dist < k:
-        for _ in range(len(queue)):
-            node = queue.popleft()
-            for neighbour in (node.left, node.right, parent[node]):
-                if neighbour and neighbour not in visited:
-                    visited.add(neighbour)
-                    queue.append(neighbour)
-        dist += 1
-    return [node.val for node in queue]
+    // All Nodes Distance K (LC 863)
+    public static List<Integer> distanceK(TreeNode root, TreeNode target, int k) {
+        // Phase 1: add parent pointers via DFS
+        Map<TreeNode, TreeNode> parent = new HashMap<>();
+        addParents(root, null, parent);
 
-# Sum of Distances in Tree (LC 834)
-def sumOfDistancesInTree(n, edges):
-    graph = defaultdict(list)
-    for u, v in edges:
-        graph[u].append(v)
-        graph[v].append(u)
+        // Phase 2: BFS from target for exactly k steps
+        Set<TreeNode> visited = new HashSet<>();
+        visited.add(target);
+        Deque<TreeNode> queue = new ArrayDeque<>();
+        queue.addLast(target);
+        int dist = 0;
+        while (!queue.isEmpty() && dist < k) {
+            int size = queue.size();
+            for (int i = 0; i < size; i++) {
+                TreeNode node = queue.pollFirst();
+                for (TreeNode neighbour : new TreeNode[]{node.left, node.right, parent.get(node)}) {
+                    if (neighbour != null && !visited.contains(neighbour)) {
+                        visited.add(neighbour);
+                        queue.addLast(neighbour);
+                    }
+                }
+            }
+            dist++;
+        }
+        List<Integer> result = new ArrayList<>();
+        for (TreeNode node : queue) result.add(node.val);
+        return result;
+    }
+    private static void addParents(TreeNode node, TreeNode par, Map<TreeNode, TreeNode> parent) {
+        if (node == null) return;
+        parent.put(node, par);
+        addParents(node.left, node, parent);
+        addParents(node.right, node, parent);
+    }
 
-    count  = [1] * n    # subtree size (including self)
-    answer = [0] * n
+    // Sum of Distances in Tree (LC 834)
+    public static int[] sumOfDistancesInTree(int n, int[][] edges) {
+        List<List<Integer>> graph = new ArrayList<>();
+        for (int i = 0; i < n; i++) graph.add(new ArrayList<>());
+        for (int[] e : edges) {
+            graph.get(e[0]).add(e[1]);
+            graph.get(e[1]).add(e[0]);
+        }
+        int[] count  = new int[n];   // subtree size (including self)
+        int[] answer = new int[n];
+        Arrays.fill(count, 1);
 
-    # Pass 1: root at node 0 — compute subtree sizes and answer[0]
-    def dfs1(node, parent):
-        for child in graph[node]:
-            if child == parent: continue
-            dfs1(child, node)
-            count[node] += count[child]
-            answer[node] += answer[child] + count[child]
-    dfs1(0, -1)
+        // Pass 1: root at node 0 — compute subtree sizes and answer[0]
+        dfs1(0, -1, graph, count, answer);
 
-    # Pass 2: reroot — propagate answers from parent to child
-    def dfs2(node, parent):
-        for child in graph[node]:
-            if child == parent: continue
-            # moving root from node to child:
-            # count[child] nodes each get 1 closer; (n - count[child]) each get 1 farther
-            answer[child] = answer[node] - count[child] + (n - count[child])
-            dfs2(child, node)
-    dfs2(0, -1)
+        // Pass 2: reroot — propagate answers from parent to child
+        dfs2(0, -1, n, graph, count, answer);
 
-    return answer
+        return answer;
+    }
+    private static void dfs1(int node, int par, List<List<Integer>> graph, int[] count, int[] answer) {
+        for (int child : graph.get(node)) {
+            if (child == par) continue;
+            dfs1(child, node, graph, count, answer);
+            count[node] += count[child];
+            answer[node] += answer[child] + count[child];
+        }
+    }
+    private static void dfs2(int node, int par, int n, List<List<Integer>> graph, int[] count, int[] answer) {
+        for (int child : graph.get(node)) {
+            if (child == par) continue;
+            // moving root from node to child:
+            // count[child] nodes each get 1 closer; (n - count[child]) each get 1 farther
+            answer[child] = answer[node] - count[child] + (n - count[child]);
+            dfs2(child, node, n, graph, count, answer);
+        }
+    }
+}
 ```
 
 ---

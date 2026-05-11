@@ -20,35 +20,49 @@ Use the stack to process strings with undo/cancel semantics and hierarchical pat
 | 3 | Minimum Remove to Make Valid Parentheses | 1249 | Medium | Stack of indices + set | Collect unmatched `(` indices in stack; unmatched `)` indices in set; rebuild string skipping both |
 
 ### Code Skeleton
-```python
-# Remove Adjacent Duplicates (LC 1047)
-def remove_duplicates(s):
-    stack = []
-    for ch in s:
-        if stack and stack[-1] == ch:
-            stack.pop()
-        else:
-            stack.append(ch)
-    return "".join(stack)
+```java
+class Solution {
+    // Remove Adjacent Duplicates (LC 1047)
+    public static String removeDuplicates(String s) {
+        Deque<Character> stack = new ArrayDeque<>();
+        for (char ch : s.toCharArray()) {
+            if (!stack.isEmpty() && stack.peekLast() == ch) {
+                stack.pollLast();
+            } else {
+                stack.addLast(ch);
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        for (char c : stack) sb.append(c);
+        return sb.toString();
+    }
 
-# Simplify Path (LC 71)
-def simplify_path(path):
-    stack = []
-    for part in path.split("/"):
-        if part == "..":
-            if stack: stack.pop()
-        elif part and part != ".":
-            stack.append(part)
-    return "/" + "/".join(stack)
+    // Simplify Path (LC 71)
+    public static String simplifyPath(String path) {
+        Deque<String> stack = new ArrayDeque<>();
+        for (String part : path.split("/")) {
+            if (part.equals("..")) {
+                if (!stack.isEmpty()) stack.pollLast();
+            } else if (!part.isEmpty() && !part.equals(".")) {
+                stack.addLast(part);
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String dir : stack) sb.append("/").append(dir);
+        return sb.length() == 0 ? "/" : sb.toString();
+    }
 
-# Minimum Remove for Valid Parentheses (LC 1249) — skeleton
-def min_remove_to_make_valid(s):
-    stack = []      # indices of unmatched '('
-    remove = set()  # all indices to remove
-    # pass 1: find unmatched ')' and collect unmatched '(' indices
-    # pass 2: add remaining stack indices to remove
-    # pass 3: rebuild string
-    pass
+    // Minimum Remove for Valid Parentheses (LC 1249) — skeleton
+    public static String minRemoveToMakeValid(String s) {
+        Deque<Integer> stack = new ArrayDeque<>();      // indices of unmatched '('
+        Set<Integer> remove = new HashSet<>();           // all indices to remove
+        // pass 1: find unmatched ')' and collect unmatched '(' indices
+        // pass 2: add remaining stack indices to remove
+        // pass 3: rebuild string
+        // TODO: implement
+        return "";
+    }
+}
 ```
 
 ## System Design (1 hour)

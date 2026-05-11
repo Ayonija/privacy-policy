@@ -20,39 +20,48 @@ Solve the three main parentheses variants — min additions, scoring, and min st
 | 3 | Score of Parentheses | 856 | Medium | Stack depth as multiplier | Each `()` at depth d = 2^d; use a stack to track depth; or: every `()` contributes the current depth value |
 
 ### Code Skeleton
-```python
-# Min Stack (LC 155)
-class MinStack:
-    def __init__(self):
-        self.stack = []  # (val, current_min)
+```java
+// Min Stack (LC 155)
+class MinStack {
+    private Deque<int[]> stack = new ArrayDeque<>(); // {val, current_min}
 
-    def push(self, val):
-        curr_min = min(val, self.stack[-1][1] if self.stack else val)
-        self.stack.append((val, curr_min))
+    public void push(int val) {
+        int currMin = stack.isEmpty() ? val : Math.min(val, stack.peekLast()[1]);
+        stack.addLast(new int[]{val, currMin});
+    }
 
-    def pop(self): self.stack.pop()
-    def top(self): return self.stack[-1][0]
-    def getMin(self): return self.stack[-1][1]
+    public void pop() { stack.pollLast(); }
+    public int top() { return stack.peekLast()[0]; }
+    public int getMin() { return stack.peekLast()[1]; }
+}
 
-# Minimum Add to Make Valid (LC 921) — O(1) space
-def min_add_to_make_valid(s):
-    open_count = close_count = 0
-    for ch in s:
-        if ch == '(':
-            open_count += 1
-        elif open_count > 0:
-            open_count -= 1
-        else:
-            close_count += 1
-    return open_count + close_count
+// Minimum Add to Make Valid (LC 921) — O(1) space
+class Solution {
+    public static int minAddToMakeValid(String s) {
+        int openCount = 0, closeCount = 0;
+        for (char ch : s.toCharArray()) {
+            if (ch == '(') {
+                openCount++;
+            } else if (openCount > 0) {
+                openCount--;
+            } else {
+                closeCount++;
+            }
+        }
+        return openCount + closeCount;
+    }
 
-# Score of Parentheses (LC 856) — skeleton
-def score_of_parentheses(s):
-    stack = [0]   # base score at current depth
-    for ch in s:
-        # '(' pushes a new 0; ')' pops and either adds 1 or doubles
-        pass
-    return stack[0]
+    // Score of Parentheses (LC 856) — skeleton
+    public static int scoreOfParentheses(String s) {
+        Deque<Integer> stack = new ArrayDeque<>();
+        stack.addLast(0);   // base score at current depth
+        for (char ch : s.toCharArray()) {
+            // '(' pushes a new 0; ')' pops and either adds 1 or doubles
+            // TODO: implement
+        }
+        return stack.peekLast();
+    }
+}
 ```
 
 ## System Design (1 hour)

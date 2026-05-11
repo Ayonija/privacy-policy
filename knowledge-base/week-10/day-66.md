@@ -38,94 +38,133 @@ Structure:
 | # | Problem | LC # | Difficulty | Pattern | Key Insight |
 |---|---------|------|------------|---------|-------------|
 | 1 | Number of Restricted Paths | 1786 | Medium | Dijkstra from n + DP count on dist-ordered DAG | Dijkstra from node n; count paths using DFS+memo where `dist[u] > dist[v]` |
-| 2 | Shortest Path Alternating Colors | 1129 | Medium | BFS state = `(node, last_colour)` | Init queue with `(0, RED)` and `(0, BLUE)`; only extend with opposite colour |
+| 2 | Shortest Path Alternating Colors | 1129 | Medium | BFS state = `(node, last_colour)` | Init queue with `(0, RED, 0)` and `(0, BLUE, 0)`; only extend with opposite colour |
 | 3 | Bus Routes | 815 | Hard | BFS on routes (hypergraph); transfers = BFS levels | `stop→routes` map; BFS over routes; boarding a route gives all its stops for free |
 
 ---
 
 ### Code Skeleton
-```python
-import heapq
-from collections import deque, defaultdict
-from functools import lru_cache
+```java
+import java.util.*;
 
-# Number of Restricted Paths (LC 1786)
-def countRestrictedPaths(n, edges):
-    MOD = 10**9 + 7
-    graph = defaultdict(list)
-    for u, v, w in edges:
-        graph[u].append((v, w))
-        graph[v].append((u, w))
-    # Dijkstra from node n
-    dist = [float('inf')] * (n + 1)
-    dist[n] = 0
-    heap = [(0, n)]
-    while heap:
-        d, u = heapq.heappop(heap)
-        if d > dist[u]: continue
-        for v, w in graph[u]:
-            if dist[u] + w < dist[v]:
-                dist[v] = dist[u] + w
-                heapq.heappush(heap, (dist[v], v))
-    # Count restricted paths from 1 to n using DFS + memoization
-    memo = {}
-    def dfs(u):
-        if u == n: return 1
-        if u in memo: return memo[u]
-        count = 0
-        for v, _ in graph[u]:
-            if dist[u] > dist[v]:   # restricted condition: getting closer to n
-                count = (count + dfs(v)) % MOD
-        memo[u] = count
-        return count
-    return dfs(1)
+class Solution {
 
-# Shortest Path with Alternating Colors (LC 1129)
-def shortestAlternatingPaths(n, redEdges, blueEdges):
-    RED, BLUE = 0, 1
-    graph = defaultdict(list)
-    for u, v in redEdges:
-        graph[u].append((v, RED))
-    for u, v in blueEdges:
-        graph[u].append((v, BLUE))
-    ans = [-1] * n
-    ans[0] = 0
-    visited = {(0, RED), (0, BLUE)}
-    queue = deque([(0, RED, 0), (0, BLUE, 0)])   # (node, last_colour, steps)
-    while queue:
-        node, colour, steps = queue.popleft()
-        for nb, edge_colour in graph[node]:
-            if edge_colour != colour and (nb, edge_colour) not in visited:
-                visited.add((nb, edge_colour))
-                if ans[nb] == -1: ans[nb] = steps + 1
-                queue.append((nb, edge_colour, steps + 1))
-    return ans
+    // Number of Restricted Paths (LC 1786)
+    public static int countRestrictedPaths(int n, int[][] edges) {
+        int MOD = 1_000_000_007;
+        List<int[]>[] graph = new ArrayList[n + 1];
+        for (int i = 0; i <= n; i++) graph[i] = new ArrayList<>();
+        for (int[] e : edges) {
+            graph[e[0]].add(new int[]{e[1], e[2]});
+            graph[e[1]].add(new int[]{e[0], e[2]});
+        }
+        // Dijkstra from node n
+        long[] dist = new long[n + 1];
+        Arrays.fill(dist, Long.MAX_VALUE);
+        dist[n] = 0;
+        PriorityQueue<long[]> heap = new PriorityQueue<>((a, b) -> Long.compare(a[0], b[0]));
+        heap.offer(new long[]{0, n});
+        while (!heap.isEmpty()) {
+            long[] top = heap.poll();
+            long d = top[0]; int u = (int) top[1];
+            if (d > dist[u]) continue;
+            for (int[] nb : graph[u]) {
+                int v = nb[0], w = nb[1];
+                if (dist[u] + w < dist[v]) {
+                    dist[v] = dist[u] + w;
+                    heap.offer(new long[]{dist[v], v});
+                }
+            }
+        }
+        // Count restricted paths from 1 to n using DFS + memoization
+        int[] memo = new int[n + 1];
+        Arrays.fill(memo, -1);
+        return dfsRestricted(1, n, graph, dist, memo, MOD);
+    }
 
-# Bus Routes (LC 815)
-def numBusesToDestination(routes, source, target):
-    if source == target: return 0
-    stop_to_routes = defaultdict(set)
-    for i, route in enumerate(routes):
-        for stop in route:
-            stop_to_routes[stop].add(i)
-    visited_routes = set()
-    visited_stops = {source}
-    queue = deque()
-    # Enqueue all routes containing source
-    for route_idx in stop_to_routes[source]:
-        queue.append((route_idx, 1))
-        visited_routes.add(route_idx)
-    while queue:
-        route_idx, transfers = queue.popleft()
-        for stop in routes[route_idx]:
-            if stop == target: return transfers
-            if stop not in visited_stops:
-                visited_stops.add(stop)
-                for next_route in stop_to_routes[stop]:
-                    if next_route not in visited_routes:
-                        visited_routes.add(next_route)
-                        queue.append((next_route, transfers + 1))
-    return -1
+    private static int dfsRestricted(int u, int n, List<int[]>[] graph, long[] dist, int[] memo, int MOD) {
+        if (u == n) return 1;
+        if (memo[u] != -1) return memo[u];
+        int count = 0;
+        for (int[] nb : graph[u]) {
+            int v = nb[0];
+            if (dist[u] > dist[v]) { // restricted condition: getting closer to n
+                count = (int) ((count + dfsRestricted(v, n, graph, dist, memo, MOD)) % MOD);
+            }
+        }
+        memo[u] = count;
+        return count;
+    }
+
+    // Shortest Path with Alternating Colors (LC 1129)
+    public static int[] shortestAlternatingPaths(int n, int[][] redEdges, int[][] blueEdges) {
+        int RED = 0, BLUE = 1;
+        List<int[]>[] graph = new ArrayList[n];
+        for (int i = 0; i < n; i++) graph[i] = new ArrayList<>();
+        for (int[] e : redEdges) graph[e[0]].add(new int[]{e[1], RED});
+        for (int[] e : blueEdges) graph[e[0]].add(new int[]{e[1], BLUE});
+        int[] ans = new int[n];
+        Arrays.fill(ans, -1);
+        ans[0] = 0;
+        Set<String> visited = new HashSet<>();
+        visited.add("0," + RED);
+        visited.add("0," + BLUE);
+        Deque<int[]> queue = new ArrayDeque<>();
+        queue.addLast(new int[]{0, RED, 0});
+        queue.addLast(new int[]{0, BLUE, 0}); // (node, last_colour, steps)
+        while (!queue.isEmpty()) {
+            int[] cur = queue.pollFirst();
+            int node = cur[0], colour = cur[1], steps = cur[2];
+            for (int[] nb : graph[node]) {
+                int nextNode = nb[0], edgeColour = nb[1];
+                String key = nextNode + "," + edgeColour;
+                if (edgeColour != colour && !visited.contains(key)) {
+                    visited.add(key);
+                    if (ans[nextNode] == -1) ans[nextNode] = steps + 1;
+                    queue.addLast(new int[]{nextNode, edgeColour, steps + 1});
+                }
+            }
+        }
+        return ans;
+    }
+
+    // Bus Routes (LC 815)
+    public static int numBusesToDestination(int[][] routes, int source, int target) {
+        if (source == target) return 0;
+        Map<Integer, Set<Integer>> stopToRoutes = new HashMap<>();
+        for (int i = 0; i < routes.length; i++) {
+            for (int stop : routes[i]) {
+                stopToRoutes.computeIfAbsent(stop, x -> new HashSet<>()).add(i);
+            }
+        }
+        Set<Integer> visitedRoutes = new HashSet<>();
+        Set<Integer> visitedStops = new HashSet<>();
+        visitedStops.add(source);
+        Deque<int[]> queue = new ArrayDeque<>();
+        // Enqueue all routes containing source
+        for (int routeIdx : stopToRoutes.getOrDefault(source, Collections.emptySet())) {
+            queue.addLast(new int[]{routeIdx, 1});
+            visitedRoutes.add(routeIdx);
+        }
+        while (!queue.isEmpty()) {
+            int[] cur = queue.pollFirst();
+            int routeIdx = cur[0], transfers = cur[1];
+            for (int stop : routes[routeIdx]) {
+                if (stop == target) return transfers;
+                if (!visitedStops.contains(stop)) {
+                    visitedStops.add(stop);
+                    for (int nextRoute : stopToRoutes.getOrDefault(stop, Collections.emptySet())) {
+                        if (!visitedRoutes.contains(nextRoute)) {
+                            visitedRoutes.add(nextRoute);
+                            queue.addLast(new int[]{nextRoute, transfers + 1});
+                        }
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+}
 ```
 
 ---

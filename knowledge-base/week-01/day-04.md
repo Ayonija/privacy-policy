@@ -18,35 +18,42 @@ Master the sliding window + frequency map combination — critical for substring
 | 3 | Permutation in String | 567 | Medium | Fixed Sliding Window + Freq Map | Fixed window size = len(s1); compare freq maps; use a `matches` counter instead of full map comparison |
 
 ### Code Skeleton
-```python
-def longest_repeating_replacement(s, k):
-    count = {}
-    left = 0
-    max_freq = 0   # max frequency of any single character in the window
-    result = 0
-    for right in range(len(s)):
-        count[s[right]] = count.get(s[right], 0) + 1
-        max_freq = max(max_freq, count[s[right]])
-        # window is invalid when (window_size - max_freq) > k replacements needed
-        while (right - left + 1) - max_freq > k:
-            count[s[left]] -= 1
-            left += 1
-        result = max(result, right - left + 1)
-    return result
+```java
+class Solution {
+    public static int longestRepeatingReplacement(String s, int k) {
+        Map<Character, Integer> count = new HashMap<>();
+        int left = 0;
+        int maxFreq = 0;   // max frequency of any single character in the window
+        int result = 0;
+        for (int right = 0; right < s.length(); right++) {
+            char c = s.charAt(right);
+            count.put(c, count.getOrDefault(c, 0) + 1);
+            maxFreq = Math.max(maxFreq, count.get(c));
+            // window is invalid when (window_size - maxFreq) > k replacements needed
+            while ((right - left + 1) - maxFreq > k) {
+                char leftChar = s.charAt(left);
+                count.put(leftChar, count.get(leftChar) - 1);
+                left++;
+            }
+            result = Math.max(result, right - left + 1);
+        }
+        return result;
+    }
+}
 ```
 
 ### Interview Tips
 
 - **Explain the validity condition first:** "A window is valid if we need at most k replacements — that's `window_size - max_frequency_char ≤ k`." State this in one sentence before touching code; it's the key insight.
-- **The `max_freq` trick:** `max_freq` can only increase (it's a running maximum) — we never need to recalculate it on shrink because we're looking for the *longest* valid window. Explain this reasoning to the interviewer; it sounds like a bug but isn't.
+- **The `maxFreq` trick:** `maxFreq` can only increase (it's a running maximum) — we never need to recalculate it on shrink because we're looking for the *longest* valid window. Explain this reasoning to the interviewer; it sounds like a bug but isn't.
 - **`matches` counter for LC 567:** instead of comparing two 26-element arrays every step (O(26) per slide), maintain a `matches` counter that tracks how many characters have matching frequencies — O(1) per slide.
 - **Brute force baseline:** "O(n² · 26) checking all substrings and counting character frequencies" → sliding window + freq map reduces to O(n).
 - **Common mistake:** for LC 567 (Permutation in String), forgetting that the window size is *fixed* at `len(s1)` — you always slide by one, never grow or shrink; it's not a variable window.
 
 ### Edge Cases to Trace Before Coding
 - LC 424: `k = 0` → any window with more than one distinct character is invalid; answer = longest run of one character
-- LC 424: all same characters → `max_freq = window_size`, condition never violated; answer = `len(s)`
-- LC 567: `len(s1) > len(s2)` → impossible, return False immediately
+- LC 424: all same characters → `maxFreq = window_size`, condition never violated; answer = `s.length()`
+- LC 567: `len(s1) > len(s2)` → impossible, return false immediately
 - LC 643 (Average Subarray): `k > len(nums)` → invalid; check constraints say this won't happen but good to mention
 
 ## System Design (1 hour)

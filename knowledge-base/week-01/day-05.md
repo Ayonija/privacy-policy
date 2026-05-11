@@ -20,42 +20,51 @@ Apply both patterns to problems where the right choice between them is non-obvio
 | 3 | Max Consecutive Ones III | 1004 | Medium | Sliding Window | Window is valid when zeros inside ≤ k; track zero count, shrink when it exceeds k |
 
 ### Code Skeleton
-```python
-# Two Pointers — fill from back (LC 977)
-def sorted_squares(nums):
-    n = len(nums)
-    result = [0] * n
-    left, right, pos = 0, n - 1, n - 1
-    while left <= right:   # NOTE: <= not < because we need the last element too
-        if abs(nums[left]) > abs(nums[right]):
-            result[pos] = nums[left] ** 2
-            left += 1
-        else:
-            result[pos] = nums[right] ** 2
-            right -= 1
-        pos -= 1
-    return result
+```java
+class Solution {
+    // Two Pointers — fill from back (LC 977)
+    public static int[] sortedSquares(int[] nums) {
+        int n = nums.length;
+        int[] result = new int[n];
+        int left = 0, right = n - 1, pos = n - 1;
+        while (left <= right) {   // NOTE: <= not < because we need the last element too
+            if (Math.abs(nums[left]) > Math.abs(nums[right])) {
+                result[pos] = nums[left] * nums[left];
+                left++;
+            } else {
+                result[pos] = nums[right] * nums[right];
+                right--;
+            }
+            pos--;
+        }
+        return result;
+    }
 
-# Sliding Window — at most k distinct (LC 904 pattern)
-def at_most_k_distinct(arr, k):
-    freq = {}
-    left = result = 0
-    for right in range(len(arr)):
-        freq[arr[right]] = freq.get(arr[right], 0) + 1
-        while len(freq) > k:
-            freq[arr[left]] -= 1
-            if freq[arr[left]] == 0:
-                del freq[arr[left]]   # must delete, not just set to 0, or len(freq) is wrong
-            left += 1
-        result = max(result, right - left + 1)
-    return result
+    // Sliding Window — at most k distinct (LC 904 pattern)
+    public static int atMostKDistinct(int[] arr, int k) {
+        Map<Integer, Integer> freq = new HashMap<>();
+        int left = 0, result = 0;
+        for (int right = 0; right < arr.length; right++) {
+            freq.put(arr[right], freq.getOrDefault(arr[right], 0) + 1);
+            while (freq.size() > k) {
+                freq.put(arr[left], freq.get(arr[left]) - 1);
+                if (freq.get(arr[left]) == 0) {
+                    freq.remove(arr[left]);   // must delete, not just set to 0, or freq.size() is wrong
+                }
+                left++;
+            }
+            result = Math.max(result, right - left + 1);
+        }
+        return result;
+    }
+}
 ```
 
 ### Interview Tips
 
 - **5-second pattern classifier:** Is the array sorted, and does the answer depend only on the two endpoint values? → Two pointers. Does the answer depend on something *inside* the window (counts, sums, distinct values)? → Sliding window. Practice this classification reflex until it's automatic.
 - **LC 977 key insight to state:** "Largest squares always come from either the leftmost or rightmost element — we compare both ends and fill the result array from the back." Say the word "from the back" — interviewers listen for this.
-- **Critical bug prevention for LC 904:** when removing from the freq map, `del freq[key]` (not just `freq[key] = 0`) is mandatory — otherwise `len(freq)` stays wrong and you'll never shrink the window correctly.
+- **Critical bug prevention for LC 904:** when removing from the freq map, `freq.remove(key)` (not just `freq.put(key, 0)`) is mandatory — otherwise `freq.size()` stays wrong and you'll never shrink the window correctly.
 - **Brute force for LC 904:** O(n²) checking every subarray with a set — sliding window is O(n).
 - **Common mistake:** using `left <= right` in LC 977's while loop — since we fill `pos` from back and `left` and `right` can meet on the last valid pair, `left <= right` is needed (not `left < right`).
 
@@ -70,7 +79,7 @@ def at_most_k_distinct(arr, k):
 - Back-filled array technique (LC 977): avoids re-sorting a result; O(n) with two passes eliminated.
 - "At most k distinct" is a generalised sliding window that underlies substring problems in interviews.
 - In systems: bounded-resource windows map to rate limiters — a sliding window rate limiter keeps a window of recent requests, exactly like LC 904 but with timestamps.
-- Space optimisation: frequency map removal when count → 0 is mandatory to keep `len(freq)` accurate; forgetting this is a common bug.
+- Space optimisation: frequency map removal when count → 0 is mandatory to keep `freq.size()` accurate; forgetting this is a common bug.
 - Interview talking point: "If asked how a sliding window rate limiter works, answer: maintain a deque or sorted list of request timestamps; evict timestamps older than the window size on each new request; reject if count ≥ limit."
 
 ## Assessment / Mock (—)

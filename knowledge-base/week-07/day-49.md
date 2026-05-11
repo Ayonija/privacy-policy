@@ -40,91 +40,96 @@ Input: a string like `"1-2--3--4-5--6--7"` where the number of leading dashes = 
 ---
 
 ### Code Skeleton
-```python
-class TreeNode:
-    def __init__(self, val=0, left=None, right=None):
-        self.val = val; self.left = left; self.right = right
+```java
+import java.util.*;
 
-# Serialize and Deserialize BST (LC 449)
-class Codec449:
-    def serialize(self, root):
-        result = []
-        def preorder(node):
-            if not node: return
-            result.append(str(node.val))
-            preorder(node.left)
-            preorder(node.right)
-        preorder(root)
-        return ",".join(result)
+class TreeNode { int val; TreeNode left, right; TreeNode(int val) { this.val = val; } }
 
-    def deserialize(self, data):
-        if not data: return None
-        vals = iter(int(x) for x in data.split(","))
-        # Bounds-based reconstruction: include node if low < val < high
-        def build(low, high):
-            val = next(vals, None)
-            if val is None or not (low < val < high):
-                # put val back — we peeked too far
-                # use a sentinel approach: track separately
-                return None
-            node = TreeNode(val)
-            node.left  = build(low, val)
-            node.right = build(val, high)
-            return node
-        # Itertools-free approach with a list pointer
-        vals_list = [int(x) for x in data.split(",")]
-        idx = [0]
-        def build2(low, high):
-            if idx[0] == len(vals_list): return None
-            val = vals_list[idx[0]]
-            if not (low < val < high): return None
-            idx[0] += 1
-            node = TreeNode(val)
-            node.left  = build2(low, val)
-            node.right = build2(val, high)
-            return node
-        return build2(float('-inf'), float('inf'))
+class Solution {
+    // Serialize and Deserialize BST (LC 449)
+    public static String serialize(TreeNode root) {
+        StringBuilder sb = new StringBuilder();
+        preorderSerialize(root, sb);
+        return sb.length() > 0 ? sb.substring(0, sb.length() - 1) : "";
+    }
+    private static void preorderSerialize(TreeNode node, StringBuilder sb) {
+        if (node == null) return;
+        sb.append(node.val).append(",");
+        preorderSerialize(node.left, sb);
+        preorderSerialize(node.right, sb);
+    }
+    public static TreeNode deserialize(String data) {
+        if (data == null || data.isEmpty()) return null;
+        String[] parts = data.split(",");
+        int[] valsList = new int[parts.length];
+        for (int i = 0; i < parts.length; i++) valsList[i] = Integer.parseInt(parts[i]);
+        int[] idx = {0};
+        return build2(valsList, idx, Long.MIN_VALUE, Long.MAX_VALUE);
+    }
+    private static TreeNode build2(int[] valsList, int[] idx, long low, long high) {
+        if (idx[0] == valsList.length) return null;
+        long val = valsList[idx[0]];
+        if (!(low < val && val < high)) return null;
+        idx[0]++;
+        TreeNode node = new TreeNode((int) val);
+        node.left  = build2(valsList, idx, low, val);
+        node.right = build2(valsList, idx, val, high);
+        return node;
+    }
 
-# Find Duplicate Subtrees (LC 652)
-from collections import defaultdict
-def findDuplicateSubtrees(root):
-    seen = defaultdict(int)
-    result = []
-    def postorder(node):
-        if not node: return "#"
-        left  = postorder(node.left)
-        right = postorder(node.right)
-        key = f"{left},{right},{node.val}"
-        seen[key] += 1
-        if seen[key] == 2:   # exactly on second occurrence
-            result.append(node)
-        return key
-    postorder(root)
-    return result
+    // Find Duplicate Subtrees (LC 652)
+    public static List<TreeNode> findDuplicateSubtrees(TreeNode root) {
+        Map<String, Integer> seen = new HashMap<>();
+        List<TreeNode> result = new ArrayList<>();
+        postorderDup(root, seen, result);
+        return result;
+    }
+    private static String postorderDup(TreeNode node, Map<String, Integer> seen, List<TreeNode> result) {
+        if (node == null) return "#";
+        String left  = postorderDup(node.left,  seen, result);
+        String right = postorderDup(node.right, seen, result);
+        String key = left + "," + right + "," + node.val;
+        seen.put(key, seen.getOrDefault(key, 0) + 1);
+        if (seen.get(key) == 2) {   // exactly on second occurrence
+            result.add(node);
+        }
+        return key;
+    }
 
-# Recover Tree from Preorder Traversal (LC 1028)
-def recoverFromPreorder(traversal):
-    stack = []
-    i = 0
-    while i < len(traversal):
-        depth = 0
-        while i < len(traversal) and traversal[i] == '-':
-            depth += 1; i += 1
-        val = 0
-        while i < len(traversal) and traversal[i].isdigit():
-            val = val * 10 + int(traversal[i]); i += 1
-        node = TreeNode(val)
-        # pop stack to depth — stack holds path from root to parent
-        while len(stack) > depth:
-            stack.pop()
-        if stack:
-            parent = stack[-1]
-            if parent.left is None:
-                parent.left = node
-            else:
-                parent.right = node
-        stack.append(node)
-    return stack[0]  # root is the first element
+    // Recover Tree from Preorder Traversal (LC 1028)
+    public static TreeNode recoverFromPreorder(String traversal) {
+        Deque<TreeNode> stack = new ArrayDeque<>();
+        int i = 0;
+        int n = traversal.length();
+        while (i < n) {
+            int depth = 0;
+            while (i < n && traversal.charAt(i) == '-') {
+                depth++;
+                i++;
+            }
+            int val = 0;
+            while (i < n && Character.isDigit(traversal.charAt(i))) {
+                val = val * 10 + (int)(traversal.charAt(i));
+                i++;
+            }
+            TreeNode node = new TreeNode(val);
+            // pop stack to depth — stack holds path from root to parent
+            while (stack.size() > depth) {
+                stack.pollLast();
+            }
+            if (!stack.isEmpty()) {
+                TreeNode parent = stack.peekLast();
+                if (parent.left == null) {
+                    parent.left = node;
+                } else {
+                    parent.right = node;
+                }
+            }
+            stack.addLast(node);
+        }
+        return stack.peekFirst();  // root is the first element
+    }
+}
 ```
 
 ---

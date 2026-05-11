@@ -15,51 +15,69 @@ Solidify all linked list patterns from Days 11–13; identify the remove-nth and
 | # | Problem | LC # | Difficulty | Pattern | Key Insight |
 |---|---------|------|------------|---------|-------------|
 | 1 | Middle of the Linked List | 876 | Easy | Fast/Slow | When fast reaches end, slow is at mid; for even-length lists slow is the second middle |
-| 2 | Remove Nth Node From End of List | 19 | Medium | Two Pointers (gap n) | Dummy head; advance fast by n+1 steps first; then move both until fast is None |
+| 2 | Remove Nth Node From End of List | 19 | Medium | Two Pointers (gap n) | Dummy head; advance fast by n+1 steps first; then move both until fast is null |
 | 3 | Remove Duplicates from Sorted List II | 82 | Medium | Dummy head + skip run | When a duplicate run is detected, skip all nodes with that value; prev.next jumps over entire run |
 
 ### Code Skeleton
-```python
-# Remove Nth from end (LC 19)
-def remove_nth_from_end(head, n):
-    dummy = ListNode(0, head)
-    fast = slow = dummy
-    for _ in range(n + 1):   # advance fast n+1 steps — leaves 1-node gap between slow and fast
-        fast = fast.next
-    while fast:               # advance both until fast is None
-        fast, slow = fast.next, slow.next
-    slow.next = slow.next.next  # slow is now at the node BEFORE the target
-    return dummy.next
+```java
+class ListNode {
+    int val;
+    ListNode next;
+    ListNode(int val) { this.val = val; }
+}
 
-# Remove duplicates II (LC 82)
-def delete_duplicates(head):
-    dummy = ListNode(0, head)
-    prev = dummy   # prev stops before any duplicate run
-    curr = head
-    while curr:
-        if curr.next and curr.val == curr.next.val:
-            val = curr.val
-            while curr and curr.val == val:  # skip ALL nodes with this value
-                curr = curr.next
-            prev.next = curr   # prev jumps over the entire duplicate run
-        else:
-            prev = curr        # non-duplicate: advance prev normally
-            curr = curr.next
-    return dummy.next
+class Solution {
+    // Remove Nth from end (LC 19)
+    public static ListNode removeNthFromEnd(ListNode head, int n) {
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
+        ListNode fast = dummy, slow = dummy;
+        for (int i = 0; i < n + 1; i++) {   // advance fast n+1 steps — leaves 1-node gap between slow and fast
+            fast = fast.next;
+        }
+        while (fast != null) {               // advance both until fast is null
+            fast = fast.next;
+            slow = slow.next;
+        }
+        slow.next = slow.next.next;  // slow is now at the node BEFORE the target
+        return dummy.next;
+    }
+
+    // Remove duplicates II (LC 82)
+    public static ListNode deleteDuplicates(ListNode head) {
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
+        ListNode prev = dummy;   // prev stops before any duplicate run
+        ListNode curr = head;
+        while (curr != null) {
+            if (curr.next != null && curr.val == curr.next.val) {
+                int val = curr.val;
+                while (curr != null && curr.val == val) {  // skip ALL nodes with this value
+                    curr = curr.next;
+                }
+                prev.next = curr;   // prev jumps over the entire duplicate run
+            } else {
+                prev = curr;        // non-duplicate: advance prev normally
+                curr = curr.next;
+            }
+        }
+        return dummy.next;
+    }
+}
 ```
 
 ### Interview Tips
 
-- **The n+1 gap trick:** "I advance `fast` by `n+1` steps from the dummy head (not n) so that when `fast` is None, `slow` is at the node *before* the one I want to delete — allowing `slow.next = slow.next.next`." Draw this on the whiteboard if possible.
+- **The n+1 gap trick:** "I advance `fast` by `n+1` steps from the dummy head (not n) so that when `fast` is null, `slow` is at the node *before* the one I want to delete — allowing `slow.next = slow.next.next`." Draw this on the whiteboard if possible.
 - **Why dummy head is essential for LC 19:** if `n` equals the list length, the node to remove is the head — without a dummy, you'd crash accessing `slow.next.next`. Dummy makes the head removal identical to any other node removal.
 - **LC 82 vs LC 83 (Remove Duplicates I):** LC 83 keeps one copy of each duplicate; LC 82 removes ALL copies. The key difference: LC 82's `prev` pointer *doesn't advance* when it encounters a duplicate run; it only advances on non-duplicate nodes.
-- **Common mistake in LC 82:** checking `curr.val == curr.next.val` without guarding `curr.next is not None` — accessing `curr.next.val` when `curr.next` is None throws an error. Always check `curr.next` first.
+- **Common mistake in LC 82:** checking `curr.val == curr.next.val` without guarding `curr.next != null` — accessing `curr.next.val` when `curr.next` is null throws a NullPointerException. Always check `curr.next` first.
 - **Brute force for LC 876 (Middle):** count nodes, then traverse again to the midpoint — O(2n). Fast/slow finds the middle in one pass O(n).
 
 ### Edge Cases to Trace Before Coding
 - LC 19: `n` equals list length → remove head; dummy prevents crash; `slow` stays at dummy after n+1 advance ✓
-- LC 19: single-node list, `n = 1` → remove head; dummy.next becomes None ✓
-- LC 82: list with all same values `[1,1,1]` → entire list is a duplicate run; `prev` stays at dummy; `prev.next = None`; return `dummy.next = None` ✓
+- LC 19: single-node list, `n = 1` → remove head; dummy.next becomes null ✓
+- LC 82: list with all same values `[1,1,1]` → entire list is a duplicate run; `prev` stays at dummy; `prev.next = null`; return `dummy.next = null` ✓
 - LC 82: no duplicates → `curr.next` is always different from `curr`; `prev` advances every step; list returned unchanged ✓
 - LC 876: even-length list → slow ends at the second middle node (as per problem definition)
 
@@ -82,7 +100,7 @@ def delete_duplicates(head):
 
 | Q | A |
 |---|---|
-| How do you set the gap between two pointers to find the nth node from the end? | Advance fast pointer by n+1 steps from the dummy head; then advance both until fast is None; slow is now just before the target |
+| How do you set the gap between two pointers to find the nth node from the end? | Advance fast pointer by n+1 steps from the dummy head; then advance both until fast is null; slow is now just before the target |
 | Why advance n+1 steps (not n) in Remove Nth From End? | You want slow to stop at the node *before* the target so you can do `slow.next = slow.next.next`; n+1 leaves that one-step buffer |
 | How do you skip an entire duplicate run in LC 82? | Detect `curr.val == curr.next.val`; record the value; advance curr while `curr.val == recorded_val`; then set `prev.next = curr` (bypassing all duplicate nodes) |
 | What routing capability does a Layer 7 load balancer have that Layer 4 cannot? | Path-based and header-based routing (e.g., route `/api` vs `/static` to different backends, inspect auth headers, enable canary deployments) |

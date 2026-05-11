@@ -44,60 +44,70 @@ When valid, `sum = left.sum + node.val + right.sum`. Update global max when vali
 ---
 
 ### Code Skeleton
-```python
-class TreeNode:
-    def __init__(self, val=0, left=None, right=None):
-        self.val = val; self.left = left; self.right = right
+```java
+class TreeNode { int val; TreeNode left, right; TreeNode(int val) { this.val = val; } }
 
-# Delete Node in BST (LC 450)
-def deleteNode(root, key):
-    if not root: return None
-    if key < root.val:
-        root.left = deleteNode(root.left, key)
-    elif key > root.val:
-        root.right = deleteNode(root.right, key)
-    else:
-        # Found the node to delete
-        if not root.left: return root.right   # no left child
-        if not root.right: return root.left   # no right child
-        # Two children: replace with inorder successor
-        successor = root.right
-        while successor.left:
-            successor = successor.left
-        root.val = successor.val
-        root.right = deleteNode(root.right, successor.val)
-    return root
+class Solution {
+    // Delete Node in BST (LC 450)
+    public static TreeNode deleteNode(TreeNode root, int key) {
+        if (root == null) return null;
+        if (key < root.val) {
+            root.left = deleteNode(root.left, key);
+        } else if (key > root.val) {
+            root.right = deleteNode(root.right, key);
+        } else {
+            // Found the node to delete
+            if (root.left == null) return root.right;   // no left child
+            if (root.right == null) return root.left;   // no right child
+            // Two children: replace with inorder successor
+            TreeNode successor = root.right;
+            while (successor.left != null) {
+                successor = successor.left;
+            }
+            root.val = successor.val;
+            root.right = deleteNode(root.right, successor.val);
+        }
+        return root;
+    }
 
-# Minimum Absolute Difference in BST (LC 530)
-def getMinimumDifference(root):
-    prev = [None]
-    min_diff = [float('inf')]
-    def inorder(node):
-        if not node: return
-        inorder(node.left)
-        if prev[0] is not None:
-            min_diff[0] = min(min_diff[0], node.val - prev[0])
-        prev[0] = node.val
-        inorder(node.right)
-    inorder(root)
-    return min_diff[0]
+    // Minimum Absolute Difference in BST (LC 530)
+    private Integer prevVal = null;
+    private int minDiff = Integer.MAX_VALUE;
+    public int getMinimumDifference(TreeNode root) {
+        inorder530(root);
+        return minDiff;
+    }
+    private void inorder530(TreeNode node) {
+        if (node == null) return;
+        inorder530(node.left);
+        if (prevVal != null) {
+            minDiff = Math.min(minDiff, node.val - prevVal);
+        }
+        prevVal = node.val;
+        inorder530(node.right);
+    }
 
-# Maximum Sum BST in Binary Tree (LC 1373)
-def maxSumBST(root):
-    max_sum = [0]
-    # Returns (is_bst, min_val, max_val, subtree_sum)
-    def dfs(node):
-        if not node:
-            return True, float('inf'), float('-inf'), 0
-        l_valid, l_min, l_max, l_sum = dfs(node.left)
-        r_valid, r_min, r_max, r_sum = dfs(node.right)
-        if l_valid and r_valid and l_max < node.val < r_min:
-            total = l_sum + node.val + r_sum
-            max_sum[0] = max(max_sum[0], total)
-            return True, min(l_min, node.val), max(r_max, node.val), total
-        return False, 0, 0, 0
-    dfs(root)
-    return max_sum[0]
+    // Maximum Sum BST in Binary Tree (LC 1373)
+    private int maxSum = 0;
+    // Returns int[]{isValid (1=true,0=false), minVal, maxVal, subtreeSum}
+    public int maxSumBST(TreeNode root) {
+        dfs1373(root);
+        return maxSum;
+    }
+    private int[] dfs1373(TreeNode node) {
+        if (node == null) {
+            return new int[]{1, Integer.MAX_VALUE, Integer.MIN_VALUE, 0};
+        }
+        int[] left  = dfs1373(node.left);
+        int[] right = dfs1373(node.right);
+        if (left[0] == 1 && right[0] == 1 && left[2] < node.val && node.val < right[1]) {
+            int total = left[3] + node.val + right[3];
+            maxSum = Math.max(maxSum, total);
+            return new int[]{1, Math.min(left[1], node.val), Math.max(right[2], node.val), total};
+        }
+        return new int[]{0, 0, 0, 0};
+    }
+}
 ```
 
 ---

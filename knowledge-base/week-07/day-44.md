@@ -46,48 +46,60 @@ BFS with index tracking: root = index 0. Left child of node at index `i` = `2*i`
 ---
 
 ### Code Skeleton
-```python
-class TreeNode:
-    def __init__(self, val=0, left=None, right=None):
-        self.val = val; self.left = left; self.right = right
+```java
+class TreeNode { int val; TreeNode left, right; TreeNode(int val) { this.val = val; } }
 
-# LCA of BST (LC 235)
-def lowestCommonAncestorBST(root, p, q):
-    node = root
-    while node:
-        if p.val < node.val and q.val < node.val:
-            node = node.left
-        elif p.val > node.val and q.val > node.val:
-            node = node.right
-        else:
-            return node   # split point — current node is LCA
+class Solution {
+    // LCA of BST (LC 235)
+    public static TreeNode lowestCommonAncestorBST(TreeNode root, TreeNode p, TreeNode q) {
+        TreeNode node = root;
+        while (node != null) {
+            if (p.val < node.val && q.val < node.val) {
+                node = node.left;
+            } else if (p.val > node.val && q.val > node.val) {
+                node = node.right;
+            } else {
+                return node;   // split point — current node is LCA
+            }
+        }
+        return null;
+    }
 
-# LCA of Binary Tree (LC 236)
-def lowestCommonAncestor(root, p, q):
-    if not root or root == p or root == q:
-        return root
-    left  = lowestCommonAncestor(root.left,  p, q)
-    right = lowestCommonAncestor(root.right, p, q)
-    if left and right:   # p and q are in different subtrees
-        return root
-    return left or right  # LCA is deeper on whichever side found a node
+    // LCA of Binary Tree (LC 236)
+    public static TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        if (root == null || root == p || root == q) return root;
+        TreeNode left  = lowestCommonAncestor(root.left,  p, q);
+        TreeNode right = lowestCommonAncestor(root.right, p, q);
+        if (left != null && right != null) return root;   // p and q are in different subtrees
+        return left != null ? left : right;  // LCA is deeper on whichever side found a node
+    }
 
-# Maximum Width of Binary Tree (LC 662)
-from collections import deque
-def widthOfBinaryTree(root):
-    if not root: return 0
-    max_width = 0
-    queue = deque([(root, 0)])     # (node, index)
-    while queue:
-        level_size = len(queue)
-        _, first_idx = queue[0]
-        for _ in range(level_size):
-            node, idx = queue.popleft()
-            idx -= first_idx        # normalise to prevent overflow
-            if node.left:  queue.append((node.left,  2 * idx))
-            if node.right: queue.append((node.right, 2 * idx + 1))
-        max_width = max(max_width, idx + 1)   # idx is last node's normalised index
-    return max_width
+    // Maximum Width of Binary Tree (LC 662)
+    public static int widthOfBinaryTree(TreeNode root) {
+        if (root == null) return 0;
+        int maxWidth = 0;
+        java.util.Deque<long[]> queue = new java.util.ArrayDeque<>();
+        queue.addLast(new long[]{0, 0}); // placeholder; we'll store [node_index] pairs
+        // Use a queue of [node, index] pairs
+        java.util.Deque<Object[]> q = new java.util.ArrayDeque<>();
+        q.addLast(new Object[]{root, 0L});
+        while (!q.isEmpty()) {
+            int size = q.size();
+            long firstIdx = ((Long) ((Object[]) q.peekFirst())[1]);
+            long lastIdx = firstIdx;
+            for (int i = 0; i < size; i++) {
+                Object[] pair = q.pollFirst();
+                TreeNode node = (TreeNode) pair[0];
+                long idx = (Long) pair[1] - firstIdx;  // normalise to prevent overflow
+                lastIdx = idx;
+                if (node.left  != null) q.addLast(new Object[]{node.left,  2 * idx});
+                if (node.right != null) q.addLast(new Object[]{node.right, 2 * idx + 1});
+            }
+            maxWidth = Math.max(maxWidth, (int)(lastIdx + 1));
+        }
+        return maxWidth;
+    }
+}
 ```
 
 ---

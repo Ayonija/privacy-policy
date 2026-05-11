@@ -38,70 +38,99 @@ Place n queens on an n×n board so no two queens share a row, column, or diagona
 ---
 
 ### Code Skeleton
-```python
-# Palindrome Partitioning (LC 131)
-def partition(s):
-    n = len(s)
-    # Precompute is_palindrome[i][j]
-    is_pal = [[False] * n for _ in range(n)]
-    for i in range(n - 1, -1, -1):
-        for j in range(i, n):
-            if s[i] == s[j] and (j - i <= 2 or is_pal[i + 1][j - 1]):
-                is_pal[i][j] = True
+```java
+import java.util.*;
 
-    result = []
-    def backtrack(start, path):
-        if start == n:
-            result.append(path[:])
-            return
-        for end in range(start, n):
-            if is_pal[start][end]:
-                path.append(s[start:end + 1])
-                backtrack(end + 1, path)
-                path.pop()
-    backtrack(0, [])
-    return result
+// Palindrome Partitioning (LC 131)
+class Solution {
+    public List<List<String>> partition(String s) {
+        int n = s.length();
+        // Precompute is_palindrome[i][j]
+        boolean[][] isPal = new boolean[n][n];
+        for (int i = n - 1; i >= 0; i--) {
+            for (int j = i; j < n; j++) {
+                if (s.charAt(i) == s.charAt(j) && (j - i <= 2 || isPal[i + 1][j - 1])) {
+                    isPal[i][j] = true;
+                }
+            }
+        }
 
-# Generate Parentheses (LC 22)
-def generateParenthesis(n):
-    result = []
-    def backtrack(path, open_count, close_count):
-        if len(path) == 2 * n:
-            result.append(''.join(path))
-            return
-        if open_count < n:
-            path.append('(')
-            backtrack(path, open_count + 1, close_count)
-            path.pop()
-        if close_count < open_count:
-            path.append(')')
-            backtrack(path, open_count, close_count + 1)
-            path.pop()
-    backtrack([], 0, 0)
-    return result
+        List<List<String>> result = new ArrayList<>();
+        backtrack(s, 0, isPal, new ArrayList<>(), result);
+        return result;
+    }
 
-# N-Queens (LC 51)
-def solveNQueens(n):
-    cols = set()
-    diag1 = set()   # r - c
-    diag2 = set()   # r + c
-    board = [['.' for _ in range(n)] for _ in range(n)]
-    result = []
+    private void backtrack(String s, int start, boolean[][] isPal, List<String> path, List<List<String>> result) {
+        if (start == s.length()) {
+            result.add(new ArrayList<>(path));
+            return;
+        }
+        for (int end = start; end < s.length(); end++) {
+            if (isPal[start][end]) {
+                path.add(s.substring(start, end + 1));
+                backtrack(s, end + 1, isPal, path, result);
+                path.remove(path.size() - 1);
+            }
+        }
+    }
+}
 
-    def backtrack(row):
-        if row == n:
-            result.append([''.join(r) for r in board])
-            return
-        for col in range(n):
-            if col in cols or (row - col) in diag1 or (row + col) in diag2:
-                continue
-            board[row][col] = 'Q'
-            cols.add(col); diag1.add(row - col); diag2.add(row + col)
-            backtrack(row + 1)
-            board[row][col] = '.'
-            cols.discard(col); diag1.discard(row - col); diag2.discard(row + col)
-    backtrack(0)
-    return result
+// Generate Parentheses (LC 22)
+class Solution {
+    public List<String> generateParenthesis(int n) {
+        List<String> result = new ArrayList<>();
+        backtrack(new StringBuilder(), 0, 0, n, result);
+        return result;
+    }
+
+    private void backtrack(StringBuilder path, int openCount, int closeCount, int n, List<String> result) {
+        if (path.length() == 2 * n) {
+            result.add(path.toString());
+            return;
+        }
+        if (openCount < n) {
+            path.append('(');
+            backtrack(path, openCount + 1, closeCount, n, result);
+            path.deleteCharAt(path.length() - 1);
+        }
+        if (closeCount < openCount) {
+            path.append(')');
+            backtrack(path, openCount, closeCount + 1, n, result);
+            path.deleteCharAt(path.length() - 1);
+        }
+    }
+}
+
+// N-Queens (LC 51)
+class Solution {
+    public List<List<String>> solveNQueens(int n) {
+        Set<Integer> cols = new HashSet<>();
+        Set<Integer> diag1 = new HashSet<>(); // r - c
+        Set<Integer> diag2 = new HashSet<>(); // r + c
+        char[][] board = new char[n][n];
+        for (char[] row : board) Arrays.fill(row, '.');
+        List<List<String>> result = new ArrayList<>();
+        backtrack(0, n, board, cols, diag1, diag2, result);
+        return result;
+    }
+
+    private void backtrack(int row, int n, char[][] board, Set<Integer> cols, Set<Integer> diag1, Set<Integer> diag2, List<List<String>> result) {
+        if (row == n) {
+            List<String> solution = new ArrayList<>();
+            for (char[] r : board) solution.add(new String(r));
+            result.add(solution);
+            return;
+        }
+        for (int col = 0; col < n; col++) {
+            if (cols.contains(col) || diag1.contains(row - col) || diag2.contains(row + col)) continue;
+            board[row][col] = 'Q';
+            cols.add(col); diag1.add(row - col); diag2.add(row + col);
+            backtrack(row + 1, n, board, cols, diag1, diag2, result);
+            board[row][col] = '.';
+            cols.remove(col); diag1.remove(row - col); diag2.remove(row + col);
+        }
+    }
+}
 ```
 
 ---

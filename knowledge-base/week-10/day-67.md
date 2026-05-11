@@ -38,81 +38,116 @@ Each node has a colour ('a'–'z'). Find the maximum frequency of any single col
 ---
 
 ### Code Skeleton
-```python
-from collections import defaultdict, deque
+```java
+import java.util.*;
 
-# Sequence Reconstruction (LC 444)
-def sequenceReconstruction(org, seqs):
-    graph = defaultdict(set)
-    in_degree = defaultdict(int)
-    nodes = set()
-    for seq in seqs:
-        for node in seq: nodes.add(node)
-        for i in range(len(seq) - 1):
-            u, v = seq[i], seq[i+1]
-            if v not in graph[u]:
-                graph[u].add(v)
-                in_degree[v] += 1
-    if set(org) != nodes: return False
-    queue = deque(n for n in nodes if in_degree[n] == 0)
-    idx = 0
-    while queue:
-        if len(queue) > 1: return False   # not unique
-        node = queue.popleft()
-        if idx >= len(org) or org[idx] != node: return False
-        idx += 1
-        for nb in graph[node]:
-            in_degree[nb] -= 1
-            if in_degree[nb] == 0:
-                queue.append(nb)
-    return idx == len(org)
+class Solution {
 
-# Parallel Courses III (LC 2050)
-def minimumTime(n, relations, time):
-    graph = defaultdict(list)
-    in_degree = [0] * (n + 1)
-    for prev, next_ in relations:
-        graph[prev].append(next_)
-        in_degree[next_] += 1
-    finish_time = [0] * (n + 1)
-    for i in range(1, n + 1):
-        finish_time[i] = time[i - 1]
-    queue = deque(i for i in range(1, n + 1) if in_degree[i] == 0)
-    while queue:
-        u = queue.popleft()
-        for v in graph[u]:
-            finish_time[v] = max(finish_time[v], finish_time[u] + time[v - 1])
-            in_degree[v] -= 1
-            if in_degree[v] == 0:
-                queue.append(v)
-    return max(finish_time[1:])
+    // Sequence Reconstruction (LC 444)
+    public static boolean sequenceReconstruction(int[] org, List<List<Integer>> seqs) {
+        Map<Integer, Set<Integer>> graph = new HashMap<>();
+        Map<Integer, Integer> inDegree = new HashMap<>();
+        Set<Integer> nodes = new HashSet<>();
+        for (List<Integer> seq : seqs) {
+            for (int node : seq) {
+                nodes.add(node);
+                graph.putIfAbsent(node, new HashSet<>());
+                inDegree.putIfAbsent(node, 0);
+            }
+            for (int i = 0; i < seq.size() - 1; i++) {
+                int u = seq.get(i), v = seq.get(i + 1);
+                if (!graph.get(u).contains(v)) {
+                    graph.get(u).add(v);
+                    inDegree.put(v, inDegree.get(v) + 1);
+                }
+            }
+        }
+        Set<Integer> orgSet = new HashSet<>();
+        for (int x : org) orgSet.add(x);
+        if (!orgSet.equals(nodes)) return false;
+        Deque<Integer> queue = new ArrayDeque<>();
+        for (int n : nodes) {
+            if (inDegree.get(n) == 0) queue.addLast(n);
+        }
+        int idx = 0;
+        while (!queue.isEmpty()) {
+            if (queue.size() > 1) return false; // not unique
+            int node = queue.pollFirst();
+            if (idx >= org.length || org[idx] != node) return false;
+            idx++;
+            for (int nb : graph.getOrDefault(node, Collections.emptySet())) {
+                inDegree.put(nb, inDegree.get(nb) - 1);
+                if (inDegree.get(nb) == 0) queue.addLast(nb);
+            }
+        }
+        return idx == org.length;
+    }
 
-# Largest Color Value in Directed Graph (LC 1857)
-def largestPathValue(colors, edges):
-    n = len(colors)
-    graph = defaultdict(list)
-    in_degree = [0] * n
-    for u, v in edges:
-        graph[u].append(v)
-        in_degree[v] += 1
-    # dp[node][c] = max count of colour c on any path ending at node
-    dp = [[0] * 26 for _ in range(n)]
-    for i in range(n):
-        dp[i][ord(colors[i]) - ord('a')] = 1   # each node contributes its own colour
-    queue = deque(i for i in range(n) if in_degree[i] == 0)
-    processed = 0
-    ans = 0
-    while queue:
-        u = queue.popleft()
-        processed += 1
-        ans = max(ans, max(dp[u]))
-        for v in graph[u]:
-            for c in range(26):
-                dp[v][c] = max(dp[v][c], dp[u][c] + (1 if ord(colors[v]) - ord('a') == c else 0))
-            in_degree[v] -= 1
-            if in_degree[v] == 0:
-                queue.append(v)
-    return ans if processed == n else -1   # cycle detected if not all processed
+    // Parallel Courses III (LC 2050)
+    public static int minimumTime(int n, int[][] relations, int[] time) {
+        List<Integer>[] graph = new ArrayList[n + 1];
+        for (int i = 0; i <= n; i++) graph[i] = new ArrayList<>();
+        int[] inDegree = new int[n + 1];
+        for (int[] rel : relations) {
+            graph[rel[0]].add(rel[1]);
+            inDegree[rel[1]]++;
+        }
+        int[] finishTime = new int[n + 1];
+        for (int i = 1; i <= n; i++) finishTime[i] = time[i - 1];
+        Deque<Integer> queue = new ArrayDeque<>();
+        for (int i = 1; i <= n; i++) {
+            if (inDegree[i] == 0) queue.addLast(i);
+        }
+        while (!queue.isEmpty()) {
+            int u = queue.pollFirst();
+            for (int v : graph[u]) {
+                finishTime[v] = Math.max(finishTime[v], finishTime[u] + time[v - 1]);
+                inDegree[v]--;
+                if (inDegree[v] == 0) queue.addLast(v);
+            }
+        }
+        int ans = 0;
+        for (int i = 1; i <= n; i++) ans = Math.max(ans, finishTime[i]);
+        return ans;
+    }
+
+    // Largest Color Value in Directed Graph (LC 1857)
+    public static int largestPathValue(String colors, int[][] edges) {
+        int n = colors.length();
+        List<Integer>[] graph = new ArrayList[n];
+        for (int i = 0; i < n; i++) graph[i] = new ArrayList<>();
+        int[] inDegree = new int[n];
+        for (int[] e : edges) {
+            graph[e[0]].add(e[1]);
+            inDegree[e[1]]++;
+        }
+        // dp[node][c] = max count of colour c on any path ending at node
+        int[][] dp = new int[n][26];
+        for (int i = 0; i < n; i++) {
+            dp[i][colors.charAt(i) - 'a'] = 1; // each node contributes its own colour
+        }
+        Deque<Integer> queue = new ArrayDeque<>();
+        for (int i = 0; i < n; i++) {
+            if (inDegree[i] == 0) queue.addLast(i);
+        }
+        int processed = 0;
+        int ans = 0;
+        while (!queue.isEmpty()) {
+            int u = queue.pollFirst();
+            processed++;
+            for (int c = 0; c < 26; c++) ans = Math.max(ans, dp[u][c]);
+            for (int v : graph[u]) {
+                for (int c = 0; c < 26; c++) {
+                    int add = (colors.charAt(v) - 'a' == c) ? 1 : 0;
+                    dp[v][c] = Math.max(dp[v][c], dp[u][c] + add);
+                }
+                inDegree[v]--;
+                if (inDegree[v] == 0) queue.addLast(v);
+            }
+        }
+        return processed == n ? ans : -1; // cycle detected if not all processed
+    }
+}
 ```
 
 ---

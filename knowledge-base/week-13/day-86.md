@@ -42,62 +42,83 @@ Return the k-th permutation (1-indexed) of [1, 2, ..., n]. Use the factorial num
 ---
 
 ### Code Skeleton
-```python
-# Permutations (LC 46)
-def permute(nums):
-    result = []
-    visited = [False] * len(nums)
-    def backtrack(path):
-        if len(path) == len(nums):
-            result.append(path[:])
-            return
-        for i in range(len(nums)):
-            if visited[i]:
-                continue
-            visited[i] = True
-            path.append(nums[i])
-            backtrack(path)
-            path.pop()
-            visited[i] = False
-    backtrack([])
-    return result
+```java
+import java.util.*;
 
-# Permutations II (LC 47)
-def permuteUnique(nums):
-    nums.sort()
-    result = []
-    visited = [False] * len(nums)
-    def backtrack(path):
-        if len(path) == len(nums):
-            result.append(path[:])
-            return
-        for i in range(len(nums)):
-            if visited[i]:
-                continue
-            # Skip duplicate: same value as previous, and previous is NOT in path
-            if i > 0 and nums[i] == nums[i - 1] and not visited[i - 1]:
-                continue
-            visited[i] = True
-            path.append(nums[i])
-            backtrack(path)
-            path.pop()
-            visited[i] = False
-    backtrack([])
-    return result
+// Permutations (LC 46)
+class Solution {
+    public List<List<Integer>> permute(int[] nums) {
+        List<List<Integer>> result = new ArrayList<>();
+        boolean[] visited = new boolean[nums.length];
+        backtrack(nums, visited, new ArrayList<>(), result);
+        return result;
+    }
 
-# Permutation Sequence (LC 60)
-def getPermutation(n, k):
-    import math
-    digits = list(range(1, n + 1))
-    k -= 1   # convert to 0-indexed
-    result = []
-    for i in range(n, 0, -1):
-        factorial = math.factorial(i - 1)
-        idx = k // factorial
-        result.append(str(digits[idx]))
-        digits.pop(idx)
-        k %= factorial
-    return ''.join(result)
+    private void backtrack(int[] nums, boolean[] visited, List<Integer> path, List<List<Integer>> result) {
+        if (path.size() == nums.length) {
+            result.add(new ArrayList<>(path));
+            return;
+        }
+        for (int i = 0; i < nums.length; i++) {
+            if (visited[i]) continue;
+            visited[i] = true;
+            path.add(nums[i]);
+            backtrack(nums, visited, path, result);
+            path.remove(path.size() - 1);
+            visited[i] = false;
+        }
+    }
+}
+
+// Permutations II (LC 47)
+class Solution {
+    public List<List<Integer>> permuteUnique(int[] nums) {
+        Arrays.sort(nums);
+        List<List<Integer>> result = new ArrayList<>();
+        boolean[] visited = new boolean[nums.length];
+        backtrack(nums, visited, new ArrayList<>(), result);
+        return result;
+    }
+
+    private void backtrack(int[] nums, boolean[] visited, List<Integer> path, List<List<Integer>> result) {
+        if (path.size() == nums.length) {
+            result.add(new ArrayList<>(path));
+            return;
+        }
+        for (int i = 0; i < nums.length; i++) {
+            if (visited[i]) continue;
+            // Skip duplicate: same value as previous, and previous is NOT in path
+            if (i > 0 && nums[i] == nums[i - 1] && !visited[i - 1]) continue;
+            visited[i] = true;
+            path.add(nums[i]);
+            backtrack(nums, visited, path, result);
+            path.remove(path.size() - 1);
+            visited[i] = false;
+        }
+    }
+}
+
+// Permutation Sequence (LC 60)
+class Solution {
+    public String getPermutation(int n, int k) {
+        List<Integer> digits = new ArrayList<>();
+        int factorial = 1;
+        for (int i = 1; i <= n; i++) {
+            digits.add(i);
+            factorial *= i;
+        }
+        k -= 1; // convert to 0-indexed
+        StringBuilder result = new StringBuilder();
+        for (int i = n; i > 0; i--) {
+            factorial /= i;
+            int idx = k / factorial;
+            result.append(digits.get(idx));
+            digits.remove(idx);
+            k %= factorial;
+        }
+        return result.toString();
+    }
+}
 ```
 
 ---
@@ -162,22 +183,24 @@ Rebalance impact: during rebalance, consumption is paused (stop-the-world). Stra
 3. **Sticky:** minimise partition movement during rebalances
 
 **Offset commit strategies:**
-```python
-# Auto-commit (enabled by default, risky)
-# Offsets committed every auto.commit.interval.ms (5s)
-# Risk: if consumer crashes between commit and processing → data re-processed
+```java
+// Auto-commit (enabled by default, risky)
+// Offsets committed every auto.commit.interval.ms (5s)
+// Risk: if consumer crashes between commit and processing → data re-processed
 
-# Manual sync commit (after processing batch)
-for messages in consumer.poll():
-    process(messages)
-consumer.commit_sync()  # blocks until broker ACKs commit
+// Manual sync commit (after processing batch)
+for (ConsumerRecord<?,?> message : consumer.poll(Duration.ofMillis(100))) {
+    process(message);
+}
+consumer.commitSync(); // blocks until broker ACKs commit
 
-# Manual async commit (higher throughput, less safe)
-consumer.commit_async(callback=on_commit_callback)
+// Manual async commit (higher throughput, less safe)
+consumer.commitAsync(onCommitCallback);
 
-# Committing specific offsets (per-partition fine-grained control)
-offsets = {TopicPartition(topic, partition): OffsetAndMetadata(offset + 1)}
-consumer.commit_sync(offsets)
+// Committing specific offsets (per-partition fine-grained control)
+Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>();
+offsets.put(new TopicPartition(topic, partition), new OffsetAndMetadata(offset + 1));
+consumer.commitSync(offsets);
 ```
 
 **Consumer lag monitoring:**

@@ -19,44 +19,61 @@ Merge and sort linked lists — patterns that directly mirror merge sort and app
 | 3 | Sort List | 148 | Medium | Merge Sort on list | Fast/slow to find mid; cut at mid; recurse on both halves; merge results |
 
 ### Code Skeleton
-```python
-# Merge two sorted lists (LC 21)
-def merge_two_lists(l1, l2):
-    dummy = ListNode(0)
-    curr = dummy
-    while l1 and l2:
-        if l1.val <= l2.val:
-            curr.next, l1 = l1, l1.next
-        else:
-            curr.next, l2 = l2, l2.next
-        curr = curr.next
-    curr.next = l1 or l2
-    return dummy.next
+```java
+class ListNode {
+    int val;
+    ListNode next;
+    ListNode(int val) { this.val = val; }
+}
 
-# Sort list (LC 148) — merge sort approach
-def sort_list(head):
-    if not head or not head.next:
-        return head
-    # Step 1: find midpoint and sever list
-    slow, fast = head, head.next   # fast starts at head.next to bias mid left
-    while fast and fast.next:
-        slow, fast = slow.next, fast.next.next
-    second = slow.next
-    slow.next = None   # sever: left half is head..slow, right half is second..
-    # Step 2 + 3: sort halves and merge
-    return merge_two_lists(sort_list(head), sort_list(second))
+class Solution {
+    // Merge two sorted lists (LC 21)
+    public static ListNode mergeTwoLists(ListNode l1, ListNode l2) {
+        ListNode dummy = new ListNode(0);
+        ListNode curr = dummy;
+        while (l1 != null && l2 != null) {
+            if (l1.val <= l2.val) {
+                curr.next = l1;
+                l1 = l1.next;
+            } else {
+                curr.next = l2;
+                l2 = l2.next;
+            }
+            curr = curr.next;
+        }
+        curr.next = (l1 != null) ? l1 : l2;
+        return dummy.next;
+    }
+
+    // Sort list (LC 148) — merge sort approach
+    public static ListNode sortList(ListNode head) {
+        if (head == null || head.next == null) {
+            return head;
+        }
+        // Step 1: find midpoint and sever list
+        ListNode slow = head, fast = head.next;   // fast starts at head.next to bias mid left
+        while (fast != null && fast.next != null) {
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        ListNode second = slow.next;
+        slow.next = null;   // sever: left half is head..slow, right half is second..
+        // Step 2 + 3: sort halves and merge
+        return mergeTwoLists(sortList(head), sortList(second));
+    }
+}
 ```
 
 ### Interview Tips
 
-- **`curr.next = l1 or l2` — explain it:** "In Python, `l1 or l2` returns `l1` if it's not None, else `l2`. This attaches whichever list still has remaining nodes in one line." Interviewers appreciate concise, intentional idioms over verbose if-else.
+- **`curr.next = (l1 != null) ? l1 : l2` — explain it:** "This attaches whichever list still has remaining nodes in one line — if l1 is non-null we attach it, otherwise we attach l2." Interviewers appreciate concise, intentional idioms over verbose if-else.
 - **Why dummy head is always safe:** without dummy, you'd need special-casing to set the initial result head before the loop. With dummy, the first node attachment is identical to all subsequent ones — zero edge cases.
 - **Sort List — announce the approach first:** "Merge sort: (1) find middle with fast/slow, (2) sever at mid, (3) recursively sort both halves, (4) merge. Time O(n log n), space O(log n) for call stack — optimal for a linked list since we can't random-access for quicksort."
 - **Carry in Add Two Numbers — most common bug:** after the main while loop, if `carry == 1` append one final node. Trace `999 + 1` to verify.
-- **Common mistake:** in Sort List, initialising `fast = head` instead of `fast = head.next` — with `fast = head` on a 2-node list, `fast.next` is non-None so the loop runs an extra step and `slow` ends up past the midpoint.
+- **Common mistake:** in Sort List, initialising `fast = head` instead of `fast = head.next` — with `fast = head` on a 2-node list, `fast.next` is non-null so the loop runs an extra step and `slow` ends up past the midpoint.
 
 ### Edge Cases to Trace Before Coding
-- LC 21: one or both inputs are empty → `l1 or l2` handles correctly; `while l1 and l2` skips immediately ✓
+- LC 21: one or both inputs are empty → `(l1 != null) ? l1 : l2` handles correctly; `while l1 != null && l2 != null` skips immediately ✓
 - LC 2: both lists represent 0 → result is `[0]`; carry stays 0 throughout ✓
 - LC 2: `[9,9,9] + [9,9,9,9]` → most digits plus carry; ensure the longer list is still processed after shorter runs out
 - LC 148: single node → base case returns head immediately
@@ -82,7 +99,7 @@ def sort_list(head):
 
 | Q | A |
 |---|---|
-| How do you cut a linked list in half for merge sort? | Find mid with fast/slow pointers; save `mid.next` as the right half head, then set `mid.next = None` to sever the list |
+| How do you cut a linked list in half for merge sort? | Find mid with fast/slow pointers; save `mid.next` as the right half head, then set `mid.next = null` to sever the list |
 | Why does Add Two Numbers need a dummy head? | The first result node is computed inside the loop — dummy lets you attach it with `curr.next` without special-casing the head |
 | What is the space complexity of recursive merge sort on a linked list? | O(log n) for the recursive call stack; each level halves the list, so there are log n levels |
 | When does Round Robin load balancing produce imbalance? | When servers have different capacities or when request durations vary significantly — a slow request on one server ties it up while round robin still routes to it |

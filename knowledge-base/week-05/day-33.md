@@ -34,44 +34,58 @@ For "subarray sum divisible by k": a subarray sum is divisible by k iff `(prefix
 ---
 
 ### Code Skeleton
-```python
-# Subarray Sum Equals K (LC 560)
-def subarray_sum(nums, k):
-    prefix_map = {0: 1}   # prefix_sum → count of times seen
-    prefix = 0
-    count = 0
-    for n in nums:
-        prefix += n
-        count += prefix_map.get(prefix - k, 0)
-        prefix_map[prefix] = prefix_map.get(prefix, 0) + 1
-    return count
+```java
+class Solution {
+    // Subarray Sum Equals K (LC 560)
+    public static int subarraySum(int[] nums, int k) {
+        Map<Integer, Integer> prefixMap = new HashMap<>();
+        prefixMap.put(0, 1);   // prefix_sum → count of times seen
+        int prefix = 0;
+        int count = 0;
+        for (int n : nums) {
+            prefix += n;
+            count += prefixMap.getOrDefault(prefix - k, 0);
+            prefixMap.put(prefix, prefixMap.getOrDefault(prefix, 0) + 1);
+        }
+        return count;
+    }
 
-# Continuous Subarray Sum (LC 523)
-def check_subarray_sum(nums, k):
-    mod_map = {0: -1}   # remainder → earliest index seen
-    prefix = 0
-    for i, n in enumerate(nums):
-        prefix = (prefix + n) % k
-        if prefix in mod_map:
-            if i - mod_map[prefix] >= 2:   # length ≥ 2
-                return True
-        else:
-            mod_map[prefix] = i
-    return False
+    // Continuous Subarray Sum (LC 523)
+    public static boolean checkSubarraySum(int[] nums, int k) {
+        Map<Integer, Integer> modMap = new HashMap<>();
+        modMap.put(0, -1);   // remainder → earliest index seen
+        int prefix = 0;
+        for (int i = 0; i < nums.length; i++) {
+            prefix = (prefix + nums[i]) % k;
+            if (modMap.containsKey(prefix)) {
+                if (i - modMap.get(prefix) >= 2) {   // length >= 2
+                    return true;
+                }
+            } else {
+                modMap.put(prefix, i);
+            }
+        }
+        return false;
+    }
 
-# Number of Submatrices That Sum to Target (LC 1074) — skeleton
-def num_submatrix_sum_target(matrix, target):
-    rows, cols = len(matrix), len(matrix[0])
-    result = 0
-    for r1 in range(rows):
-        col_sum = [0] * cols    # compressed column sums for rows r1..r2
-        for r2 in range(r1, rows):
-            for c in range(cols):
-                col_sum[c] += matrix[r2][c]
-            # now run LC 560 on col_sum with target
-            # (prefix sum + count map)
-        pass
-    return result
+    // Number of Submatrices That Sum to Target (LC 1074) — skeleton
+    public static int numSubmatrixSumTarget(int[][] matrix, int target) {
+        int rows = matrix.length, cols = matrix[0].length;
+        int result = 0;
+        for (int r1 = 0; r1 < rows; r1++) {
+            int[] colSum = new int[cols];    // compressed column sums for rows r1..r2
+            for (int r2 = r1; r2 < rows; r2++) {
+                for (int c = 0; c < cols; c++) {
+                    colSum[c] += matrix[r2][c];
+                }
+                // now run LC 560 on colSum with target
+                // (prefix sum + count map)
+                // TODO: implement
+            }
+        }
+        return result;
+    }
+}
 ```
 
 ---

@@ -19,44 +19,55 @@ Push two-pointer fluency into less-obvious setups: multi-number sums, interval m
 | 3 | Interval List Intersections | 986 | Medium | Two Pointers on two arrays | Advance the pointer whose interval ends first; overlap exists when max(start) ≤ min(end) |
 
 ### Code Skeleton
-```python
-# 4Sum (LC 18)
-def four_sum(nums, target):
-    nums.sort()
-    result = []
-    n = len(nums)
-    for i in range(n - 3):
-        if i > 0 and nums[i] == nums[i-1]: continue       # skip dup fixed i
-        for j in range(i + 1, n - 2):
-            if j > i + 1 and nums[j] == nums[j-1]: continue  # skip dup fixed j
-            left, right = j + 1, n - 1
-            while left < right:
-                s = nums[i] + nums[j] + nums[left] + nums[right]
-                if s == target:
-                    result.append([nums[i], nums[j], nums[left], nums[right]])
-                    while left < right and nums[left] == nums[left+1]: left += 1
-                    while left < right and nums[right] == nums[right-1]: right -= 1
-                    left += 1; right -= 1
-                elif s < target:
-                    left += 1
-                else:
-                    right -= 1
-    return result
+```java
+class Solution {
+    // 4Sum (LC 18)
+    public static List<List<Integer>> fourSum(int[] nums, int target) {
+        Arrays.sort(nums);
+        List<List<Integer>> result = new ArrayList<>();
+        int n = nums.length;
+        for (int i = 0; i < n - 3; i++) {
+            if (i > 0 && nums[i] == nums[i - 1]) continue;       // skip dup fixed i
+            for (int j = i + 1; j < n - 2; j++) {
+                if (j > i + 1 && nums[j] == nums[j - 1]) continue;  // skip dup fixed j
+                int left = j + 1, right = n - 1;
+                while (left < right) {
+                    long s = (long) nums[i] + nums[j] + nums[left] + nums[right];
+                    if (s == target) {
+                        result.add(Arrays.asList(nums[i], nums[j], nums[left], nums[right]));
+                        while (left < right && nums[left] == nums[left + 1]) left++;
+                        while (left < right && nums[right] == nums[right - 1]) right--;
+                        left++; right--;
+                    } else if (s < target) {
+                        left++;
+                    } else {
+                        right--;
+                    }
+                }
+            }
+        }
+        return result;
+    }
 
-# Interval Intersection (LC 986)
-def interval_intersection(A, B):
-    i = j = 0
-    result = []
-    while i < len(A) and j < len(B):
-        lo = max(A[i][0], B[j][0])   # overlap start = later of two starts
-        hi = min(A[i][1], B[j][1])   # overlap end = earlier of two ends
-        if lo <= hi:                  # actual overlap exists
-            result.append([lo, hi])
-        if A[i][1] < B[j][1]:        # advance the interval that ends sooner
-            i += 1
-        else:
-            j += 1
-    return result
+    // Interval Intersection (LC 986)
+    public static int[][] intervalIntersection(int[][] A, int[][] B) {
+        int i = 0, j = 0;
+        List<int[]> result = new ArrayList<>();
+        while (i < A.length && j < B.length) {
+            int lo = Math.max(A[i][0], B[j][0]);   // overlap start = later of two starts
+            int hi = Math.min(A[i][1], B[j][1]);   // overlap end = earlier of two ends
+            if (lo <= hi) {                          // actual overlap exists
+                result.add(new int[]{lo, hi});
+            }
+            if (A[i][1] < B[j][1]) {               // advance the interval that ends sooner
+                i++;
+            } else {
+                j++;
+            }
+        }
+        return result.toArray(new int[0][]);
+    }
+}
 ```
 
 ### Interview Tips

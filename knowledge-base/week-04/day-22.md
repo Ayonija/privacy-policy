@@ -18,30 +18,40 @@ Master the monotonic decreasing stack — the single pattern behind every "next 
 | 3 | Next Greater Element II | 503 | Medium | Monotonic Stack (circular) | Iterate 2n times (index mod n); second pass resolves elements that wrap around |
 
 ### Code Skeleton
-```python
-# Daily Temperatures (LC 739)
-def daily_temperatures(temperatures):
-    result = [0] * len(temperatures)
-    stack = []  # stores indices, decreasing temperatures
-    for i, temp in enumerate(temperatures):
-        while stack and temperatures[stack[-1]] < temp:
-            idx = stack.pop()
-            result[idx] = i - idx
-        stack.append(i)
-    return result
+```java
+// Daily Temperatures (LC 739)
+class Solution {
+    public static int[] dailyTemperatures(int[] temperatures) {
+        int[] result = new int[temperatures.length];
+        Deque<Integer> stack = new ArrayDeque<>(); // stores indices, decreasing temperatures
+        for (int i = 0; i < temperatures.length; i++) {
+            while (!stack.isEmpty() && temperatures[stack.peekLast()] < temperatures[i]) {
+                int idx = stack.pollLast();
+                result[idx] = i - idx;
+            }
+            stack.addLast(i);
+        }
+        return result;
+    }
 
-# Next Greater Element II — circular (LC 503)
-def next_greater_elements(nums):
-    n = len(nums)
-    result = [-1] * n
-    stack = []  # stores indices; values are in decreasing order
-    for i in range(2 * n):   # iterate twice to simulate circular array
-        while stack and nums[stack[-1]] < nums[i % n]:
-            idx = stack.pop()
-            result[idx] = nums[i % n]   # first greater element found
-        if i < n:
-            stack.append(i)   # only push indices from first pass
-    return result
+    // Next Greater Element II — circular (LC 503)
+    public static int[] nextGreaterElements(int[] nums) {
+        int n = nums.length;
+        int[] result = new int[n];
+        Arrays.fill(result, -1);
+        Deque<Integer> stack = new ArrayDeque<>(); // stores indices; values are in decreasing order
+        for (int i = 0; i < 2 * n; i++) {   // iterate twice to simulate circular array
+            while (!stack.isEmpty() && nums[stack.peekLast()] < nums[i % n]) {
+                int idx = stack.pollLast();
+                result[idx] = nums[i % n];   // first greater element found
+            }
+            if (i < n) {
+                stack.addLast(i);   // only push indices from first pass
+            }
+        }
+        return result;
+    }
+}
 ```
 
 ### Interview Tips

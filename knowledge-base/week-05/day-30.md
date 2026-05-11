@@ -19,32 +19,49 @@ Month 1 close-out: solve two advanced monotonic stack problems that combine gree
 | 3 | 132 Pattern | 456 | Medium | Monotonic stack (right-to-left) + running min | Scan right-to-left; stack holds candidates for nums[k] (the "2"); pop when top < current (update third); return true if any nums[i] < third |
 
 ### Code Skeleton
-```python
-# Remove Duplicate Letters (LC 316)
-def remove_duplicate_letters(s):
-    last = {ch: i for i, ch in enumerate(s)}
-    stack = []
-    in_stack = set()
-    for i, ch in enumerate(s):
-        if ch in in_stack:
-            continue
-        while stack and ch < stack[-1] and last[stack[-1]] > i:
-            in_stack.discard(stack.pop())
-        stack.append(ch)
-        in_stack.add(ch)
-    return "".join(stack)
+```java
+class Solution {
+    // Remove Duplicate Letters (LC 316)
+    public static String removeDuplicateLetters(String s) {
+        Map<Character, Integer> last = new HashMap<>();
+        for (int i = 0; i < s.length(); i++) {
+            last.put(s.charAt(i), i);
+        }
+        Deque<Character> stack = new ArrayDeque<>();
+        Set<Character> inStack = new HashSet<>();
+        for (int i = 0; i < s.length(); i++) {
+            char ch = s.charAt(i);
+            if (inStack.contains(ch)) {
+                continue;
+            }
+            while (!stack.isEmpty() && ch < stack.peekLast() && last.get(stack.peekLast()) > i) {
+                inStack.remove(stack.pollLast());
+            }
+            stack.addLast(ch);
+            inStack.add(ch);
+        }
+        StringBuilder sb = new StringBuilder();
+        for (char c : stack) sb.append(c);
+        return sb.toString();
+    }
 
-# 132 Pattern (LC 456)
-def find132pattern(nums):
-    stack = []   # candidates for nums[k] (the "2" in 132)
-    third = float('-inf')   # current best nums[k]
-    for n in reversed(nums):
-        if n < third:
-            return True
-        while stack and stack[-1] < n:
-            third = stack.pop()
-        stack.append(n)
-    return False
+    // 132 Pattern (LC 456)
+    public static boolean find132pattern(int[] nums) {
+        Deque<Integer> stack = new ArrayDeque<>();   // candidates for nums[k] (the "2" in 132)
+        int third = Integer.MIN_VALUE;               // current best nums[k]
+        for (int i = nums.length - 1; i >= 0; i--) {
+            int n = nums[i];
+            if (n < third) {
+                return true;
+            }
+            while (!stack.isEmpty() && stack.peekLast() < n) {
+                third = stack.pollLast();
+            }
+            stack.addLast(n);
+        }
+        return false;
+    }
+}
 ```
 
 ### Interview Tips

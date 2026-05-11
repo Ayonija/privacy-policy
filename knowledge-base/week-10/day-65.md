@@ -16,13 +16,13 @@ From (0,0) to (x, y) on an infinite chessboard. Knight has 8 moves. BFS with vis
 Boustrophedon (zigzag) numbering. BFS from cell 1 to cell n². At each state (cell number), try rolling 1–6; resolve snakes/ladders if the destination has one. Return minimum dice rolls. Key subtlety: when converting a cell number to (row, col), the row numbering is from the bottom, and alternating rows go right-to-left.
 
 Boustrophedon conversion (cell `s` → `(row, col)`):
-```python
-s -= 1  # 0-indexed
-row = s // n          # row from bottom
-col = s % n
-if row % 2 == 1:      # odd rows go right-to-left
-    col = n - 1 - col
-row = n - 1 - row     # flip to grid indexing (row 0 = bottom → top)
+```java
+s -= 1; // 0-indexed
+int row = s / n;       // row from bottom
+int col = s % n;
+if (row % 2 == 1)      // odd rows go right-to-left
+    col = n - 1 - col;
+row = n - 1 - row;     // flip to grid indexing (row 0 = bottom → top)
 ```
 
 **Shortest Path to Get All Keys (LC 864):**
@@ -48,86 +48,115 @@ Grid with keys (a-f) and locks (A-F). BFS where state = `(row, col, keys_bitmask
 ---
 
 ### Code Skeleton
-```python
-from collections import deque
+```java
+import java.util.*;
 
-# Minimum Knight Moves (LC 1197)
-def minKnightMoves(x, y):
-    x, y = abs(x), abs(y)   # symmetry
-    queue = deque([(0, 0, 0)])
-    visited = {(0, 0)}
-    dirs = [(2,1),(2,-1),(-2,1),(-2,-1),(1,2),(1,-2),(-1,2),(-1,-2)]
-    while queue:
-        r, c, steps = queue.popleft()
-        if r == x and c == y: return steps
-        for dr, dc in dirs:
-            nr, nc = r+dr, c+dc
-            if (nr, nc) not in visited and nr >= -1 and nc >= -1:
-                visited.add((nr, nc))
-                queue.append((nr, nc, steps + 1))
-    return -1
+class Solution {
 
-# Snakes and Ladders (LC 909)
-def snakesAndLadders(board):
-    n = len(board)
+    // Minimum Knight Moves (LC 1197)
+    public static int minKnightMoves(int x, int y) {
+        x = Math.abs(x);
+        y = Math.abs(y); // symmetry
+        Deque<int[]> queue = new ArrayDeque<>();
+        queue.addLast(new int[]{0, 0, 0});
+        Set<String> visited = new HashSet<>();
+        visited.add("0,0");
+        int[][] dirs = {{2,1},{2,-1},{-2,1},{-2,-1},{1,2},{1,-2},{-1,2},{-1,-2}};
+        while (!queue.isEmpty()) {
+            int[] cur = queue.pollFirst();
+            int r = cur[0], c = cur[1], steps = cur[2];
+            if (r == x && c == y) return steps;
+            for (int[] d : dirs) {
+                int nr = r + d[0], nc = c + d[1];
+                String key = nr + "," + nc;
+                if (!visited.contains(key) && nr >= -1 && nc >= -1) {
+                    visited.add(key);
+                    queue.addLast(new int[]{nr, nc, steps + 1});
+                }
+            }
+        }
+        return -1;
+    }
 
-    def cell_to_rc(s):
-        s -= 1
-        row, col = s // n, s % n
-        if row % 2 == 1:
-            col = n - 1 - col
-        return n - 1 - row, col
+    // Snakes and Ladders (LC 909)
+    public static int snakesAndLadders(int[][] board) {
+        int n = board.length;
 
-    visited = {1}
-    queue = deque([(1, 0)])   # (cell, moves)
-    while queue:
-        cell, moves = queue.popleft()
-        for roll in range(1, 7):
-            next_cell = cell + roll
-            if next_cell > n * n: break
-            r, c = cell_to_rc(next_cell)
-            if board[r][c] != -1:
-                next_cell = board[r][c]   # follow snake or ladder
-            if next_cell == n * n: return moves + 1
-            if next_cell not in visited:
-                visited.add(next_cell)
-                queue.append((next_cell, moves + 1))
-    return -1
+        // Convert cell number to (row, col)
+        int[] cellToRC = new int[n * n + 1];
+        // helper: returns {row, col} for cell s (1-indexed)
+        // (inlined below for clarity)
 
-# Shortest Path to Get All Keys (LC 864)
-def shortestPathAllKeys(grid):
-    rows, cols = len(grid), len(grid[0])
-    start_r = start_c = 0
-    total_keys = 0
-    for r in range(rows):
-        for c in range(cols):
-            ch = grid[r][c]
-            if ch == '@': start_r, start_c = r, c
-            if ch.islower(): total_keys += 1
+        Set<Integer> visited = new HashSet<>();
+        visited.add(1);
+        Deque<int[]> queue = new ArrayDeque<>();
+        queue.addLast(new int[]{1, 0}); // (cell, moves)
+        while (!queue.isEmpty()) {
+            int[] cur = queue.pollFirst();
+            int cell = cur[0], moves = cur[1];
+            for (int roll = 1; roll <= 6; roll++) {
+                int next = cell + roll;
+                if (next > n * n) break;
+                int s = next - 1;
+                int row = s / n;
+                int col = s % n;
+                if (row % 2 == 1) col = n - 1 - col;
+                row = n - 1 - row;
+                if (board[row][col] != -1) next = board[row][col]; // follow snake or ladder
+                if (next == n * n) return moves + 1;
+                if (!visited.contains(next)) {
+                    visited.add(next);
+                    queue.addLast(new int[]{next, moves + 1});
+                }
+            }
+        }
+        return -1;
+    }
 
-    all_keys = (1 << total_keys) - 1
-    queue = deque([(start_r, start_c, 0, 0)])   # (r, c, keys_bitmask, steps)
-    visited = {(start_r, start_c, 0)}
-    dirs = [(0,1),(0,-1),(1,0),(-1,0)]
+    // Shortest Path to Get All Keys (LC 864)
+    public static int shortestPathAllKeys(String[] grid) {
+        int rows = grid.length, cols = grid[0].length();
+        int startR = 0, startC = 0;
+        int totalKeys = 0;
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                char ch = grid[r].charAt(c);
+                if (ch == '@') { startR = r; startC = c; }
+                if (Character.isLowerCase(ch)) totalKeys++;
+            }
+        }
+        int allKeys = (1 << totalKeys) - 1;
+        Deque<int[]> queue = new ArrayDeque<>();
+        queue.addLast(new int[]{startR, startC, 0, 0}); // (r, c, keys_bitmask, steps)
+        Set<String> visited = new HashSet<>();
+        visited.add(startR + "," + startC + "," + 0);
+        int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0}};
 
-    while queue:
-        r, c, keys, steps = queue.popleft()
-        for dr, dc in dirs:
-            nr, nc = r+dr, c+dc
-            if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] != '#':
-                ch = grid[nr][nc]
-                new_keys = keys
-                if ch.isupper():                       # lock
-                    if not (keys >> (ord(ch) - ord('A'))) & 1:
-                        continue                        # don't have the key
-                elif ch.islower():                     # key
-                    new_keys |= (1 << (ord(ch) - ord('a')))
-                if new_keys == all_keys: return steps + 1
-                state = (nr, nc, new_keys)
-                if state not in visited:
-                    visited.add(state)
-                    queue.append((nr, nc, new_keys, steps + 1))
-    return -1
+        while (!queue.isEmpty()) {
+            int[] cur = queue.pollFirst();
+            int r = cur[0], c = cur[1], keys = cur[2], steps = cur[3];
+            for (int[] d : dirs) {
+                int nr = r + d[0], nc = c + d[1];
+                if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+                char ch = grid[nr].charAt(nc);
+                if (ch == '#') continue;
+                int newKeys = keys;
+                if (Character.isUpperCase(ch)) {         // lock
+                    if (((keys >> (ch - 'A')) & 1) == 0) continue; // don't have key
+                } else if (Character.isLowerCase(ch)) { // key
+                    newKeys |= (1 << (ch - 'a'));
+                }
+                if (newKeys == allKeys) return steps + 1;
+                String state = nr + "," + nc + "," + newKeys;
+                if (!visited.contains(state)) {
+                    visited.add(state);
+                    queue.addLast(new int[]{nr, nc, newKeys, steps + 1});
+                }
+            }
+        }
+        return -1;
+    }
+}
 ```
 
 ---
@@ -209,7 +238,7 @@ After each: state time complexity, space complexity, and one edge case aloud.
 | Q | A |
 |---|---|
 | How do you handle symmetry in Minimum Knight Moves BFS? | Use `(abs(x), abs(y))` as the target — by symmetry, all four quadrants require the same number of moves. Also bound the search space to `r >= -1, c >= -1` to avoid infinite expansion. |
-| What is the boustrophedon conversion in Snakes and Ladders? | Cell `s` (1-indexed): `s -= 1; row = s // n; col = s % n; if row % 2 == 1: col = n-1-col; row = n-1-row`. Even rows go left-to-right; odd rows right-to-left; row 0 is at the top of the grid (row n-1 is bottom). |
+| What is the boustrophedon conversion in Snakes and Ladders? | Cell `s` (1-indexed): `s -= 1; row = s / n; col = s % n; if row % 2 == 1: col = n-1-col; row = n-1-row`. Even rows go left-to-right; odd rows right-to-left; row 0 is at the top of the grid (row n-1 is bottom). |
 | What is the state space size for Shortest Path to Get All Keys? | `m × n × 2^k` where k = number of keys (at most 6 → 2^6 = 64 bitmask states per cell). Visited set uses `(row, col, keys_bitmask)` triples. |
 | How does consistent hashing reduce resharding when adding a node? | Keys are assigned to the nearest clockwise node on a hash ring. Adding a node only moves keys between the new node and its predecessor — O(keys/N) moved vs O(keys) in naive `key % N` hashing. |
 | What is the Quorum condition R + W > N and why does it guarantee consistency? | With N replicas, if W nodes must ack a write and R nodes must respond to a read, then R + W > N means the read set and write set must overlap by at least one node — that node has the latest write, ensuring the read sees it. |

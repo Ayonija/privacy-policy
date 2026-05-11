@@ -42,42 +42,58 @@ A HashMap transforms a recognition problem into an O(1) lookup. The key insight 
 ---
 
 ### Code Skeleton
-```python
-# Group Anagrams (LC 49)
-from collections import defaultdict
-def group_anagrams(strs):
-    groups = defaultdict(list)
-    for s in strs:
-        key = tuple(sorted(s))   # or: count array as tuple
-        groups[key].append(s)
-    return list(groups.values())
+```java
+class Solution {
+    // Group Anagrams (LC 49)
+    public static List<List<String>> groupAnagrams(String[] strs) {
+        Map<String, List<String>> groups = new HashMap<>();
+        for (String s : strs) {
+            char[] chars = s.toCharArray();
+            Arrays.sort(chars);
+            String key = new String(chars);   // sorted string as canonical key
+            groups.computeIfAbsent(key, k -> new ArrayList<>()).add(s);
+        }
+        return new ArrayList<>(groups.values());
+    }
 
-# Longest Consecutive Sequence (LC 128)
-def longest_consecutive(nums):
-    num_set = set(nums)
-    best = 0
-    for n in num_set:
-        if n - 1 not in num_set:          # start of a streak
-            length = 1
-            while n + length in num_set:
-                length += 1
-            best = max(best, length)
-    return best
+    // Longest Consecutive Sequence (LC 128)
+    public static int longestConsecutive(int[] nums) {
+        Set<Integer> numSet = new HashSet<>();
+        for (int n : nums) numSet.add(n);
+        int best = 0;
+        for (int n : numSet) {
+            if (!numSet.contains(n - 1)) {          // start of a streak
+                int length = 1;
+                while (numSet.contains(n + length)) {
+                    length++;
+                }
+                best = Math.max(best, length);
+            }
+        }
+        return best;
+    }
 
-# Minimum Window Substring (LC 76) — skeleton
-def min_window(s, t):
-    need = {}   # freq map of t
-    have = {}   # freq map of current window
-    formed = 0  # how many unique chars in t are satisfied
-    required = len(set(t))
-    left = 0
-    result = (float('inf'), 0, 0)  # (length, left, right)
-    for right, ch in enumerate(s):
-        # 1. expand: add s[right] to have
-        # 2. if have[ch] == need[ch]: formed += 1
-        # 3. while formed == required: try to contract left
-        pass
-    return "" if result[0] == float('inf') else s[result[1]:result[2]+1]
+    // Minimum Window Substring (LC 76) — skeleton
+    public static String minWindow(String s, String t) {
+        Map<Character, Integer> need = new HashMap<>();   // freq map of t
+        Map<Character, Integer> have = new HashMap<>();   // freq map of current window
+        int formed = 0;  // how many unique chars in t are satisfied
+        int required = 0;
+        for (char c : t.toCharArray()) {
+            need.put(c, need.getOrDefault(c, 0) + 1);
+        }
+        required = need.size();
+        int left = 0;
+        int[] result = {Integer.MAX_VALUE, 0, 0};  // {length, left, right}
+        for (int right = 0; right < s.length(); right++) {
+            // 1. expand: add s[right] to have
+            // 2. if have[ch] == need[ch]: formed += 1
+            // 3. while formed == required: try to contract left
+            // TODO: implement
+        }
+        return result[0] == Integer.MAX_VALUE ? "" : s.substring(result[1], result[2] + 1);
+    }
+}
 ```
 
 ---

@@ -50,76 +50,108 @@ Graph with edge travel times and per-city fees. Reach city `n-1` within `maxTime
 ---
 
 ### Code Skeleton
-```python
-import heapq
-from math import inf
+```java
+import java.util.*;
 
-# Find City With Smallest Neighbors (LC 1334)
-def findTheCity(n, edges, distanceThreshold):
-    dist = [[inf] * n for _ in range(n)]
-    for i in range(n): dist[i][i] = 0
-    for u, v, w in edges:
-        dist[u][v] = w
-        dist[v][u] = w
-    for k in range(n):
-        for i in range(n):
-            for j in range(n):
-                if dist[i][k] + dist[k][j] < dist[i][j]:
-                    dist[i][j] = dist[i][k] + dist[k][j]
-    ans = -1
-    min_count = inf
-    for i in range(n):
-        count = sum(1 for j in range(n) if i != j and dist[i][j] <= distanceThreshold)
-        if count <= min_count:   # <= keeps the largest index on ties
-            min_count = count
-            ans = i
-    return ans
+class Solution {
 
-# Number of Ways to Arrive (LC 1976)
-def countPaths(n, roads):
-    MOD = 10**9 + 7
-    graph = [[] for _ in range(n)]
-    for u, v, t in roads:
-        graph[u].append((v, t))
-        graph[v].append((u, t))
-    dist = [inf] * n
-    ways = [0] * n
-    dist[0] = 0; ways[0] = 1
-    heap = [(0, 0)]   # (dist, node)
-    while heap:
-        d, u = heapq.heappop(heap)
-        if d > dist[u]: continue
-        for v, w in graph[u]:
-            new_d = dist[u] + w
-            if new_d < dist[v]:
-                dist[v] = new_d
-                ways[v] = ways[u]
-                heapq.heappush(heap, (new_d, v))
-            elif new_d == dist[v]:
-                ways[v] = (ways[v] + ways[u]) % MOD
-    return ways[n - 1]
+    // Find City With Smallest Neighbors (LC 1334)
+    public static int findTheCity(int n, int[][] edges, int distanceThreshold) {
+        int[][] dist = new int[n][n];
+        for (int[] row : dist) Arrays.fill(row, Integer.MAX_VALUE);
+        for (int i = 0; i < n; i++) dist[i][i] = 0;
+        for (int[] e : edges) {
+            dist[e[0]][e[1]] = e[2];
+            dist[e[1]][e[0]] = e[2];
+        }
+        for (int k = 0; k < n; k++) {
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    if (dist[i][k] != Integer.MAX_VALUE && dist[k][j] != Integer.MAX_VALUE
+                            && dist[i][k] + dist[k][j] < dist[i][j]) {
+                        dist[i][j] = dist[i][k] + dist[k][j];
+                    }
+                }
+            }
+        }
+        int ans = -1;
+        int minCount = Integer.MAX_VALUE;
+        for (int i = 0; i < n; i++) {
+            int count = 0;
+            for (int j = 0; j < n; j++) {
+                if (i != j && dist[i][j] <= distanceThreshold) count++;
+            }
+            if (count <= minCount) { // <= keeps the largest index on ties
+                minCount = count;
+                ans = i;
+            }
+        }
+        return ans;
+    }
 
-# Min Cost to Reach Destination in Time (LC 1928) — 2D Bellman-Ford
-def minCost(maxTime, edges, passingFees):
-    n = len(passingFees)
-    INF = float('inf')
-    # dp[t][v] = minimum fee to reach city v using exactly t time
-    dp = [[INF] * n for _ in range(maxTime + 1)]
-    dp[0][0] = passingFees[0]
-    for t in range(1, maxTime + 1):
-        dp[t][0] = passingFees[0]   # staying at city 0 (no, start fresh each time)
-    # Reset: dp[0][0] = passingFees[0], all others INF
-    dp = [[INF] * n for _ in range(maxTime + 1)]
-    dp[0][0] = passingFees[0]
-    for t in range(1, maxTime + 1):
-        for u, v, w in edges:
-            if t >= w:
-                if dp[t - w][u] != INF:
-                    dp[t][v] = min(dp[t][v], dp[t - w][u] + passingFees[v])
-                if dp[t - w][v] != INF:
-                    dp[t][u] = min(dp[t][u], dp[t - w][v] + passingFees[u])
-    ans = min(dp[t][n - 1] for t in range(maxTime + 1))
-    return ans if ans != INF else -1
+    // Number of Ways to Arrive (LC 1976)
+    public static int countPaths(int n, int[][] roads) {
+        int MOD = 1_000_000_007;
+        List<int[]>[] graph = new ArrayList[n];
+        for (int i = 0; i < n; i++) graph[i] = new ArrayList<>();
+        for (int[] r : roads) {
+            graph[r[0]].add(new int[]{r[1], r[2]});
+            graph[r[1]].add(new int[]{r[0], r[2]});
+        }
+        long[] dist = new long[n];
+        long[] ways = new long[n];
+        Arrays.fill(dist, Long.MAX_VALUE);
+        dist[0] = 0;
+        ways[0] = 1;
+        PriorityQueue<long[]> heap = new PriorityQueue<>((a, b) -> Long.compare(a[0], b[0]));
+        heap.offer(new long[]{0, 0}); // (dist, node)
+        while (!heap.isEmpty()) {
+            long[] top = heap.poll();
+            long d = top[0];
+            int u = (int) top[1];
+            if (d > dist[u]) continue;
+            for (int[] nb : graph[u]) {
+                int v = nb[0], w = nb[1];
+                long newD = dist[u] + w;
+                if (newD < dist[v]) {
+                    dist[v] = newD;
+                    ways[v] = ways[u];
+                    heap.offer(new long[]{newD, v});
+                } else if (newD == dist[v]) {
+                    ways[v] = (ways[v] + ways[u]) % MOD;
+                }
+            }
+        }
+        return (int) ways[n - 1];
+    }
+
+    // Min Cost to Reach Destination in Time (LC 1928) — 2D Bellman-Ford
+    public static int minCost(int maxTime, int[][] edges, int[] passingFees) {
+        int n = passingFees.length;
+        // dp[t][v] = minimum fee to reach city v using exactly t time
+        int[][] dp = new int[maxTime + 1][n];
+        for (int[] row : dp) Arrays.fill(row, Integer.MAX_VALUE);
+        dp[0][0] = passingFees[0];
+        for (int t = 1; t <= maxTime; t++) {
+            for (int[] e : edges) {
+                int u = e[0], v = e[1], w = e[2];
+                if (t >= w) {
+                    if (dp[t - w][u] != Integer.MAX_VALUE) {
+                        dp[t][v] = Math.min(dp[t][v], dp[t - w][u] + passingFees[v]);
+                    }
+                    if (dp[t - w][v] != Integer.MAX_VALUE) {
+                        dp[t][u] = Math.min(dp[t][u], dp[t - w][v] + passingFees[u]);
+                    }
+                }
+            }
+        }
+        int ans = Integer.MAX_VALUE;
+        for (int t = 0; t <= maxTime; t++) {
+            ans = Math.min(ans, dp[t][n - 1]);
+        }
+        return ans == Integer.MAX_VALUE ? -1 : ans;
+    }
+}
 ```
 
 ---
@@ -188,7 +220,7 @@ Read path:
 - If filter says "definitely not present" → skip this SSTable entirely
 - Reduces SSTable reads to only those likely to contain the key
 
-**Interview talking point:** "A naive KV store does random disk writes — catastrophic for HDD and suboptimal for SSD. The LSM Tree converts all writes to sequential appends (WAL + MemTable flush), which maximises disk throughput. The trade-off is read amplification: a read may need to search multiple SSTables. Bloom filters reduce this to O(1) SSTable checks for non-existent keys."
+**Interview talking point:** "A naive KV store does random disk writes — catastrophic for HDD and suboptimal for SSD. The LSM Tree converts all writes to sequential appends (WAL + MemTable flush → SSTable), which maximises disk throughput. The trade-off is read amplification: a read may need to search multiple SSTables. Bloom filters reduce this to O(1) SSTable checks for non-existent keys."
 
 ---
 

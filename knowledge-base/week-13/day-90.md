@@ -38,59 +38,80 @@ Each event has a `[start, end]` day range; you can attend at most one event per 
 ---
 
 ### Code Skeleton
-```python
-import heapq
-from collections import Counter
+```java
+import java.util.*;
 
-# Monotone Increasing Digits (LC 738)
-def monotoneIncreasingDigits(n):
-    digits = list(str(n))
-    mark = len(digits)   # position from which we fill '9'
-    for i in range(len(digits) - 1, 0, -1):
-        if digits[i] < digits[i - 1]:
-            digits[i - 1] = str(int(digits[i - 1]) - 1)
-            mark = i
-    for i in range(mark, len(digits)):
-        digits[i] = '9'
-    return int(''.join(digits))
+// Monotone Increasing Digits (LC 738)
+class Solution {
+    public int monotoneIncreasingDigits(int n) {
+        char[] digits = String.valueOf(n).toCharArray();
+        int mark = digits.length; // position from which we fill '9'
+        for (int i = digits.length - 1; i > 0; i--) {
+            if (digits[i] < digits[i - 1]) {
+                digits[i - 1] = (char)(digits[i - 1] - 1);
+                mark = i;
+            }
+        }
+        for (int i = mark; i < digits.length; i++) {
+            digits[i] = '9';
+        }
+        return Integer.parseInt(new String(digits));
+    }
+}
 
-# Minimum Deletions to Make Character Frequencies Unique (LC 1647)
-def minDeletions(s):
-    freqs = sorted(Counter(s).values(), reverse=True)
-    seen = set()
-    deletions = 0
-    for freq in freqs:
-        while freq > 0 and freq in seen:
-            freq -= 1
-            deletions += 1
-        if freq > 0:
-            seen.add(freq)
-    return deletions
+// Minimum Deletions to Make Character Frequencies Unique (LC 1647)
+class Solution {
+    public int minDeletions(String s) {
+        int[] freq = new int[26];
+        for (char c : s.toCharArray()) freq[c - 'a']++;
+        // Sort frequencies descending
+        Integer[] freqs = new Integer[26];
+        for (int i = 0; i < 26; i++) freqs[i] = freq[i];
+        Arrays.sort(freqs, Collections.reverseOrder());
+        Set<Integer> seen = new HashSet<>();
+        int deletions = 0;
+        for (int f : freqs) {
+            while (f > 0 && seen.contains(f)) {
+                f--;
+                deletions++;
+            }
+            if (f > 0) seen.add(f);
+        }
+        return deletions;
+    }
+}
 
-# Maximum Number of Events That Can Be Attended (LC 1353)
-def maxEvents(events):
-    events.sort()   # sort by start day
-    heap = []       # min-heap of end days
-    day = 0
-    attended = 0
-    i = 0
-    n = len(events)
-    max_day = max(e[1] for e in events)
+// Maximum Number of Events That Can Be Attended (LC 1353)
+class Solution {
+    public int maxEvents(int[][] events) {
+        Arrays.sort(events, (a, b) -> a[0] - b[0]); // sort by start day
+        PriorityQueue<Integer> heap = new PriorityQueue<>(); // min-heap of end days
+        int attended = 0;
+        int i = 0;
+        int n = events.length;
+        int maxDay = 0;
+        for (int[] e : events) maxDay = Math.max(maxDay, e[1]);
 
-    for day in range(1, max_day + 1):
-        # Add all events starting today
-        while i < n and events[i][0] == day:
-            heapq.heappush(heap, events[i][1])
-            i += 1
-        # Remove expired events
-        while heap and heap[0] < day:
-            heapq.heappop(heap)
-        # Attend the event ending soonest
-        if heap:
-            heapq.heappop(heap)
-            attended += 1
+        for (int day = 1; day <= maxDay; day++) {
+            // Add all events starting today
+            while (i < n && events[i][0] == day) {
+                heap.offer(events[i][1]);
+                i++;
+            }
+            // Remove expired events
+            while (!heap.isEmpty() && heap.peek() < day) {
+                heap.poll();
+            }
+            // Attend the event ending soonest
+            if (!heap.isEmpty()) {
+                heap.poll();
+                attended++;
+            }
+        }
 
-    return attended
+        return attended;
+    }
+}
 ```
 
 ---

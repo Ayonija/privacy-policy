@@ -6,7 +6,7 @@ Solve intersection detection and in-place reordering — problems that demand bo
 
 ## DSA (2 hours)
 ### Pattern: Two Pointers on Two Lists + In-Place Reorder
-- Intersection: advance both pointers; when one reaches None, redirect it to the other list's head; they meet at the intersection node (or both hit None if no intersection) — total traversal = m + n for both.
+- Intersection: advance both pointers; when one reaches null, redirect it to the other list's head; they meet at the intersection node (or both hit null if no intersection) — total traversal = m + n for both.
 - Reorder List: find mid, reverse second half, then interleave the two halves node by node.
 - Trigger condition: "find where two lists join" OR "interleave nodes from two halves of a list."
 - Time complexity: O(m+n) for intersection, O(n) for reorder | Space complexity: O(1)
@@ -19,21 +19,32 @@ Solve intersection detection and in-place reordering — problems that demand bo
 | 3 | Reorder List | 143 | Medium | Fast/Slow + Reverse + Merge | Find mid; reverse second half; interleave first half with reversed second half |
 
 ### Code Skeleton
-```python
-# Intersection (LC 160)
-def get_intersection_node(headA, headB):
-    a, b = headA, headB
-    while a != b:
-        a = a.next if a else headB
-        b = b.next if b else headA
-    return a  # None if no intersection
+```java
+class ListNode {
+    int val;
+    ListNode next;
+    ListNode(int val) { this.val = val; }
+}
 
-# Reorder List (LC 143) — skeleton
-def reorder_list(head):
-    # 1. find mid (fast/slow)
-    # 2. reverse second half in-place
-    # 3. interleave: first, second, first.next, second.next, ...
-    pass
+class Solution {
+    // Intersection (LC 160)
+    public static ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+        ListNode a = headA, b = headB;
+        while (a != b) {
+            a = (a != null) ? a.next : headB;
+            b = (b != null) ? b.next : headA;
+        }
+        return a;  // null if no intersection
+    }
+
+    // Reorder List (LC 143) — skeleton
+    public static void reorderList(ListNode head) {
+        // 1. find mid (fast/slow)
+        // 2. reverse second half in-place
+        // 3. interleave: first, second, first.next, second.next, ...
+        // TODO: implement
+    }
+}
 ```
 
 ## System Design (1 hour)

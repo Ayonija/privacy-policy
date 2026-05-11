@@ -42,49 +42,59 @@ After traversal, swap `first.val` and `second.val`.
 ---
 
 ### Code Skeleton
-```python
-class TreeNode:
-    def __init__(self, val=0, left=None, right=None):
-        self.val = val; self.left = left; self.right = right
+```java
+class TreeNode { int val; TreeNode left, right; TreeNode(int val) { this.val = val; } }
 
-# Validate BST (LC 98)
-def isValidBST(root):
-    def dfs(node, low, high):
-        if not node: return True
-        if not (low < node.val < high): return False
-        return dfs(node.left, low, node.val) and dfs(node.right, node.val, high)
-    return dfs(root, float('-inf'), float('inf'))
+class Solution {
+    // Validate BST (LC 98)
+    public static boolean isValidBST(TreeNode root) {
+        return dfs(root, Long.MIN_VALUE, Long.MAX_VALUE);
+    }
+    private static boolean dfs(TreeNode node, long low, long high) {
+        if (node == null) return true;
+        if (!(low < node.val && node.val < high)) return false;
+        return dfs(node.left, low, node.val) && dfs(node.right, node.val, high);
+    }
 
-# Kth Smallest in BST (LC 230)
-def kthSmallest(root, k):
-    count = [0]
-    result = [None]
-    def inorder(node):
-        if not node or result[0] is not None: return
-        inorder(node.left)
-        count[0] += 1
-        if count[0] == k:
-            result[0] = node.val
-            return
-        inorder(node.right)
-    inorder(root)
-    return result[0]
+    // Kth Smallest in BST (LC 230)
+    private int count = 0;
+    private int result = 0;
+    public int kthSmallest(TreeNode root, int k) {
+        inorder(root, k);
+        return result;
+    }
+    private void inorder(TreeNode node, int k) {
+        if (node == null || count >= k) return;
+        inorder(node.left, k);
+        count++;
+        if (count == k) {
+            result = node.val;
+            return;
+        }
+        inorder(node.right, k);
+    }
 
-# Recover BST (LC 99) — O(n) time, O(h) space
-def recoverTree(root):
-    first = second = prev = None
-    def inorder(node):
-        nonlocal first, second, prev
-        if not node: return
-        inorder(node.left)
-        if prev and prev.val > node.val:
-            if first is None:
-                first = prev     # larger node at first inversion
-            second = node        # smaller node (update on every inversion)
-        prev = node
-        inorder(node.right)
-    inorder(root)
-    first.val, second.val = second.val, first.val
+    // Recover BST (LC 99) — O(n) time, O(h) space
+    TreeNode first = null, second = null, prev = null;
+    public void recoverTree(TreeNode root) {
+        inorderRecover(root);
+        int tmp = first.val;
+        first.val = second.val;
+        second.val = tmp;
+    }
+    private void inorderRecover(TreeNode node) {
+        if (node == null) return;
+        inorderRecover(node.left);
+        if (prev != null && prev.val > node.val) {
+            if (first == null) {
+                first = prev;     // larger node at first inversion
+            }
+            second = node;        // smaller node (update on every inversion)
+        }
+        prev = node;
+        inorderRecover(node.right);
+    }
+}
 ```
 
 ---

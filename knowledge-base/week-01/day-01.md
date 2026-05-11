@@ -18,19 +18,24 @@ Build the two-pointer mental model — the most reusable O(n) technique for sort
 | 3 | 3Sum | 15 | Medium | Two Pointers + Sort | Fix one element with outer loop, run two pointers inside; skip duplicates after sorting |
 
 ### Code Skeleton
-```python
-def two_pointers_template(arr):
-    left, right = 0, len(arr) - 1
-    while left < right:
-        current = arr[left] + arr[right]   # example: pair sum
-        if current < target:
-            left += 1   # need larger value
-        elif current > target:
-            right -= 1  # need smaller value
-        else:
-            # found answer — record, then skip duplicates
-            left += 1
-            right -= 1
+```java
+class Solution {
+    public static void twoPointersTemplate(int[] arr, int target) {
+        int left = 0, right = arr.length - 1;
+        while (left < right) {
+            int current = arr[left] + arr[right];   // example: pair sum
+            if (current < target) {
+                left++;   // need larger value
+            } else if (current > target) {
+                right--;  // need smaller value
+            } else {
+                // found answer — record, then skip duplicates
+                left++;
+                right--;
+            }
+        }
+    }
+}
 ```
 
 ### Interview Tips

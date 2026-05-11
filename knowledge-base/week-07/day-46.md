@@ -38,58 +38,72 @@ BFS, tracking `(col, row)` for each node. Left child: `(col-1, row+1)`. Right ch
 ---
 
 ### Code Skeleton
-```python
-class TreeNode:
-    def __init__(self, val=0, left=None, right=None):
-        self.val = val; self.left = left; self.right = right
+```java
+import java.util.*;
 
-# Construct BT from Preorder + Inorder (LC 105)
-def buildTree_pre_in(preorder, inorder):
-    inorder_idx = {val: i for i, val in enumerate(inorder)}
-    def build(pre_start, pre_end, in_start, in_end):
-        if pre_start > pre_end: return None
-        root_val = preorder[pre_start]
-        root = TreeNode(root_val)
-        mid = inorder_idx[root_val]         # root's position in inorder
-        left_size = mid - in_start
-        root.left  = build(pre_start + 1, pre_start + left_size, in_start, mid - 1)
-        root.right = build(pre_start + left_size + 1, pre_end,   mid + 1,  in_end)
-        return root
-    return build(0, len(preorder) - 1, 0, len(inorder) - 1)
+class TreeNode { int val; TreeNode left, right; TreeNode(int val) { this.val = val; } }
 
-# Construct BT from Inorder + Postorder (LC 106)
-def buildTree_in_post(inorder, postorder):
-    inorder_idx = {val: i for i, val in enumerate(inorder)}
-    def build(in_start, in_end, post_start, post_end):
-        if in_start > in_end: return None
-        root_val = postorder[post_end]
-        root = TreeNode(root_val)
-        mid = inorder_idx[root_val]
-        left_size = mid - in_start
-        root.left  = build(in_start, mid - 1, post_start, post_start + left_size - 1)
-        root.right = build(mid + 1,  in_end,  post_start + left_size, post_end - 1)
-        return root
-    return build(0, len(inorder) - 1, 0, len(postorder) - 1)
+class Solution {
+    // Construct BT from Preorder + Inorder (LC 105)
+    public static TreeNode buildTreePreIn(int[] preorder, int[] inorder) {
+        Map<Integer, Integer> inorderIdx = new HashMap<>();
+        for (int i = 0; i < inorder.length; i++) inorderIdx.put(inorder[i], i);
+        return buildPreIn(preorder, inorderIdx, 0, preorder.length - 1, 0, inorder.length - 1);
+    }
+    private static TreeNode buildPreIn(int[] preorder, Map<Integer, Integer> inorderIdx,
+                                       int preStart, int preEnd, int inStart, int inEnd) {
+        if (preStart > preEnd) return null;
+        int rootVal = preorder[preStart];
+        TreeNode root = new TreeNode(rootVal);
+        int mid = inorderIdx.get(rootVal);         // root's position in inorder
+        int leftSize = mid - inStart;
+        root.left  = buildPreIn(preorder, inorderIdx, preStart + 1, preStart + leftSize, inStart, mid - 1);
+        root.right = buildPreIn(preorder, inorderIdx, preStart + leftSize + 1, preEnd,   mid + 1,  inEnd);
+        return root;
+    }
 
-# Vertical Order Traversal (LC 987)
-from collections import deque, defaultdict
-def verticalTraversal(root):
-    if not root: return []
-    nodes = []  # list of (col, row, val)
-    queue = deque([(root, 0, 0)])   # (node, col, row)
-    while queue:
-        node, col, row = queue.popleft()
-        nodes.append((col, row, node.val))
-        if node.left:  queue.append((node.left,  col - 1, row + 1))
-        if node.right: queue.append((node.right, col + 1, row + 1))
-    nodes.sort()   # sort by (col, row, val)
-    result = []
-    col_map = defaultdict(list)
-    for col, row, val in nodes:
-        col_map[col].append(val)
-    for col in sorted(col_map):
-        result.append(col_map[col])
-    return result
+    // Construct BT from Inorder + Postorder (LC 106)
+    public static TreeNode buildTreeInPost(int[] inorder, int[] postorder) {
+        Map<Integer, Integer> inorderIdx = new HashMap<>();
+        for (int i = 0; i < inorder.length; i++) inorderIdx.put(inorder[i], i);
+        return buildInPost(inorder, postorder, inorderIdx, 0, inorder.length - 1, 0, postorder.length - 1);
+    }
+    private static TreeNode buildInPost(int[] inorder, int[] postorder, Map<Integer, Integer> inorderIdx,
+                                        int inStart, int inEnd, int postStart, int postEnd) {
+        if (inStart > inEnd) return null;
+        int rootVal = postorder[postEnd];
+        TreeNode root = new TreeNode(rootVal);
+        int mid = inorderIdx.get(rootVal);
+        int leftSize = mid - inStart;
+        root.left  = buildInPost(inorder, postorder, inorderIdx, inStart, mid - 1, postStart, postStart + leftSize - 1);
+        root.right = buildInPost(inorder, postorder, inorderIdx, mid + 1,  inEnd,  postStart + leftSize, postEnd - 1);
+        return root;
+    }
+
+    // Vertical Order Traversal (LC 987)
+    public static List<List<Integer>> verticalTraversal(TreeNode root) {
+        if (root == null) return new ArrayList<>();
+        List<int[]> nodes = new ArrayList<>();  // [col, row, val]
+        Deque<Object[]> queue = new ArrayDeque<>();
+        queue.addLast(new Object[]{root, 0, 0});   // (node, col, row)
+        while (!queue.isEmpty()) {
+            Object[] item = queue.pollFirst();
+            TreeNode node = (TreeNode) item[0];
+            int col = (int) item[1], row = (int) item[2];
+            nodes.add(new int[]{col, row, node.val});
+            if (node.left  != null) queue.addLast(new Object[]{node.left,  col - 1, row + 1});
+            if (node.right != null) queue.addLast(new Object[]{node.right, col + 1, row + 1});
+        }
+        nodes.sort((a, b) -> a[0] != b[0] ? a[0] - b[0] : a[1] != b[1] ? a[1] - b[1] : a[2] - b[2]);
+        List<List<Integer>> result = new ArrayList<>();
+        Map<Integer, List<Integer>> colMap = new TreeMap<>();
+        for (int[] n : nodes) {
+            colMap.computeIfAbsent(n[0], k -> new ArrayList<>()).add(n[2]);
+        }
+        result.addAll(colMap.values());
+        return result;
+    }
+}
 ```
 
 ---

@@ -46,53 +46,66 @@ Rules (for each node, based on children states):
 ---
 
 ### Code Skeleton
-```python
-class TreeNode:
-    def __init__(self, val=0, left=None, right=None):
-        self.val = val; self.left = left; self.right = right
+```java
+import java.util.*;
 
-# Path Sum II (LC 113)
-def pathSum(root, targetSum):
-    result = []
-    def dfs(node, remaining, path):
-        if not node: return
-        path.append(node.val)
-        if not node.left and not node.right and remaining == node.val:
-            result.append(list(path))   # copy — not a reference
-        else:
-            dfs(node.left,  remaining - node.val, path)
-            dfs(node.right, remaining - node.val, path)
-        path.pop()   # backtrack
-    dfs(root, targetSum, [])
-    return result
+class TreeNode { int val; TreeNode left, right; TreeNode(int val) { this.val = val; } }
 
-# Sum Root to Leaf Numbers (LC 129)
-def sumNumbers(root):
-    def dfs(node, num):
-        if not node: return 0
-        num = num * 10 + node.val
-        if not node.left and not node.right:
-            return num   # leaf: full number formed
-        return dfs(node.left, num) + dfs(node.right, num)
-    return dfs(root, 0)
+class Solution {
+    // Path Sum II (LC 113)
+    public static List<List<Integer>> pathSum(TreeNode root, int targetSum) {
+        List<List<Integer>> result = new ArrayList<>();
+        dfsPath(root, targetSum, new ArrayList<>(), result);
+        return result;
+    }
+    private static void dfsPath(TreeNode node, int remaining, List<Integer> path, List<List<Integer>> result) {
+        if (node == null) return;
+        path.add(node.val);
+        if (node.left == null && node.right == null && remaining == node.val) {
+            result.add(new ArrayList<>(path));   // copy — not a reference
+        } else {
+            dfsPath(node.left,  remaining - node.val, path, result);
+            dfsPath(node.right, remaining - node.val, path, result);
+        }
+        path.remove(path.size() - 1);   // backtrack
+    }
 
-# Binary Tree Cameras (LC 968)
-def minCameraCover(root):
-    cameras = [0]
-    # States: 0 = not covered, 1 = covered (no camera), 2 = has camera
-    def dfs(node):
-        if not node: return 1   # null nodes are "covered" (don't need coverage)
-        left  = dfs(node.left)
-        right = dfs(node.right)
-        if left == 0 or right == 0:   # a child is uncovered → place camera here
-            cameras[0] += 1
-            return 2
-        if left == 2 or right == 2:   # a child has a camera → this node is covered
-            return 1
-        return 0   # both children covered but no adjacent camera → this node is uncovered
-    if dfs(root) == 0:   # root itself is uncovered
-        cameras[0] += 1
-    return cameras[0]
+    // Sum Root to Leaf Numbers (LC 129)
+    public static int sumNumbers(TreeNode root) {
+        return dfsSum(root, 0);
+    }
+    private static int dfsSum(TreeNode node, int num) {
+        if (node == null) return 0;
+        num = num * 10 + node.val;
+        if (node.left == null && node.right == null) {
+            return num;   // leaf: full number formed
+        }
+        return dfsSum(node.left, num) + dfsSum(node.right, num);
+    }
+
+    // Binary Tree Cameras (LC 968)
+    private int cameras = 0;
+    // States: 0 = not covered, 1 = covered (no camera), 2 = has camera
+    public int minCameraCover(TreeNode root) {
+        if (dfsCam(root) == 0) {   // root itself is uncovered
+            cameras++;
+        }
+        return cameras;
+    }
+    private int dfsCam(TreeNode node) {
+        if (node == null) return 1;   // null nodes are "covered" (don't need coverage)
+        int left  = dfsCam(node.left);
+        int right = dfsCam(node.right);
+        if (left == 0 || right == 0) {   // a child is uncovered → place camera here
+            cameras++;
+            return 2;
+        }
+        if (left == 2 || right == 2) {   // a child has a camera → this node is covered
+            return 1;
+        }
+        return 0;   // both children covered but no adjacent camera → this node is uncovered
+    }
+}
 ```
 
 ---

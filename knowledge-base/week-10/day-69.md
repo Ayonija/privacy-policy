@@ -10,7 +10,7 @@ Minimum Cost to Make a Valid Path encodes turning directions as edge weights 0 o
 ### Pattern: 0-1 BFS on directed grid + DFS on equation multiplication graph + Dijkstra with sub-node counting
 
 **Minimum Cost to Make a Valid Path in a Grid (LC 1368):**
-Each cell has a direction arrow (→, ←, ↑, ↓). Moving in the arrow's direction costs 0; moving in any other direction costs 1 (you change the arrow). Find the minimum cost to go from (0,0) to (m-1, n-1). 0-1 BFS: follow the arrow (cost 0, `appendleft`) or override it (cost 1, `append`).
+Each cell has a direction arrow (→, ←, ↑, ↓). Moving in the arrow's direction costs 0; moving in any other direction costs 1 (you change the arrow). Find the minimum cost to go from (0,0) to (m-1, n-1). 0-1 BFS: follow the arrow (cost 0, `addFirst`) or override it (cost 1, `addLast`).
 
 **Evaluate Division (LC 399):**
 Given equations like `a / b = 2.0`, answer queries like `a / c = ?`. Build a weighted directed graph: edge `a → b` with weight `val`; edge `b → a` with weight `1/val`. To answer `a / c`: DFS/BFS from a to c, multiplying edge weights along the path. If a or c is not in the graph, return -1.
@@ -36,88 +36,121 @@ Algorithm:
 ### Problems
 | # | Problem | LC # | Difficulty | Pattern | Key Insight |
 |---|---------|------|------------|---------|-------------|
-| 1 | Min Cost Valid Path in Grid | 1368 | Medium | 0-1 BFS; follow arrow = cost 0; override = cost 1 | Grid cells as nodes; 4 directions; `appendleft` if direction matches arrow |
+| 1 | Min Cost Valid Path in Grid | 1368 | Medium | 0-1 BFS; follow arrow = cost 0; override = cost 1 | Grid cells as nodes; 4 directions; `addFirst` if direction matches arrow |
 | 2 | Evaluate Division | 399 | Medium | Weighted directed graph + DFS/BFS product path | Edge `a→b` weight = val; `b→a` weight = 1/val; DFS from src to dst; multiply weights |
 | 3 | Reachable Nodes in Subdivided Graph | 882 | Hard | Dijkstra + sub-node counting per edge | `dist[v]` = min steps to original node v; sub-nodes reachable from each side = `maxMoves - dist[endpoint]` |
 
 ---
 
 ### Code Skeleton
-```python
-from collections import deque, defaultdict
-import heapq
+```java
+import java.util.*;
 
-# Min Cost Valid Path in Grid (LC 1368) — 0-1 BFS
-def minCost(grid):
-    rows, cols = len(grid), len(grid[0])
-    # directions indexed by cell value: 1=right, 2=left, 3=down, 4=up
-    dir_map = {1: (0,1), 2: (0,-1), 3: (1,0), 4: (-1,0)}
-    dirs = [(0,1),(0,-1),(1,0),(-1,0)]
-    dist = [[float('inf')] * cols for _ in range(rows)]
-    dist[0][0] = 0
-    dq = deque([(0, 0, 0)])   # (cost, row, col)
-    while dq:
-        cost, r, c = dq.popleft()
-        if cost > dist[r][c]: continue
-        for d, (dr, dc) in enumerate(dirs, 1):   # d = direction number
-            nr, nc = r+dr, c+dc
-            if 0 <= nr < rows and 0 <= nc < cols:
-                move_cost = 0 if grid[r][c] == d else 1
-                new_cost = cost + move_cost
-                if new_cost < dist[nr][nc]:
-                    dist[nr][nc] = new_cost
-                    if move_cost == 0:
-                        dq.appendleft((new_cost, nr, nc))
-                    else:
-                        dq.append((new_cost, nr, nc))
-    return dist[rows-1][cols-1]
+class Solution {
 
-# Evaluate Division (LC 399)
-def calcEquation(equations, values, queries):
-    graph = defaultdict(dict)
-    for (a, b), val in zip(equations, values):
-        graph[a][b] = val
-        graph[b][a] = 1.0 / val
+    // Min Cost Valid Path in Grid (LC 1368) — 0-1 BFS
+    public static int minCost(int[][] grid) {
+        int rows = grid.length, cols = grid[0].length;
+        // directions indexed by cell value: 1=right, 2=left, 3=down, 4=up
+        int[][] dirMap = {{0,1},{0,-1},{1,0},{-1,0}};
+        int[][] dist = new int[rows][cols];
+        for (int[] row : dist) Arrays.fill(row, Integer.MAX_VALUE);
+        dist[0][0] = 0;
+        Deque<int[]> dq = new ArrayDeque<>();
+        dq.addLast(new int[]{0, 0, 0}); // (cost, row, col)
+        while (!dq.isEmpty()) {
+            int[] cur = dq.pollFirst();
+            int cost = cur[0], r = cur[1], c = cur[2];
+            if (cost > dist[r][c]) continue;
+            for (int d = 0; d < 4; d++) {
+                int nr = r + dirMap[d][0], nc = c + dirMap[d][1];
+                if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                    int moveCost = (grid[r][c] == d + 1) ? 0 : 1;
+                    int newCost = cost + moveCost;
+                    if (newCost < dist[nr][nc]) {
+                        dist[nr][nc] = newCost;
+                        if (moveCost == 0) dq.addFirst(new int[]{newCost, nr, nc});
+                        else dq.addLast(new int[]{newCost, nr, nc});
+                    }
+                }
+            }
+        }
+        return dist[rows - 1][cols - 1];
+    }
 
-    def dfs(src, dst, visited):
-        if src not in graph or dst not in graph: return -1.0
-        if src == dst: return 1.0
-        visited.add(src)
-        for nb, weight in graph[src].items():
-            if nb not in visited:
-                result = dfs(nb, dst, visited)
-                if result != -1.0:
-                    return weight * result
-        return -1.0
+    // Evaluate Division (LC 399)
+    public static double[] calcEquation(List<List<String>> equations, double[] values, List<List<String>> queries) {
+        Map<String, Map<String, Double>> graph = new HashMap<>();
+        for (int i = 0; i < equations.size(); i++) {
+            String a = equations.get(i).get(0), b = equations.get(i).get(1);
+            double val = values[i];
+            graph.computeIfAbsent(a, x -> new HashMap<>()).put(b, val);
+            graph.computeIfAbsent(b, x -> new HashMap<>()).put(a, 1.0 / val);
+        }
+        double[] result = new double[queries.size()];
+        for (int i = 0; i < queries.size(); i++) {
+            String src = queries.get(i).get(0), dst = queries.get(i).get(1);
+            result[i] = dfsDivision(src, dst, new HashSet<>(), graph);
+        }
+        return result;
+    }
 
-    return [dfs(src, dst, set()) for src, dst in queries]
+    private static double dfsDivision(String src, String dst, Set<String> visited, Map<String, Map<String, Double>> graph) {
+        if (!graph.containsKey(src) || !graph.containsKey(dst)) return -1.0;
+        if (src.equals(dst)) return 1.0;
+        visited.add(src);
+        for (Map.Entry<String, Double> e : graph.get(src).entrySet()) {
+            String nb = e.getKey();
+            double weight = e.getValue();
+            if (!visited.contains(nb)) {
+                double result = dfsDivision(nb, dst, visited, graph);
+                if (result != -1.0) return weight * result;
+            }
+        }
+        return -1.0;
+    }
 
-# Reachable Nodes in Subdivided Graph (LC 882)
-def reachableNodes(edges, maxMoves, n):
-    graph = defaultdict(list)
-    for u, v, cnt in edges:
-        graph[u].append((v, cnt + 1))   # cost = cnt+1 to cross from u to v
-        graph[v].append((u, cnt + 1))
-    # Dijkstra from node 0
-    dist = [float('inf')] * n
-    dist[0] = 0
-    heap = [(0, 0)]
-    while heap:
-        d, u = heapq.heappop(heap)
-        if d > dist[u]: continue
-        for v, w in graph[u]:
-            if dist[u] + w < dist[v]:
-                dist[v] = dist[u] + w
-                heapq.heappush(heap, (dist[v], v))
-    # Count reachable original nodes
-    reachable = sum(1 for v in range(n) if dist[v] <= maxMoves)
-    # Count reachable sub-nodes per original edge
-    edge_map = {(min(u,v), max(u,v)): cnt for u, v, cnt in edges}
-    for u, v, cnt in edges:
-        from_u = max(0, maxMoves - dist[u]) if dist[u] <= maxMoves else 0
-        from_v = max(0, maxMoves - dist[v]) if dist[v] <= maxMoves else 0
-        reachable += min(cnt, from_u + from_v)
-    return reachable
+    // Reachable Nodes in Subdivided Graph (LC 882)
+    public static int reachableNodes(int[][] edges, int maxMoves, int n) {
+        List<int[]>[] graph = new ArrayList[n];
+        for (int i = 0; i < n; i++) graph[i] = new ArrayList<>();
+        for (int[] e : edges) {
+            graph[e[0]].add(new int[]{e[1], e[2] + 1}); // cost = cnt+1
+            graph[e[1]].add(new int[]{e[0], e[2] + 1});
+        }
+        // Dijkstra from node 0
+        int[] dist = new int[n];
+        Arrays.fill(dist, Integer.MAX_VALUE);
+        dist[0] = 0;
+        PriorityQueue<int[]> heap = new PriorityQueue<>((a, b) -> a[0] - b[0]);
+        heap.offer(new int[]{0, 0});
+        while (!heap.isEmpty()) {
+            int[] top = heap.poll();
+            int d = top[0], u = top[1];
+            if (d > dist[u]) continue;
+            for (int[] nb : graph[u]) {
+                int v = nb[0], w = nb[1];
+                if (dist[u] + w < dist[v]) {
+                    dist[v] = dist[u] + w;
+                    heap.offer(new int[]{dist[v], v});
+                }
+            }
+        }
+        // Count reachable original nodes
+        int reachable = 0;
+        for (int v = 0; v < n; v++) {
+            if (dist[v] <= maxMoves) reachable++;
+        }
+        // Count reachable sub-nodes per original edge
+        for (int[] e : edges) {
+            int u = e[0], v = e[1], cnt = e[2];
+            int fromU = (dist[u] <= maxMoves) ? Math.max(0, maxMoves - dist[u]) : 0;
+            int fromV = (dist[v] <= maxMoves) ? Math.max(0, maxMoves - dist[v]) : 0;
+            reachable += Math.min(cnt, fromU + fromV);
+        }
+        return reachable;
+    }
+}
 ```
 
 ---
@@ -195,7 +228,7 @@ After each: state time complexity, space complexity, and one edge case aloud.
 
 | Q | A |
 |---|---|
-| How does 0-1 BFS handle the direction-cost grid in Min Cost Valid Path? | Build a deque. For each neighbour: cost = 0 if the cell's arrow points that way, else 1. `appendleft` for cost 0 (same distance level), `append` for cost 1 (next level). |
+| How does 0-1 BFS handle the direction-cost grid in Min Cost Valid Path? | Build a deque. For each neighbour: cost = 0 if the cell's arrow points that way, else 1. `addFirst` for cost 0 (same distance level), `addLast` for cost 1 (next level). |
 | How do you build the weighted graph for Evaluate Division? | For `a / b = val`: add edge `a → b` with weight `val` and edge `b → a` with weight `1/val`. DFS from `src` to `dst`, multiplying edge weights; return -1.0 if unreachable. |
 | In Reachable Nodes in Subdivided Graph, how do you count sub-nodes on an edge? | After Dijkstra: `from_u = max(0, maxMoves - dist[u])` if u is reachable; `from_v = max(0, maxMoves - dist[v])` if v is reachable. Sub-nodes on this edge = `min(cnt, from_u + from_v)` (cap at cnt to avoid double-counting). |
 | When does a URL shortener prefer SQL over an LSM-based KV store? | SQL is preferable when: (1) schema is fixed and simple, (2) writes are moderate (< 10K/sec), (3) reads need strong consistency, (4) B+Tree index on short_code gives sub-millisecond lookups. LSM is for write-heavy workloads where random-write B+Tree performance degrades. |

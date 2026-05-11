@@ -19,31 +19,50 @@ Tackle sliding window problems where the optimal window is non-obvious — inclu
 | 3 | Maximum Points You Can Obtain from Cards | 1423 | Medium | Fixed Sliding Window (complement) | Taking k cards from ends = leaving n-k in the middle; minimise the sum of the middle window of size n-k |
 
 ### Code Skeleton
-```python
-# Grumpy Bookstore Owner (LC 1052)
-def max_satisfied(customers, grumpy, minutes):
-    # Step 1: baseline — always-satisfied customers (where grumpy[i] == 0)
-    base = sum(c for c, g in zip(customers, grumpy) if g == 0)
-    # Step 2: slide a window of size `minutes` to maximise extra gained from suppression
-    gain = window = sum(customers[i] * grumpy[i] for i in range(minutes))
-    for i in range(minutes, len(customers)):
-        window += customers[i] * grumpy[i]
-        window -= customers[i - minutes] * grumpy[i - minutes]
-        gain = max(gain, window)
-    return base + gain
+```java
+class Solution {
+    // Grumpy Bookstore Owner (LC 1052)
+    public static int maxSatisfied(int[] customers, int[] grumpy, int minutes) {
+        // Step 1: baseline — always-satisfied customers (where grumpy[i] == 0)
+        int base = 0;
+        for (int i = 0; i < customers.length; i++) {
+            if (grumpy[i] == 0) base += customers[i];
+        }
+        // Step 2: slide a window of size `minutes` to maximise extra gained from suppression
+        int window = 0;
+        for (int i = 0; i < minutes; i++) {
+            window += customers[i] * grumpy[i];
+        }
+        int gain = window;
+        for (int i = minutes; i < customers.length; i++) {
+            window += customers[i] * grumpy[i];
+            window -= customers[i - minutes] * grumpy[i - minutes];
+            gain = Math.max(gain, window);
+        }
+        return base + gain;
+    }
 
-# Maximum Points from Cards (LC 1423)
-def max_score(cardPoints, k):
-    n = len(cardPoints)
-    window_size = n - k    # cards we are NOT taking = middle window
-    if window_size == 0:   # taking all cards
-        return sum(cardPoints)
-    window_sum = sum(cardPoints[:window_size])
-    min_middle = window_sum
-    for i in range(window_size, n):
-        window_sum += cardPoints[i] - cardPoints[i - window_size]
-        min_middle = min(min_middle, window_sum)
-    return sum(cardPoints) - min_middle
+    // Maximum Points from Cards (LC 1423)
+    public static int maxScore(int[] cardPoints, int k) {
+        int n = cardPoints.length;
+        int windowSize = n - k;    // cards we are NOT taking = middle window
+        if (windowSize == 0) {     // taking all cards
+            int total = 0;
+            for (int v : cardPoints) total += v;
+            return total;
+        }
+        int windowSum = 0;
+        for (int i = 0; i < windowSize; i++) windowSum += cardPoints[i];
+        int minMiddle = windowSum;
+        for (int i = windowSize; i < n; i++) {
+            windowSum += cardPoints[i] - cardPoints[i - windowSize];
+            minMiddle = Math.min(minMiddle, windowSum);
+        }
+        int total = 0;
+        for (int v : cardPoints) total += v;
+        return total - minMiddle;
+    }
+}
 ```
 
 ### Interview Tips
@@ -51,14 +70,14 @@ def max_score(cardPoints, k):
 - **The complement/reframe trick:** when you can't directly optimise the selection you want (k cards from both ends), reframe it as optimising the complement (leave n-k cards in the middle). Mention this reframing explicitly — it's the insight the interviewer is testing.
 - **Two-step structure for LC 1052:** "Step 1: compute baseline (sum of non-grumpy minutes). Step 2: slide a window to find maximum extra from the boost." Narrate both steps before coding — the interviewer wants to see structured thinking.
 - **Brute force for LC 1423:** O(k²) trying all splits between left-end count (0 to k) and right-end count (k-0 to 0) → complement window is O(n).
-- **Common mistake:** in LC 1423, including `window_size = 0` without a guard — `sum(cardPoints[:0])` is 0, which gives the right answer, but `range(0, n)` would re-process all cards and corrupt `min_middle`. Add the guard or trace carefully.
+- **Common mistake:** in LC 1423, including `windowSize = 0` without a guard — `sum(cardPoints[:0])` is 0, which gives the right answer, but `range(0, n)` would re-process all cards and corrupt `minMiddle`. Add the guard or trace carefully.
 - **Alternative for LC 1052:** instead of tracking `customers[i] * grumpy[i]`, directly subtract satisfied-during-boost from the full-satisfied count — same result, different framing.
 
 ### Edge Cases to Trace Before Coding
 - LC 1052: `minutes >= len(customers)` → boost covers everything; answer = total customers (no baseline subtraction needed)
-- LC 1423: `k = n` → take all cards; return `sum(cardPoints)` (window_size = 0)
-- LC 1423: `k = 0` → take no cards; return 0 (window is the entire array, min_middle = total)
-- LC 485: all 1s → single scan returns `len(nums)`; all 0s → return 0
+- LC 1423: `k = n` → take all cards; return `sum(cardPoints)` (windowSize = 0)
+- LC 1423: `k = 0` → take no cards; return 0 (window is the entire array, minMiddle = total)
+- LC 485: all 1s → single scan returns `nums.length`; all 0s → return 0
 
 ## System Design (1 hour)
 ### Topic: Sliding Window in Real Systems — Rate Limiters & Monitoring

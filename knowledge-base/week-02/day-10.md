@@ -19,33 +19,41 @@ Slot 1 close-out: verify pattern recognition speed, handle interval problems wit
 | 3 | Longest Continuous Subarray With Absolute Diff ≤ Limit | 1438 | Medium | Sliding Window + Monotonic Deque | Maintain max_deque (decreasing) and min_deque (increasing); shrink left when max−min > limit |
 
 ### Code Skeleton
-```python
-# Sliding Window with Monotonic Deque (LC 1438)
-from collections import deque
+```java
+import java.util.ArrayDeque;
+import java.util.Deque;
 
-def longest_subarray(nums, limit):
-    max_d = deque()  # indices in decreasing value order; front = current window max index
-    min_d = deque()  # indices in increasing value order; front = current window min index
-    left = result = 0
+class Solution {
+    // Sliding Window with Monotonic Deque (LC 1438)
+    public static int longestSubarray(int[] nums, int limit) {
+        Deque<Integer> maxD = new ArrayDeque<>();  // indices in decreasing value order; front = current window max index
+        Deque<Integer> minD = new ArrayDeque<>();  // indices in increasing value order; front = current window min index
+        int left = 0, result = 0;
 
-    for right in range(len(nums)):
-        # Expand: add right to both deques (maintaining monotonic property)
-        while max_d and nums[max_d[-1]] <= nums[right]:
-            max_d.pop()
-        max_d.append(right)
+        for (int right = 0; right < nums.length; right++) {
+            // Expand: add right to both deques (maintaining monotonic property)
+            while (!maxD.isEmpty() && nums[maxD.peekLast()] <= nums[right]) {
+                maxD.pollLast();
+            }
+            maxD.addLast(right);
 
-        while min_d and nums[min_d[-1]] >= nums[right]:
-            min_d.pop()
-        min_d.append(right)
+            while (!minD.isEmpty() && nums[minD.peekLast()] >= nums[right]) {
+                minD.pollLast();
+            }
+            minD.addLast(right);
 
-        # Shrink: move left until max - min <= limit
-        while nums[max_d[0]] - nums[min_d[0]] > limit:
-            left += 1
-            if max_d[0] < left: max_d.popleft()   # front expired
-            if min_d[0] < left: min_d.popleft()
+            // Shrink: move left until max - min <= limit
+            while (nums[maxD.peekFirst()] - nums[minD.peekFirst()] > limit) {
+                left++;
+                if (maxD.peekFirst() < left) maxD.pollFirst();   // front expired
+                if (minD.peekFirst() < left) minD.pollFirst();
+            }
 
-        result = max(result, right - left + 1)
-    return result
+            result = Math.max(result, right - left + 1);
+        }
+        return result;
+    }
+}
 ```
 
 ### Interview Tips
@@ -54,18 +62,18 @@ def longest_subarray(nums, limit):
 - **Always store indices, not values:** "I store indices so I can check if the front has fallen outside the current window [left, right] — if I stored values I'd lose this check." This is the single most important insight for any deque sliding window problem.
 - **Deque operation order:** expand first (pop back, then append right), then check constraint, then shrink. Getting the order wrong produces incorrect results.
 - **Brute force baseline:** O(n²) checking all subarrays and computing max-min with `max()` and `min()` each time (O(n) per call = O(n³) total) → two deques = O(n).
-- **Common mistake:** checking `if max_d[0] < left` instead of `while max_d[0] < left` — but since we add one element per step and shrink one at a time, `if` is actually sufficient here (at most one can expire per iteration). Both work, but be able to explain why.
+- **Common mistake:** checking `if maxD.peekFirst() < left` instead of `while maxD.peekFirst() < left` — but since we add one element per step and shrink one at a time, `if` is actually sufficient here (at most one can expire per iteration). Both work, but be able to explain why.
 
 ### Edge Cases to Trace Before Coding
 - `limit = 0` → only windows where all elements are equal are valid; answer = length of longest equal-value run
 - Single element → window size 1, always valid (max - min = 0 ≤ any limit ≥ 0)
-- All same elements → max_d and min_d both have same values; max - min = 0; entire array is valid
+- All same elements → maxD and minD both have same values; max - min = 0; entire array is valid
 - Strictly decreasing array with limit = 0 → every window > 1 is invalid; answer = 1
 
 ## System Design (1 hour)
 ### Topic: Big-O & RAM Model — Slot 1 Synthesis
 - Monotonic deque achieves O(1) amortised window max/min: each element is pushed and popped at most once.
-- Deque vs. sorted structure: deque is O(n) total; maintaining a sorted multiset (like `SortedList`) is O(n log n) — use deque when you only need max/min of the window.
+- Deque vs. sorted structure: deque is O(n) total; maintaining a sorted multiset (like `TreeMap`) is O(n log n) — use deque when you only need max/min of the window.
 - System design application: sliding window maximum mirrors a real-time anomaly detector — "flag if any reading in the last k seconds exceeds the min reading by more than X."
 - Recap all Big-O rules learned: amortised O(n) for pointers that never backtrack, O(1) per step for incremental state updates, O(n log n) floor when sorting is unavoidable.
 - Interview talking point: "If asked to find the maximum of every sliding window of size k, answer: use a monotonic decreasing deque of indices; pop from back when new element is larger, pop from front when index is out of window — O(n) total."

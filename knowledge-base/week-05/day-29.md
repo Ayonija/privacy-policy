@@ -20,38 +20,54 @@ Tackle harder monotonic stack problems — sum of subarray minimums and greedy d
 | 3 | Remove K Digits | 402 | Medium | Monotonic increasing stack + greedy | Pop larger digits while k > 0; strip leading zeros; if k > 0 after loop, truncate right end |
 
 ### Code Skeleton
-```python
-# Sum of Subarray Minimums (LC 907)
-def sum_subarray_mins(arr):
-    MOD = 10**9 + 7
-    n = len(arr)
-    left  = [0] * n   # number of subarrays where arr[i] is minimum, extending left
-    right = [0] * n   # extending right
-    stack = []
-    for i in range(n):
-        while stack and arr[stack[-1]] >= arr[i]:   # strict '>=' for left boundary
-            stack.pop()
-        left[i] = i - stack[-1] if stack else i + 1
-        stack.append(i)
-    stack = []
-    for i in range(n - 1, -1, -1):
-        while stack and arr[stack[-1]] > arr[i]:    # strict '>' for right boundary
-            stack.pop()
-        right[i] = stack[-1] - i if stack else n - i
-        stack.append(i)
-    return sum(arr[i] * left[i] * right[i] for i in range(n)) % MOD
+```java
+class Solution {
+    // Sum of Subarray Minimums (LC 907)
+    public static int sumSubarrayMins(int[] arr) {
+        final int MOD = 1_000_000_007;
+        int n = arr.length;
+        int[] left  = new int[n];   // number of subarrays where arr[i] is minimum, extending left
+        int[] right = new int[n];   // extending right
+        Deque<Integer> stack = new ArrayDeque<>();
+        for (int i = 0; i < n; i++) {
+            while (!stack.isEmpty() && arr[stack.peekLast()] >= arr[i]) {   // strict '>=' for left boundary
+                stack.pollLast();
+            }
+            left[i] = stack.isEmpty() ? i + 1 : i - stack.peekLast();
+            stack.addLast(i);
+        }
+        stack.clear();
+        for (int i = n - 1; i >= 0; i--) {
+            while (!stack.isEmpty() && arr[stack.peekLast()] > arr[i]) {    // strict '>' for right boundary
+                stack.pollLast();
+            }
+            right[i] = stack.isEmpty() ? n - i : stack.peekLast() - i;
+            stack.addLast(i);
+        }
+        long result = 0;
+        for (int i = 0; i < n; i++) {
+            result = (result + (long) arr[i] * left[i] * right[i]) % MOD;
+        }
+        return (int) result;
+    }
 
-# Remove K Digits (LC 402) — skeleton
-def remove_k_digits(num, k):
-    stack = []
-    for digit in num:
-        while k and stack and stack[-1] > digit:
-            stack.pop(); k -= 1
-        stack.append(digit)
-    # if k > 0, remove from end
-    # strip leading zeros
-    # return "0" if empty
-    pass
+    // Remove K Digits (LC 402) — skeleton
+    public static String removeKdigits(String num, int k) {
+        Deque<Character> stack = new ArrayDeque<>();
+        for (char digit : num.toCharArray()) {
+            while (k > 0 && !stack.isEmpty() && stack.peekLast() > digit) {
+                stack.pollLast();
+                k--;
+            }
+            stack.addLast(digit);
+        }
+        // if k > 0, remove from end
+        // strip leading zeros
+        // return "0" if empty
+        // TODO: implement post-loop steps
+        return "0";
+    }
+}
 ```
 
 ### Interview Tips

@@ -40,81 +40,49 @@ Store results of subproblems in a 1D array (or two variables). Each cell `dp[i]`
 - `e1` = # ways if current char is treated as a single character (non-`*`)
 - `s1` = # ways if current char is `*`
 
-```python
-def numDecodings(s: str) -> int:
-    MOD = 10**9 + 7
-    # Bootstrap from first character
-    e1 = 1 if s[0] != '0' else 0   # single digit, not wildcard
-    s1 = 9 if s[0] == '*' else 0   # wildcard = 9 choices (1–9)
+```java
+// Decode Ways II (LC 639) — skeleton showing state transition structure
+class Solution {
+    public int numDecodings(String s) {
+        int MOD = 1_000_000_007;
+        // Bootstrap from first character
+        long e1 = s.charAt(0) != '0' ? (s.charAt(0) != '*' ? 1 : 0) : 0;
+        long s1 = s.charAt(0) == '*' ? 9 : 0; // wildcard = 9 choices (1-9)
 
-    for i in range(1, len(s)):
-        c = s[i]
-        prev_e1, prev_s1 = e1, s1
-        
-        if c == '*':
-            e1 = 9 * prev_s1 + 9 * prev_e1  # * alone = 9 choices
-            # Two-digit: prev was *, curr is * → 11–19 (9) + 21–26 (6) = 15
-            # prev was digit d: d=1 → 11–19 (9), d=2 → 21–29 but only 21–26 (6)
-            new_s1 = 15 * prev_s1  # * followed by * (15 valid combos)
-            # prev_e1 cases: count valid two-char combos
-            # (need to track prev digit for this — simplified: recompute)
-            e1 = (9 * prev_s1 + 9 * prev_e1) % MOD
-            s1 = (15 * prev_s1) % MOD
-            # Note: full solution also accounts for prev_e1 pairs;
-            # see complete implementation below
-        else:
-            digit = int(c)
-            # Single char
-            e1 = (0 if digit == 0 else prev_s1 + prev_e1)
-            # Two-char ending with non-*: need to know if prev formed 1X or 2X
-            # Simplified skeleton — delete and implement from scratch
+        for (int i = 1; i < s.length(); i++) {
+            char c = s.charAt(i);
+            char p = s.charAt(i - 1);
+            long ne1 = 0, ns1 = 0;
 
-        e1, s1 = e1 % MOD, s1 % MOD
+            // Current char alone
+            if (c == '*') {
+                ns1 = 9 * (e1 + s1) % MOD; // * = any of 1-9
+            } else if (c != '0') {
+                ne1 = (e1 + s1) % MOD; // literal digit alone
+            }
 
-    return (e1 + s1) % MOD
-```
+            // Two-char decode (current + previous)
+            if (c == '*') {
+                if (p == '1') ne1 = (ne1 + 9 * e1) % MOD;       // 11-19
+                else if (p == '2') ne1 = (ne1 + 6 * e1) % MOD;  // 21-26
+                else if (p == '*') ne1 = (ne1 + 15 * s1) % MOD; // *1-*9 where * is 1 or 2
+            } else {
+                int d = c - '0';
+                if (p == '1') ne1 = (ne1 + e1) % MOD;            // 1d always valid
+                else if (p == '2' && d <= 6) ne1 = (ne1 + e1) % MOD; // 2d valid if d<=6
+                else if (p == '*') {
+                    ne1 = (ne1 + e1) % MOD;                       // *=1: 1d always
+                    if (d <= 6) ne1 = (ne1 + e1) % MOD;           // *=2: only if d<=6
+                }
+            }
 
-**Complete clean solution (memorize this pattern):**
-```python
-def numDecodings(s: str) -> int:
-    MOD = 10**9 + 7
-    # e1: ways where last decoded chunk used the previous single non-* char
-    # e2: ways ending with previous two-char non-* decode
-    # s1: ways where previous char was *
-    # We only need one pass; track (e1, s1) = (ways ending in literal, ways ending in *)
+            e1 = ne1;
+            s1 = ns1;
+        }
 
-    if s[0] == '0': return 0
-    e1 = 0 if s[0] == '0' else (1 if s[0] != '*' else 0)
-    s1 = 9 if s[0] == '*' else 0
-
-    for i in range(1, len(s)):
-        ne1 = ns1 = 0
-        c = s[i]
-        p = s[i-1]
-
-        # Current char alone
-        if c == '*':
-            ns1 = 9 * (e1 + s1)          # * = any of 1–9
-        elif c != '0':
-            ne1 = e1 + s1                  # literal digit alone
-
-        # Two-char decode (current + previous)
-        if c == '*':
-            if p == '1':   ne1 += 9 * e1  # 11–19
-            elif p == '2': ne1 += 6 * e1  # 21–26
-            elif p == '*': ne1 += 15 * s1 # *1–*9 where * is 1 or 2
-        else:
-            d = int(c)
-            if p == '1':   ne1 += e1       # 1d always valid
-            elif p == '2' and d <= 6: ne1 += e1  # 2d valid if d<=6
-            elif p == '*':
-                ne1 += e1 if d <= 6 else 0     # *=1 always, *=2 only if d<=6
-                ne1 += e1                        # *=1: 1d always
-                # correction: see full Neetcode solution
-
-        e1, s1 = ne1 % MOD, ns1 % MOD
-
-    return (e1 + s1) % MOD
+        return (int)((e1 + s1) % MOD);
+    }
+}
 ```
 
 > **Study note:** This problem is notorious for off-by-one in state transitions. The skeleton above shows the structure; always trace through `"*1"`, `"1*"`, `"**"` by hand before submitting.
@@ -126,32 +94,39 @@ def numDecodings(s: str) -> int:
 **Problem:** Count length-n sequences over `{A, L, P}` with no 2+ A's and no 3+ consecutive L's.  
 **State:** `dp[a][l]` = number of valid sequences ending with `a` absences used and `l` trailing lates.
 
-```python
-def checkRecord(n: int) -> int:
-    MOD = 10**9 + 7
-    # dp[a][l]: a ∈ {0,1}, l ∈ {0,1,2}
-    # Initialize for length 0: one empty sequence
-    dp = [[0] * 3 for _ in range(2)]
-    dp[0][0] = 1  # empty sequence: 0 A, 0 trailing L
+```java
+class Solution {
+    public int checkRecord(int n) {
+        int MOD = 1_000_000_007;
+        // dp[a][l]: a in {0,1}, l in {0,1,2}
+        // Initialize for length 0: one empty sequence
+        long[][] dp = new long[2][3];
+        dp[0][0] = 1; // empty sequence: 0 A, 0 trailing L
 
-    for _ in range(n):
-        ndp = [[0] * 3 for _ in range(2)]
-        for a in range(2):
-            for l in range(3):
-                if dp[a][l] == 0:
-                    continue
-                v = dp[a][l]
-                # Append 'P' → resets trailing lates, keeps absences
-                ndp[a][0] = (ndp[a][0] + v) % MOD
-                # Append 'L' → increments trailing lates (only if < 2)
-                if l < 2:
-                    ndp[a][l+1] = (ndp[a][l+1] + v) % MOD
-                # Append 'A' → resets trailing lates, uses one absence
-                if a == 0:
-                    ndp[1][0] = (ndp[1][0] + v) % MOD
-        dp = ndp
+        for (int step = 0; step < n; step++) {
+            long[][] ndp = new long[2][3];
+            for (int a = 0; a < 2; a++) {
+                for (int l = 0; l < 3; l++) {
+                    if (dp[a][l] == 0) continue;
+                    long v = dp[a][l];
+                    // Append 'P' → resets trailing lates, keeps absences
+                    ndp[a][0] = (ndp[a][0] + v) % MOD;
+                    // Append 'L' → increments trailing lates (only if < 2)
+                    if (l < 2) ndp[a][l + 1] = (ndp[a][l + 1] + v) % MOD;
+                    // Append 'A' → resets trailing lates, uses one absence
+                    if (a == 0) ndp[1][0] = (ndp[1][0] + v) % MOD;
+                }
+            }
+            dp = ndp;
+        }
 
-    return sum(dp[a][l] for a in range(2) for l in range(3)) % MOD
+        long total = 0;
+        for (int a = 0; a < 2; a++)
+            for (int l = 0; l < 3; l++)
+                total = (total + dp[a][l]) % MOD;
+        return (int) total;
+    }
+}
 ```
 
 **Complexity:** O(6n) time, O(6) = O(1) space (only 6 states).
@@ -160,13 +135,19 @@ def checkRecord(n: int) -> int:
 
 ### Climbing Stairs Revision (LC 70) — From Memory
 
-```python
-def climbStairs(n: int) -> int:
-    if n <= 2: return n
-    a, b = 1, 2
-    for _ in range(3, n + 1):
-        a, b = b, a + b
-    return b
+```java
+class Solution {
+    public int climbStairs(int n) {
+        if (n <= 2) return n;
+        int a = 1, b = 2;
+        for (int i = 3; i <= n; i++) {
+            int temp = a + b;
+            a = b;
+            b = temp;
+        }
+        return b;
+    }
+}
 ```
 
 **Generalization:** If you can take 1, 2, or 3 steps, `dp[i] = dp[i-1] + dp[i-2] + dp[i-3]`.

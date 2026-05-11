@@ -40,102 +40,143 @@ Graph with uniform edge weights (travel time = `time`), traffic lights that flip
 ---
 
 ### Code Skeleton
-```python
-from collections import deque
-import heapq
+```java
+import java.util.*;
 
-# Minimum Obstacle Removal (LC 2290) — 0-1 BFS
-def minimumObstacles(grid):
-    rows, cols = len(grid), len(grid[0])
-    dist = [[float('inf')] * cols for _ in range(rows)]
-    dist[0][0] = 0
-    dq = deque([(0, 0, 0)])   # (cost, row, col)
-    dirs = [(0,1),(0,-1),(1,0),(-1,0)]
-    while dq:
-        cost, r, c = dq.popleft()
-        if cost > dist[r][c]: continue
-        if r == rows-1 and c == cols-1: return cost
-        for dr, dc in dirs:
-            nr, nc = r+dr, c+dc
-            if 0 <= nr < rows and 0 <= nc < cols:
-                new_cost = cost + grid[nr][nc]   # 0 or 1
-                if new_cost < dist[nr][nc]:
-                    dist[nr][nc] = new_cost
-                    if grid[nr][nc] == 0:
-                        dq.appendleft((new_cost, nr, nc))   # 0-cost → front
-                    else:
-                        dq.append((new_cost, nr, nc))        # 1-cost → back
-    return dist[rows-1][cols-1]
+class Solution {
 
-# Find Safest Path in Grid (LC 2812)
-def maximumSafenessFactor(grid):
-    n = len(grid)
-    # Multi-source BFS from all thieves to compute safeness
-    safeness = [[-1] * n for _ in range(n)]
-    dq = deque()
-    for r in range(n):
-        for c in range(n):
-            if grid[r][c] == 1:
-                safeness[r][c] = 0
-                dq.append((r, c))
-    dirs = [(0,1),(0,-1),(1,0),(-1,0)]
-    while dq:
-        r, c = dq.popleft()
-        for dr, dc in dirs:
-            nr, nc = r+dr, c+dc
-            if 0 <= nr < n and 0 <= nc < n and safeness[nr][nc] == -1:
-                safeness[nr][nc] = safeness[r][c] + 1
-                dq.append((nr, nc))
-    # Binary search on minimum safeness threshold
-    def can_reach(threshold):
-        if safeness[0][0] < threshold or safeness[n-1][n-1] < threshold: return False
-        visited = [[False] * n for _ in range(n)]
-        visited[0][0] = True
-        q = deque([(0, 0)])
-        while q:
-            r, c = q.popleft()
-            if r == n-1 and c == n-1: return True
-            for dr, dc in dirs:
-                nr, nc = r+dr, c+dc
-                if 0 <= nr < n and 0 <= nc < n and not visited[nr][nc] and safeness[nr][nc] >= threshold:
-                    visited[nr][nc] = True
-                    q.append((nr, nc))
-        return False
-    lo, hi = 0, max(safeness[r][c] for r in range(n) for c in range(n))
-    while lo < hi:
-        mid = (lo + hi + 1) // 2
-        if can_reach(mid): lo = mid
-        else: hi = mid - 1
-    return lo
+    // Minimum Obstacle Removal (LC 2290) — 0-1 BFS
+    public static int minimumObstacles(int[][] grid) {
+        int rows = grid.length, cols = grid[0].length;
+        int[][] dist = new int[rows][cols];
+        for (int[] row : dist) Arrays.fill(row, Integer.MAX_VALUE);
+        dist[0][0] = 0;
+        Deque<int[]> dq = new ArrayDeque<>();
+        dq.addLast(new int[]{0, 0, 0}); // (cost, row, col)
+        int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0}};
+        while (!dq.isEmpty()) {
+            int[] cur = dq.pollFirst();
+            int cost = cur[0], r = cur[1], c = cur[2];
+            if (cost > dist[r][c]) continue;
+            if (r == rows - 1 && c == cols - 1) return cost;
+            for (int[] d : dirs) {
+                int nr = r + d[0], nc = c + d[1];
+                if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                    int newCost = cost + grid[nr][nc]; // 0 or 1
+                    if (newCost < dist[nr][nc]) {
+                        dist[nr][nc] = newCost;
+                        if (grid[nr][nc] == 0) {
+                            dq.addFirst(new int[]{newCost, nr, nc}); // 0-cost → front
+                        } else {
+                            dq.addLast(new int[]{newCost, nr, nc});  // 1-cost → back
+                        }
+                    }
+                }
+            }
+        }
+        return dist[rows - 1][cols - 1];
+    }
 
-# Second Minimum Time (LC 2045)
-def secondMinimum(n, edges, time, change):
-    graph = [[] for _ in range(n + 1)]
-    for u, v in edges:
-        graph[u].append(v)
-        graph[v].append(u)
-    dist1 = [float('inf')] * (n + 1)
-    dist2 = [float('inf')] * (n + 1)
-    dist1[1] = 0
-    queue = deque([(0, 1)])   # (time_elapsed, node)
-    while queue:
-        t, u = queue.popleft()
-        for v in graph[u]:
-            # compute travel time considering traffic lights
-            cycle = t // change
-            if cycle % 2 == 1:   # in red phase; must wait
-                t_depart = (cycle + 1) * change
-            else:
-                t_depart = t
-            arrive = t_depart + time
-            if arrive < dist1[v]:
-                dist2[v] = dist1[v]
-                dist1[v] = arrive
-                queue.append((arrive, v))
-            elif dist1[v] < arrive < dist2[v]:
-                dist2[v] = arrive
-                queue.append((arrive, v))
-    return dist2[n]
+    // Find Safest Path in Grid (LC 2812)
+    public static int maximumSafenessFactor(List<List<Integer>> gridList) {
+        int n = gridList.size();
+        int[][] grid = new int[n][n];
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                grid[i][j] = gridList.get(i).get(j);
+
+        // Multi-source BFS from all thieves to compute safeness
+        int[][] safeness = new int[n][n];
+        for (int[] row : safeness) Arrays.fill(row, -1);
+        Deque<int[]> dq = new ArrayDeque<>();
+        for (int r = 0; r < n; r++) {
+            for (int c = 0; c < n; c++) {
+                if (grid[r][c] == 1) {
+                    safeness[r][c] = 0;
+                    dq.addLast(new int[]{r, c});
+                }
+            }
+        }
+        int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0}};
+        while (!dq.isEmpty()) {
+            int[] cur = dq.pollFirst();
+            int r = cur[0], c = cur[1];
+            for (int[] d : dirs) {
+                int nr = r + d[0], nc = c + d[1];
+                if (nr >= 0 && nr < n && nc >= 0 && nc < n && safeness[nr][nc] == -1) {
+                    safeness[nr][nc] = safeness[r][c] + 1;
+                    dq.addLast(new int[]{nr, nc});
+                }
+            }
+        }
+        // Binary search on minimum safeness threshold
+        int lo = 0, hi = 0;
+        for (int[] row : safeness) for (int v : row) hi = Math.max(hi, v);
+        while (lo < hi) {
+            int mid = (lo + hi + 1) / 2;
+            if (canReach(safeness, mid, n, dirs)) lo = mid;
+            else hi = mid - 1;
+        }
+        return lo;
+    }
+
+    private static boolean canReach(int[][] safeness, int threshold, int n, int[][] dirs) {
+        if (safeness[0][0] < threshold || safeness[n-1][n-1] < threshold) return false;
+        boolean[][] visited = new boolean[n][n];
+        visited[0][0] = true;
+        Deque<int[]> q = new ArrayDeque<>();
+        q.addLast(new int[]{0, 0});
+        while (!q.isEmpty()) {
+            int[] cur = q.pollFirst();
+            int r = cur[0], c = cur[1];
+            if (r == n - 1 && c == n - 1) return true;
+            for (int[] d : dirs) {
+                int nr = r + d[0], nc = c + d[1];
+                if (nr >= 0 && nr < n && nc >= 0 && nc < n && !visited[nr][nc] && safeness[nr][nc] >= threshold) {
+                    visited[nr][nc] = true;
+                    q.addLast(new int[]{nr, nc});
+                }
+            }
+        }
+        return false;
+    }
+
+    // Second Minimum Time (LC 2045)
+    public static int secondMinimum(int n, int[][] edges, int time, int change) {
+        List<Integer>[] graph = new ArrayList[n + 1];
+        for (int i = 0; i <= n; i++) graph[i] = new ArrayList<>();
+        for (int[] e : edges) {
+            graph[e[0]].add(e[1]);
+            graph[e[1]].add(e[0]);
+        }
+        int[] dist1 = new int[n + 1];
+        int[] dist2 = new int[n + 1];
+        Arrays.fill(dist1, Integer.MAX_VALUE);
+        Arrays.fill(dist2, Integer.MAX_VALUE);
+        dist1[1] = 0;
+        Deque<int[]> queue = new ArrayDeque<>();
+        queue.addLast(new int[]{0, 1}); // (time_elapsed, node)
+        while (!queue.isEmpty()) {
+            int[] cur = queue.pollFirst();
+            int t = cur[0], u = cur[1];
+            for (int v : graph[u]) {
+                // compute travel time considering traffic lights
+                int cycle = t / change;
+                int tDepart = (cycle % 2 == 1) ? (cycle + 1) * change : t;
+                int arrive = tDepart + time;
+                if (arrive < dist1[v]) {
+                    dist2[v] = dist1[v];
+                    dist1[v] = arrive;
+                    queue.addLast(new int[]{arrive, v});
+                } else if (dist1[v] < arrive && arrive < dist2[v]) {
+                    dist2[v] = arrive;
+                    queue.addLast(new int[]{arrive, v});
+                }
+            }
+        }
+        return dist2[n];
+    }
+}
 ```
 
 ---
@@ -152,7 +193,7 @@ def secondMinimum(n, edges, time, change):
 | Pattern | Data structure | Edge weight handling | Complexity vs Dijkstra |
 |---------|---------------|---------------------|----------------------|
 | Standard Dijkstra | Min-heap | Any non-negative weight | O((V+E) log V) |
-| 0-1 BFS | Deque | 0 → `appendleft`; 1 → `append` | O(V+E) — no heap |
+| 0-1 BFS | Deque | 0 → `addFirst`; 1 → `addLast` | O(V+E) — no heap |
 | Binary search + BFS | Deque/queue per check | Threshold filter on cells | O(E log(max_val)) |
 | BFS two-distance | Deque | Standard BFS | O(V+E) × constant |
 
@@ -221,7 +262,7 @@ After each: state time complexity, space complexity, and one edge case aloud.
 
 | Q | A |
 |---|---|
-| How does 0-1 BFS achieve O(V+E) instead of O((V+E) log V)? | Uses a deque instead of a heap. Weight-0 edges push the new node to the front (`appendleft` — same "level" as current); weight-1 edges push to the back (`append` — next "level"). Maintains sorted order without a heap's log overhead. |
+| How does 0-1 BFS achieve O(V+E) instead of O((V+E) log V)? | Uses a deque instead of a heap. Weight-0 edges push the new node to the front (`addFirst` — same "level" as current); weight-1 edges push to the back (`addLast` — next "level"). Maintains sorted order without a heap's log overhead. |
 | What is the algorithm for Find Safest Path? | (1) Multi-source BFS from all thieves to compute per-cell safeness. (2) Binary search on threshold T. (3) For each T, BFS/DFS from top-left using only cells with safeness ≥ T. Return the largest T where a path exists. |
 | How does BFS track the second minimum time? | Maintain `dist1[v]` and `dist2[v]`. Accept a new time t at v into `dist1[v]` if `t < dist1[v]` (also update `dist2[v] = old dist1[v]`). Accept into `dist2[v]` if `dist1[v] < t < dist2[v]`. Answer = `dist2[n]`. |
 | What is leveled compaction and what is its trade-off? | SSTables organized in levels (L0→L1→L2...); L0 files merge into L1, L1 into L2, etc. Reduces read amplification (fewer SSTables to search per level). Trade-off: high write amplification — each byte rewritten ~10–30× across compaction levels. |

@@ -19,30 +19,43 @@ Apply the monotonic stack to span-counting and simulation problems — two commo
 | 3 | Asteroid Collision | 735 | Medium | Stack (collision simulation) | Push positive; on negative: pop positives smaller in absolute value; handle equal destruction; push negative if stack empty or top is negative |
 
 ### Code Skeleton
-```python
-# Online Stock Span (LC 901)
-class StockSpanner:
-    def __init__(self):
-        self.stack = []  # (price, span)
+```java
+// Online Stock Span (LC 901)
+class StockSpanner {
+    private Deque<int[]> stack; // {price, span}
 
-    def next(self, price):
-        span = 1
-        while self.stack and self.stack[-1][0] <= price:
-            span += self.stack.pop()[1]
-        self.stack.append((price, span))
-        return span
+    public StockSpanner() {
+        this.stack = new ArrayDeque<>();
+    }
 
-# Asteroid Collision (LC 735) — skeleton
-def asteroid_collision(asteroids):
-    stack = []
-    for a in asteroids:
-        # positive: push
-        # negative: collide with stack top if top > 0
-        # handle: top == abs(a) → both destroyed
-        #         top > abs(a) → a is destroyed
-        #         top < abs(a) or top < 0 → pop/push logic
-        pass
-    return stack
+    public int next(int price) {
+        int span = 1;
+        while (!stack.isEmpty() && stack.peekLast()[0] <= price) {
+            span += stack.pollLast()[1];
+        }
+        stack.addLast(new int[]{price, span});
+        return span;
+    }
+}
+
+// Asteroid Collision (LC 735) — skeleton
+class Solution {
+    public static int[] asteroidCollision(int[] asteroids) {
+        Deque<Integer> stack = new ArrayDeque<>();
+        for (int a : asteroids) {
+            // positive: push
+            // negative: collide with stack top if top > 0
+            // handle: top == abs(a) → both destroyed
+            //         top > abs(a) → a is destroyed
+            //         top < abs(a) or top < 0 → pop/push logic
+            // TODO: implement
+        }
+        int[] result = new int[stack.size()];
+        int i = result.length - 1;
+        for (int val : stack) result[i--] = val;
+        return result;
+    }
+}
 ```
 
 ## System Design (1 hour)

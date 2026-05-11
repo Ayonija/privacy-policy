@@ -43,45 +43,71 @@ Two-pass greedy:
 ---
 
 ### Code Skeleton
-```python
-# Partition Labels (LC 763)
-def partitionLabels(s):
-    last = {c: i for i, c in enumerate(s)}   # last index of each char
-    result = []
-    start = end = 0
-    for i, c in enumerate(s):
-        end = max(end, last[c])
-        if i == end:
-            result.append(end - start + 1)
-            start = i + 1
-    return result
+```java
+import java.util.*;
 
-# Remove K Digits (LC 402)
-def removeKdigits(num, k):
-    stack = []
-    for digit in num:
-        while k > 0 and stack and stack[-1] > digit:
-            stack.pop()
-            k -= 1
-        stack.append(digit)
-    # If k > 0 after scan, remove from the right (largest suffix digits)
-    stack = stack[:-k] if k else stack
-    # Strip leading zeros and handle empty case
-    result = ''.join(stack).lstrip('0')
-    return result or '0'
+// Partition Labels (LC 763)
+class Solution {
+    public List<Integer> partitionLabels(String s) {
+        int[] last = new int[26];
+        for (int i = 0; i < s.length(); i++) last[s.charAt(i) - 'a'] = i; // last index of each char
+        List<Integer> result = new ArrayList<>();
+        int start = 0, end = 0;
+        for (int i = 0; i < s.length(); i++) {
+            end = Math.max(end, last[s.charAt(i) - 'a']);
+            if (i == end) {
+                result.add(end - start + 1);
+                start = i + 1;
+            }
+        }
+        return result;
+    }
+}
 
-# Candy (LC 135)
-def candy(ratings):
-    n = len(ratings)
-    left = [1] * n
-    right = [1] * n
-    for i in range(1, n):
-        if ratings[i] > ratings[i - 1]:
-            left[i] = left[i - 1] + 1
-    for i in range(n - 2, -1, -1):
-        if ratings[i] > ratings[i + 1]:
-            right[i] = right[i + 1] + 1
-    return sum(max(left[i], right[i]) for i in range(n))
+// Remove K Digits (LC 402)
+class Solution {
+    public String removeKdigits(String num, int k) {
+        Deque<Character> stack = new ArrayDeque<>();
+        for (char digit : num.toCharArray()) {
+            while (k > 0 && !stack.isEmpty() && stack.peekLast() > digit) {
+                stack.pollLast();
+                k--;
+            }
+            stack.addLast(digit);
+        }
+        // If k > 0 after scan, remove from the right (largest suffix digits)
+        for (int i = 0; i < k; i++) stack.pollLast();
+        // Strip leading zeros and handle empty case
+        StringBuilder sb = new StringBuilder();
+        boolean leadingZero = true;
+        for (char c : stack) {
+            if (leadingZero && c == '0') continue;
+            leadingZero = false;
+            sb.append(c);
+        }
+        return sb.length() == 0 ? "0" : sb.toString();
+    }
+}
+
+// Candy (LC 135)
+class Solution {
+    public int candy(int[] ratings) {
+        int n = ratings.length;
+        int[] left = new int[n];
+        int[] right = new int[n];
+        Arrays.fill(left, 1);
+        Arrays.fill(right, 1);
+        for (int i = 1; i < n; i++) {
+            if (ratings[i] > ratings[i - 1]) left[i] = left[i - 1] + 1;
+        }
+        for (int i = n - 2; i >= 0; i--) {
+            if (ratings[i] > ratings[i + 1]) right[i] = right[i + 1] + 1;
+        }
+        int total = 0;
+        for (int i = 0; i < n; i++) total += Math.max(left[i], right[i]);
+        return total;
+    }
+}
 ```
 
 ---

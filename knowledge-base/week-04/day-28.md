@@ -18,28 +18,37 @@ Consolidate the full Stacks & Queues unit before the final two days; close the W
 | 3 | Removing Stars From a String | 2390 | Medium | Stack (`*` pops previous char) | On `*`, pop stack; on letter, push; join at end |
 
 ### Code Skeleton
-```python
-# Number of Recent Calls (LC 933)
-from collections import deque
-class RecentCounter:
-    def __init__(self):
-        self.q = deque()
+```java
+// Number of Recent Calls (LC 933)
+class RecentCounter {
+    private Deque<Integer> q = new ArrayDeque<>();
 
-    def ping(self, t):
-        self.q.append(t)
-        while self.q[0] < t - 3000:
-            self.q.popleft()
-        return len(self.q)
+    public int ping(int t) {
+        q.addLast(t);
+        while (q.peekFirst() < t - 3000) {
+            q.pollFirst();
+        }
+        return q.size();
+    }
+}
 
-# Make The String Great (LC 1544)
-def make_good(s):
-    stack = []
-    for ch in s:
-        if stack and stack[-1] != ch and stack[-1].lower() == ch.lower():
-            stack.pop()
-        else:
-            stack.append(ch)
-    return "".join(stack)
+// Make The String Great (LC 1544)
+class Solution {
+    public static String makeGood(String s) {
+        Deque<Character> stack = new ArrayDeque<>();
+        for (char ch : s.toCharArray()) {
+            if (!stack.isEmpty() && stack.peekLast() != ch
+                    && Character.toLowerCase(stack.peekLast()) == Character.toLowerCase(ch)) {
+                stack.pollLast();
+            } else {
+                stack.addLast(ch);
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        for (char c : stack) sb.append(c);
+        return sb.toString();
+    }
+}
 ```
 
 ## System Design (1 hour)

@@ -19,34 +19,47 @@ Apply dummy-head and pointer manipulation to partition and rotate problems — c
 | 3 | Rotate List | 61 | Medium | Find new tail + stitch | Compute length; effective rotation = k % length; new tail is at position length − k − 1 |
 
 ### Code Skeleton
-```python
-# Partition List (LC 86)
-def partition(head, x):
-    less_dummy = ListNode(0)
-    greater_dummy = ListNode(0)
-    less, greater = less_dummy, greater_dummy
-    curr = head
-    while curr:
-        if curr.val < x:
-            less.next = curr
-            less = less.next
-        else:
-            greater.next = curr
-            greater = greater.next
-        curr = curr.next
-    greater.next = None        # important: cut off old tail
-    less.next = greater_dummy.next
-    return less_dummy.next
+```java
+class ListNode {
+    int val;
+    ListNode next;
+    ListNode(int val) { this.val = val; }
+}
 
-# Rotate List (LC 61) — skeleton
-def rotate_right(head, k):
-    if not head or not head.next or k == 0:
-        return head
-    # 1. compute length, make list circular (tail.next = head)
-    # 2. effective = k % length
-    # 3. advance (length - effective) steps to find new tail
-    # 4. new_head = new_tail.next; new_tail.next = None
-    pass
+class Solution {
+    // Partition List (LC 86)
+    public static ListNode partition(ListNode head, int x) {
+        ListNode lessDummy = new ListNode(0);
+        ListNode greaterDummy = new ListNode(0);
+        ListNode less = lessDummy, greater = greaterDummy;
+        ListNode curr = head;
+        while (curr != null) {
+            if (curr.val < x) {
+                less.next = curr;
+                less = less.next;
+            } else {
+                greater.next = curr;
+                greater = greater.next;
+            }
+            curr = curr.next;
+        }
+        greater.next = null;        // important: cut off old tail
+        less.next = greaterDummy.next;
+        return lessDummy.next;
+    }
+
+    // Rotate List (LC 61) — skeleton
+    public static ListNode rotateRight(ListNode head, int k) {
+        if (head == null || head.next == null || k == 0) {
+            return head;
+        }
+        // 1. compute length, make list circular (tail.next = head)
+        // 2. effective = k % length
+        // 3. advance (length - effective) steps to find new tail
+        // 4. new_head = new_tail.next; new_tail.next = null
+        return head; // TODO: implement
+    }
+}
 ```
 
 ## System Design (1 hour)
@@ -68,7 +81,7 @@ def rotate_right(head, k):
 
 | Q | A |
 |---|---|
-| How do you null-terminate the greater partition in LC 86, and why is it critical? | `greater.next = None` after the scan loop — the last node in the greater list may still point to an earlier node in the original list, creating a cycle |
+| How do you null-terminate the greater partition in LC 86, and why is it critical? | `greater.next = null` after the scan loop — the last node in the greater list may still point to an earlier node in the original list, creating a cycle |
 | What is the formula for the effective rotation amount in Rotate List? | `effective = k % length`; if k is a multiple of length, the list is unchanged |
 | How do you find the new tail in Rotate List? | Advance `length − effective − 1` steps from the head; the node at that position is the new tail |
 | What is the difference between active and passive load balancer health checks? | Active: LB probes each backend on a schedule. Passive: LB observes real traffic errors — no extra requests but slower to detect failures |

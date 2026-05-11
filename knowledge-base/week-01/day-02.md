@@ -18,27 +18,32 @@ Solidify two-pointer fluency by applying it to geometry-style problems and multi
 | 3 | 3Sum Closest | 16 | Medium | Two Pointers + Sort | Track abs diff between current sum and target; same duplicate-skip discipline as 3Sum |
 
 ### Code Skeleton
-```python
-def container_with_most_water(height):
-    left, right = 0, len(height) - 1
-    max_area = 0
-    while left < right:
-        area = min(height[left], height[right]) * (right - left)
-        max_area = max(max_area, area)
-        if height[left] < height[right]:
-            left += 1   # shorter side limits the area; moving it is the only way to possibly improve
-        else:
-            right -= 1
-    return max_area
+```java
+class Solution {
+    public static int containerWithMostWater(int[] height) {
+        int left = 0, right = height.length - 1;
+        int maxArea = 0;
+        while (left < right) {
+            int area = Math.min(height[left], height[right]) * (right - left);
+            maxArea = Math.max(maxArea, area);
+            if (height[left] < height[right]) {
+                left++;   // shorter side limits the area; moving it is the only way to possibly improve
+            } else {
+                right--;
+            }
+        }
+        return maxArea;
+    }
+}
 ```
 
 ### Interview Tips
 
 - **Prove the greedy argument out loud:** "Moving the taller pointer can only decrease width and can't increase the limiting height, so area can only shrink. Therefore we always move the shorter pointer." Interviewers at L5+ expect you to justify the greedy choice, not just state it.
 - **Brute force baseline:** O(n²) is checking every pair `(i, j)` — state this before explaining the O(n) approach so the interviewer sees you understand what you're improving.
-- **3Sum Closest communication tip:** initialise `closest` with the first three elements, not `float('inf')`, to avoid issues with the `abs()` comparison initialisation.
-- **Common mistake:** in Container With Most Water, updating `max_area` inside the `if` branch rather than unconditionally — you must record the area *before* moving any pointer.
-- **Alternative approach for Reverse String:** the two-pointer swap is O(1) space; mention that Python's `s.reverse()` does the same but isn't allowed in-place questions.
+- **3Sum Closest communication tip:** initialise `closest` with the first three elements, not `Integer.MAX_VALUE`, to avoid issues with the `Math.abs()` comparison initialisation.
+- **Common mistake:** in Container With Most Water, updating `maxArea` inside the `if` branch rather than unconditionally — you must record the area *before* moving any pointer.
+- **Alternative approach for Reverse String:** the two-pointer swap is O(1) space; mention that Java's `StringBuilder.reverse()` does the same but isn't allowed in-place questions.
 
 ### Edge Cases to Trace Before Coding
 - `height` has only 2 elements → still works; one iteration captures the only possible area

@@ -19,28 +19,37 @@ Integrate two-pointer and sliding window into mixed-context problems to build pa
 | 3 | Subarray Product Less Than K | 713 | Medium | Sliding Window (product) | For each right, count valid subarrays ending at right = `right − left + 1` when product < k |
 
 ### Code Skeleton
-```python
-# Remove Duplicates (LC 26) — slow/fast two pointers
-def remove_duplicates(nums):
-    slow = 0   # slow = last confirmed unique element's index
-    for fast in range(1, len(nums)):
-        if nums[fast] != nums[slow]:   # new unique element found
-            slow += 1
-            nums[slow] = nums[fast]
-    return slow + 1   # count = last unique index + 1
+```java
+class Solution {
+    // Remove Duplicates (LC 26) — slow/fast two pointers
+    public static int removeDuplicates(int[] nums) {
+        int slow = 0;   // slow = last confirmed unique element's index
+        for (int fast = 1; fast < nums.length; fast++) {
+            if (nums[fast] != nums[slow]) {   // new unique element found
+                slow++;
+                nums[slow] = nums[fast];
+            }
+        }
+        return slow + 1;   // count = last unique index + 1
+    }
 
-# Subarray Product < K (LC 713)
-def num_subarray_product_less_than_k(nums, k):
-    if k <= 1:    # all positive ints ≥ 1, so no subarray product can be < 1
-        return 0
-    product, left, count = 1, 0, 0
-    for right in range(len(nums)):
-        product *= nums[right]
-        while product >= k:
-            product //= nums[left]
-            left += 1
-        count += right - left + 1  # subarrays ending at right with start in [left..right]
-    return count
+    // Subarray Product < K (LC 713)
+    public static int numSubarrayProductLessThanK(int[] nums, int k) {
+        if (k <= 1) {    // all positive ints >= 1, so no subarray product can be < 1
+            return 0;
+        }
+        int product = 1, left = 0, count = 0;
+        for (int right = 0; right < nums.length; right++) {
+            product *= nums[right];
+            while (product >= k) {
+                product /= nums[left];
+                left++;
+            }
+            count += right - left + 1;  // subarrays ending at right with start in [left..right]
+        }
+        return count;
+    }
+}
 ```
 
 ### Interview Tips

@@ -51,75 +51,86 @@ Strategy:
 ---
 
 ### Code Skeleton
-```python
-class TreeNode:
-    def __init__(self, val=0, left=None, right=None):
-        self.val = val; self.left = left; self.right = right
+```java
+class TreeNode { int val; TreeNode left, right; TreeNode(int val) { this.val = val; } }
 
-# House Robber III (LC 337)
-def rob(root):
-    def dfs(node):
-        if not node: return (0, 0)  # (rob_this, skip_this)
-        l_rob, l_skip = dfs(node.left)
-        r_rob, r_skip = dfs(node.right)
-        rob_this  = node.val + l_skip + r_skip
-        skip_this = max(l_rob, l_skip) + max(r_rob, r_skip)
-        return (rob_this, skip_this)
-    return max(dfs(root))
+class Solution {
+    // House Robber III (LC 337)
+    public static int rob(TreeNode root) {
+        int[] result = dfsRob(root);
+        return Math.max(result[0], result[1]);
+    }
+    // returns [robThis, skipThis]
+    private static int[] dfsRob(TreeNode node) {
+        if (node == null) return new int[]{0, 0};
+        int[] left  = dfsRob(node.left);
+        int[] right = dfsRob(node.right);
+        int robThis  = node.val + left[1] + right[1];
+        int skipThis = Math.max(left[0], left[1]) + Math.max(right[0], right[1]);
+        return new int[]{robThis, skipThis};
+    }
 
-# Count Complete Tree Nodes (LC 222)
-def countNodes(root):
-    def height(node, go_left):
-        h = 0
-        while node:
-            h += 1
-            node = node.left if go_left else node.right
-        return h
-    if not root: return 0
-    lh = height(root, True)    # leftmost path height
-    rh = height(root, False)   # rightmost path height
-    if lh == rh:
-        return (1 << lh) - 1   # 2^h - 1: perfect binary tree
-    return 1 + countNodes(root.left) + countNodes(root.right)
+    // Count Complete Tree Nodes (LC 222)
+    public static int countNodes(TreeNode root) {
+        if (root == null) return 0;
+        int lh = height(root, true);    // leftmost path height
+        int rh = height(root, false);   // rightmost path height
+        if (lh == rh) {
+            return (1 << lh) - 1;   // 2^h - 1: perfect binary tree
+        }
+        return 1 + countNodes(root.left) + countNodes(root.right);
+    }
+    private static int height(TreeNode node, boolean goLeft) {
+        int h = 0;
+        while (node != null) {
+            h++;
+            node = goLeft ? node.left : node.right;
+        }
+        return h;
+    }
 
-# Redundant Connection II (LC 685)
-def findRedundantDirectedConnection(edges):
-    n = len(edges)
-    parent = list(range(n + 1))   # union-find parent array
+    // Redundant Connection II (LC 685)
+    public static int[] findRedundantDirectedConnection(int[][] edges) {
+        int n = edges.length;
+        int[] parent = new int[n + 1];
+        for (int i = 0; i <= n; i++) parent[i] = i;   // union-find parent array
 
-    def find(x):
-        while parent[x] != x:
-            parent[x] = parent[parent[x]]   # path compression
-            x = parent[x]
-        return x
+        // Step 1: find node with in-degree 2 (if any)
+        int[] inDegree = new int[n + 1];
+        for (int[] e : edges) inDegree[e[1]]++;
 
-    def union(x, y):
-        px, py = find(x), find(y)
-        if px == py: return False   # cycle detected
-        parent[px] = py
-        return True
+        int cand1 = -1, cand2 = -1;
+        for (int i = n - 1; i >= 0; i--) {   // iterate backwards to find LATER candidate first
+            if (inDegree[edges[i][1]] == 2) {
+                if (cand2 == -1) {
+                    cand2 = i;   // later edge (try removing this first)
+                } else {
+                    cand1 = i;   // earlier edge
+                }
+            }
+        }
 
-    # Step 1: find node with in-degree 2 (if any)
-    in_degree = [0] * (n + 1)
-    for u, v in edges:
-        in_degree[v] += 1
-
-    cand1 = cand2 = None
-    for i in range(n - 1, -1, -1):   # iterate backwards to find LATER candidate first
-        if in_degree[edges[i][1]] == 2:
-            if cand2 is None:
-                cand2 = i   # later edge (try removing this first)
-            else:
-                cand1 = i   # earlier edge
-
-    # Step 2: try removing cand2 and see if remaining graph is valid
-    for i, (u, v) in enumerate(edges):
-        if i == cand2: continue   # skip candidate 2
-        if not union(u, v):
-            # cycle found — if cand1 exists, return cand1; else return this edge
-            return edges[cand1] if cand1 is not None else edges[i]
-
-    return edges[cand2]   # removing cand2 made graph valid → cand2 is the answer
+        // Step 2: try removing cand2 and see if remaining graph is valid
+        for (int i = 0; i < n; i++) {
+            if (i == cand2) continue;   // skip candidate 2
+            int u = edges[i][0], v = edges[i][1];
+            int pu = find(parent, u), pv = find(parent, v);
+            if (pu == pv) {
+                // cycle found
+                return cand1 != -1 ? edges[cand1] : edges[i];
+            }
+            parent[pu] = pv;
+        }
+        return edges[cand2];   // removing cand2 made graph valid → cand2 is the answer
+    }
+    private static int find(int[] parent, int x) {
+        while (parent[x] != x) {
+            parent[x] = parent[parent[x]];   // path compression
+            x = parent[x];
+        }
+        return x;
+    }
+}
 ```
 
 ---

@@ -44,70 +44,99 @@ Minimize over all v.
 ---
 
 ### Code Skeleton
-```python
-import heapq
-from collections import defaultdict
+```java
+import java.util.*;
 
-# Find Closest Node to Given Two Nodes (LC 2359)
-def closestMeetingNode(edges, node1, node2):
-    n = len(edges)
-    def get_dist(start):
-        dist = [-1] * n
-        node = start
-        d = 0
-        while node != -1 and dist[node] == -1:
-            dist[node] = d
-            d += 1
-            node = edges[node]
-        return dist
-    dist1 = get_dist(node1)
-    dist2 = get_dist(node2)
-    ans, min_max = -1, float('inf')
-    for v in range(n):
-        if dist1[v] != -1 and dist2[v] != -1:
-            mx = max(dist1[v], dist2[v])
-            if mx < min_max:
-                min_max = mx
-                ans = v
-    return ans
+class Solution {
 
-# Min Vertices to Reach All Nodes (LC 1557)
-def findSmallestSetOfVertices(n, edges):
-    has_incoming = set()
-    for _, v in edges:
-        has_incoming.add(v)
-    return [i for i in range(n) if i not in has_incoming]
+    // Find Closest Node to Given Two Nodes (LC 2359)
+    public static int closestMeetingNode(int[] edges, int node1, int node2) {
+        int n = edges.length;
+        int[] dist1 = getDist(node1, edges, n);
+        int[] dist2 = getDist(node2, edges, n);
+        int ans = -1;
+        int minMax = Integer.MAX_VALUE;
+        for (int v = 0; v < n; v++) {
+            if (dist1[v] != -1 && dist2[v] != -1) {
+                int mx = Math.max(dist1[v], dist2[v]);
+                if (mx < minMax) {
+                    minMax = mx;
+                    ans = v;
+                }
+            }
+        }
+        return ans;
+    }
 
-# Minimum Weighted Subgraph (LC 2203)
-def minimumWeight(n, edges, src1, src2, dest):
-    graph = defaultdict(list)
-    rev_graph = defaultdict(list)
-    for u, v, w in edges:
-        graph[u].append((v, w))
-        rev_graph[v].append((u, w))
+    private static int[] getDist(int start, int[] edges, int n) {
+        int[] dist = new int[n];
+        Arrays.fill(dist, -1);
+        int node = start, d = 0;
+        while (node != -1 && dist[node] == -1) {
+            dist[node] = d;
+            d++;
+            node = edges[node];
+        }
+        return dist;
+    }
 
-    def dijkstra(start, adj):
-        dist = [float('inf')] * n
-        dist[start] = 0
-        heap = [(0, start)]
-        while heap:
-            d, u = heapq.heappop(heap)
-            if d > dist[u]: continue
-            for v, w in adj[u]:
-                if dist[u] + w < dist[v]:
-                    dist[v] = dist[u] + w
-                    heapq.heappush(heap, (dist[v], v))
-        return dist
+    // Min Vertices to Reach All Nodes (LC 1557)
+    public static List<Integer> findSmallestSetOfVertices(int n, List<List<Integer>> edges) {
+        Set<Integer> hasIncoming = new HashSet<>();
+        for (List<Integer> e : edges) hasIncoming.add(e.get(1));
+        List<Integer> result = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            if (!hasIncoming.contains(i)) result.add(i);
+        }
+        return result;
+    }
 
-    d1 = dijkstra(src1, graph)    # dist from src1 to all nodes
-    d2 = dijkstra(src2, graph)    # dist from src2 to all nodes
-    d3 = dijkstra(dest, rev_graph)  # dist from dest to all nodes (reverse graph)
+    // Minimum Weighted Subgraph (LC 2203)
+    public static long minimumWeight(int n, int[][] edges, int src1, int src2, int dest) {
+        List<int[]>[] graph = new ArrayList[n];
+        List<int[]>[] revGraph = new ArrayList[n];
+        for (int i = 0; i < n; i++) {
+            graph[i] = new ArrayList<>();
+            revGraph[i] = new ArrayList<>();
+        }
+        for (int[] e : edges) {
+            graph[e[0]].add(new int[]{e[1], e[2]});
+            revGraph[e[1]].add(new int[]{e[0], e[2]});
+        }
+        long[] d1 = dijkstra(src1, graph, n);    // dist from src1 to all nodes
+        long[] d2 = dijkstra(src2, graph, n);    // dist from src2 to all nodes
+        long[] d3 = dijkstra(dest, revGraph, n); // dist from dest to all nodes (reverse graph)
 
-    ans = float('inf')
-    for v in range(n):
-        if d1[v] != float('inf') and d2[v] != float('inf') and d3[v] != float('inf'):
-            ans = min(ans, d1[v] + d2[v] + d3[v])
-    return ans if ans != float('inf') else -1
+        long ans = Long.MAX_VALUE;
+        for (int v = 0; v < n; v++) {
+            if (d1[v] != Long.MAX_VALUE && d2[v] != Long.MAX_VALUE && d3[v] != Long.MAX_VALUE) {
+                ans = Math.min(ans, d1[v] + d2[v] + d3[v]);
+            }
+        }
+        return ans == Long.MAX_VALUE ? -1 : ans;
+    }
+
+    private static long[] dijkstra(int start, List<int[]>[] adj, int n) {
+        long[] dist = new long[n];
+        Arrays.fill(dist, Long.MAX_VALUE);
+        dist[start] = 0;
+        PriorityQueue<long[]> heap = new PriorityQueue<>((a, b) -> Long.compare(a[0], b[0]));
+        heap.offer(new long[]{0, start});
+        while (!heap.isEmpty()) {
+            long[] top = heap.poll();
+            long d = top[0]; int u = (int) top[1];
+            if (d > dist[u]) continue;
+            for (int[] nb : adj[u]) {
+                int v = nb[0], w = nb[1];
+                if (dist[u] + w < dist[v]) {
+                    dist[v] = dist[u] + w;
+                    heap.offer(new long[]{dist[v], v});
+                }
+            }
+        }
+        return dist;
+    }
+}
 ```
 
 ---
