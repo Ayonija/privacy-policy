@@ -118,6 +118,39 @@ class StreamChecker:
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Value-Accumulating Trie / Sorted Trie Autocomplete / Reverse-Word Trie Streaming in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given three advanced Trie problems: Map Sum Pairs (aggregate values by prefix), Search Suggestions System (autocomplete returning top-3 lexicographic matches per prefix), and Stream of Characters (real-time matching of a character stream against a word dictionary). Each requires a different extension of the base Trie: value propagation, sorted suggestions, or reversed-word streaming."
+
+**Task:** "My goal was to extend the standard Trie structure in the minimal way needed for each query type — storing accumulated sums at nodes for Map Sum, leveraging sort + binary search instead of a Trie for autocomplete, and inserting reversed words to enable suffix-in-stream matching."
+
+**Action:** Walk the interviewer through these steps:
+1. *Classify the pattern:* "Prefix sum aggregation → value-accumulating Trie (delta propagation). Top-3 autocomplete → sort products + binary search (simpler than a Trie with stored suggestion lists). Real-time stream suffix matching → insert reversed words into Trie; maintain active search list advancing on each character."
+2. *Initialize:* "Map Sum: each Trie node stores `#sum` (accumulated value of all keys passing through). When a key is re-inserted, compute `delta = new_val - old_val` and propagate only the delta — avoiding re-summing all keys. Stream of Characters: build the Trie from reversed words at `__init__` time; maintain `self.active = []` to track in-progress searches."
+3. *Core loop logic:* "Map Sum insert: traverse the key path, adding `delta` to `#sum` at every node visited. Stream query: for each new character, start a new search from root AND advance all existing active searches. A search that reaches `is_end` means the word ended at the current stream position."
+4. *Convergence guarantee:* "Map Sum delta propagation is correct because the sum at any node equals the sum of `val` for all keys that pass through it — delta propagation maintains this invariant without recomputing. Active search list shrinks naturally (dead searches are dropped); it is bounded by the length of the longest word in the dictionary."
+5. *Duplicate handling / edge case proactivity:* "For Search Suggestions, the sort + binary search approach is simpler than a Trie for this problem: `bisect_left` finds the leftmost product with the given prefix in O(log n), and the next 3 entries either match or don't — no complex Trie node management. This avoids the O(n × L log 3) insertion overhead of a suggestion-storing Trie."
+
+**Result:** "Map Sum: O(L) per insert and O(L) per sum query — identical to a standard Trie, achieved via delta propagation. Search Suggestions: O(n log n) build + O(|searchWord| × log n) total query vs O(n × L) Trie build + O(|searchWord|) query — simpler code with comparable performance. Stream of Characters: O(L_max) per query where L_max = longest word length, vs O(W × L) scanning all words per character."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer this approach |
+|-------------|---------------------------|--------------------------|
+| Recompute sum by DFS on Map Sum query | Very infrequent queries (< 10 total) | O(subtree_size) per query vs O(L) with stored sums — delta propagation wins at scale |
+| Trie with top-3 stored at each node (LC 1268) | searchWord is very long (L > 1000) | O(L log n) per character for sort+bisect vs O(L) Trie traversal; Trie wins only for extremely long searches |
+| Naive scan all words per character (LC 1032) | Dictionary has ≤ 20 words | O(W × L) per character vs O(active_searches) with reversed Trie — Trie wins for large dictionaries |
+
+**Why NOT recompute sum in Map Sum:** DFS over the subtree gives O(subtree_size) per query — for a key at depth 10 with 1000 sub-keys, that's 1000 operations vs O(10) with stored sums.
+**Why NOT naive scan for Stream of Characters:** For a dictionary of 10^4 words and a stream of 10^4 characters, naive scan is 10^8 comparisons vs O(10^4 × L_max) with the reversed Trie.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 677: re-insert same key with new value → delta = new - old; sum updates correctly; key not previously inserted → delta = val; prefix longer than any key → return 0
 - LC 1268: no products share any prefix → empty lists for each step; single character searchWord → check all products starting with that char; duplicate products → return them (problem uses list as-is)
@@ -206,8 +239,24 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you designed a system that needed to process a continuous stream of data in real-time — how did you balance throughput and latency?
-- Leadership principle: Dive Deep
+
+**Leadership Principle:** Dive Deep
+
+**STAR Story: Designing a Real-Time Keyword Matching System Using a Reversed-Word Trie**
+
+**Situation (20%):** "Our content moderation team needed to detect prohibited phrases in a live chat stream, matching incoming characters against a dictionary of 15,000 banned terms as each character arrived. The original approach loaded all 15,000 terms and ran Python `any(term in buffer for term in terms)` on the full rolling buffer every 50ms. This consumed 35% of a CPU core at peak chat volume (800 messages/minute) and introduced 200–300ms average detection latency."
+
+**Task (part of S/T):** "I was tasked with reducing detection latency to under 20ms while reducing CPU usage to below 5%, without changing the moderation team's workflow for adding or removing banned terms."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I instrumented the existing code and confirmed that the bottleneck was the O(dictionary_size × buffer_length) substring scan on every new character — 15,000 × 500 characters = 7.5 million character comparisons per poll.
+Then, I proposed a reversed-word Trie: insert all banned terms reversed, maintain a list of active Trie searches, and advance each search by one character as each new character arrives. A search reaching `is_end` means the reversed banned term ends at the current stream position — equivalently, the banned term ends at the current character.
+Next, I built the Trie in a background thread that rebuilt on dictionary changes, with an atomic pointer swap so updates were lock-free from the hot path.
+Finally, I benchmarked the new system against replayed production chat logs showing peak load — 800 messages/minute, average message length 120 characters, dictionary of 15,000 terms — and compared CPU and latency."
+
+**Result (10-20%):** "Detection latency dropped from 200–300ms to 8–14ms per message — a 20× improvement. CPU usage fell from 35% to 2.1% of a single core. The reversed Trie handled dictionary updates (new banned terms added or removed) in under 200ms with the background rebuild. Over 6 months post-deployment, zero false negatives were reported for the 15,000-term dictionary, and detection covered terms up to 50 characters long — previously the 500ms scan window had missed multi-word phrases at high chat rates."
+
+**Interview tip:** Interviewers want to hear about *your* contribution. Say "I instrumented", "I proposed", "I built", "I benchmarked" — not "we did". Prepare this story for questions about: Dive Deep, technical curiosity, real-time systems, and CPU-efficient algorithm design.
 
 ---
 

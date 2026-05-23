@@ -64,6 +64,36 @@ class Solution {
 - **Brute force baseline:** O(n²) checking all subarrays and computing max-min with `max()` and `min()` each time (O(n) per call = O(n³) total) → two deques = O(n).
 - **Common mistake:** checking `if maxD.peekFirst() < left` instead of `while maxD.peekFirst() < left` — but since we add one element per step and shrink one at a time, `if` is actually sufficient here (at most one can expire per iteration). Both work, but be able to explain why.
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Sliding Window with Monotonic Deque in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given an array and a limit, and asked to find the longest subarray where the difference between the maximum and minimum is at most `limit`. The brute-force approach of checking all O(n²) subarrays and computing max-min via `max()` and `min()` is O(n³) — for n = 10⁵ that's 10¹⁵ operations. Even with a precomputed sliding range using a sorted structure it's O(n log n)."
+
+**Task:** "My goal was to solve this in O(n) time and O(n) space by recognising that I need O(1)-per-step access to both the window's max and min — achievable with two simultaneous monotonic deques."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "Sliding window where validity depends on `max - min` — an internal state I can't compute in O(1) without auxiliary structure. Two monotonic deques give O(1) max and O(1) min simultaneously."
+2. *Initialize:* "I maintain `maxD` (decreasing deque, front = current window max index) and `minD` (increasing deque, front = current window min index). Set `left = 0`, `result = 0`."
+3. *Core loop logic:* "For each `right`: pop from back of `maxD` while `nums[maxD.back] <= nums[right]` (maintain decreasing); push `right` to `maxD`. Similarly maintain `minD` (pop while `nums[minD.back] >= nums[right]`). Then while `nums[maxD.front] - nums[minD.front] > limit`: `left++`, and pop front of each deque if it's now out of window. Record `right - left + 1`."
+4. *Convergence guarantee:* "Each element is pushed and popped from each deque at most once — O(n) total for all deque operations, O(n) amortised."
+5. *Duplicate handling / edge case proactivity:* "Always store indices in the deque, not values — this is the critical insight for all deque sliding window problems. Storing values loses the ability to check if the front has slid out of the window."
+
+**Result:** "This achieves O(n) time vs O(n log n) with a TreeMap or O(n³) brute force. For n = 10⁵, the difference between O(n) and O(n log n) is ~10⁵ vs ~1.7M operations — both fast, but the deque approach proves your algorithmic depth to the interviewer."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer Monotonic Deque here |
+|-------------|---------------------------|-------------------------------|
+| Brute force O(n³) or O(n²) | When n ≤ 200 | O(n) deque approach vs O(n²)–O(n³); clear winner at n ≥ 10³ |
+| Sorted multiset / TreeMap O(n log n) | When window minimum AND maximum are needed and n ≤ 10⁵ | TreeMap gives O(log n) per operation; deque gives O(1) amortised — deque is strictly faster |
+
+**Why NOT brute force:** O(n²)–O(n³) for n = 10⁵ — timeout.
+**Why NOT TreeMap/sorted set:** O(n log n) total with O(log n) per insert/delete — correct but ~17× slower than deque for n = 10⁵. Use TreeMap only when you need full sorted order of the window, not just max/min.
+
 ### Edge Cases to Trace Before Coding
 - `limit = 0` → only windows where all elements are equal are valid; answer = length of longest equal-value run
 - Single element → window size 1, always valid (max - min = 0 ≤ any limit ≥ 0)
@@ -82,8 +112,24 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you maintained a "priority view" of a changing situation (e.g., kept track of the top issues in a fast-moving project) with minimal rework — analogous to a monotonic deque maintaining max without re-scanning the window.
-- Leadership principle: Customer Obsession
+
+**Leadership Principle:** Customer Obsession
+
+**STAR Story: Maintaining a Real-Time Priority View of Customer Incidents Without Rescanning**
+
+**Situation (20%):** "At my previous company, our on-call team received 50–200 alerts per hour during peak traffic periods. The on-call engineer had to manually scroll through a Slack channel and re-read all recent alerts to identify the current highest-severity issue — this 'full scan' took 5–10 minutes, during which new critical incidents could arrive unnoticed. Customer impact windows were stretching to 20–30 minutes because of this prioritization delay."
+
+**Task (part of S/T):** "I was responsible for on-call tooling. My goal was to give the on-call engineer a continuously updated 'current highest severity' view that stayed accurate as new alerts arrived and old ones resolved — without requiring manual re-scanning."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I designed a priority alert tracker as a monotonic data structure: a priority queue keyed by severity level, updated incrementally as alerts arrived and resolved. When a new alert arrived, it was inserted in O(log n) — when an alert was resolved, it was removed and the next highest severity was immediately surfaced.
+Then, I built a Slack bot that maintained this live 'top incident' view and posted updates only when the top-severity incident changed — not on every alert. Engineers saw the current worst problem without reading every alert.
+Next, I piloted the bot with 2 on-call engineers for 2 weeks and collected feedback on false positives and missed escalations.
+Finally, I refined the severity scoring weights based on their feedback and deployed to the full on-call rotation."
+
+**Result (10-20%):** "Mean time to acknowledge the highest-severity incident dropped from 18 minutes to 3 minutes — an 83% reduction. Customer impact window shortened by an average of 12 minutes. The on-call engineers reported 40% less cognitive load in post-rotation surveys. The bot was adopted by 3 other teams within the quarter."
+
+**Interview tip:** Customer Obsession questions should connect your technical decision directly to customer impact. "The bot reduced customer impact windows by 12 minutes" is more powerful than "engineers liked it." Prepare for: customer obsession, delivering results, ownership, or bias for action.
 
 ## Flashcards
 

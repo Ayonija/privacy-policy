@@ -93,6 +93,38 @@ class LFUCache:
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining LFU Cache design in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was asked to design a cache that evicts the least frequently used key and, on a tie, evicts the least recently used among tied keys — all get, put, and evict operations must be O(1). The obvious approach of sorting keys by frequency on every eviction is O(k log k) where k is the cache size — on a cache of 100,000 entries, that's 1.7 million operations per eviction, which would cripple a high-throughput API serving 50,000 requests per second."
+
+**Task:** "My goal was to design a data structure that achieves O(1) for all operations by maintaining the frequency ordering incrementally rather than recomputing it."
+
+**Action:** Walk the interviewer through these steps:
+1. *Identify the three invariants:* "I need: (1) O(1) lookup of a key's value and current frequency. (2) O(1) promotion of a key from frequency f to f+1. (3) O(1) eviction of the LRU key at the minimum frequency."
+2. *Choose the data structures:* "I use three data structures: `key_map = {key: [value, freq]}` for O(1) key lookup. `freq_map = {freq: OrderedDict(key → value)}` — an OrderedDict at each frequency level to maintain LRU order within that level. A `min_freq` integer tracking the current minimum."
+3. *Implement `get`:* "On get: look up key in `key_map`. Remove it from `freq_map[freq]`. Add it to `freq_map[freq + 1]`. If `freq_map[freq]` is now empty and `freq == min_freq`, increment `min_freq`. All O(1) amortised."
+4. *Implement `put`:* "On put of a new key: if at capacity, evict with `freq_map[min_freq].popitem(last=False)` — the oldest insertion at the minimum frequency. Insert the new key at `freq_map[1]` and reset `min_freq = 1`. On update of an existing key: same as get, then update the value."
+5. *Why OrderedDict for LRU tie-breaking:* "OrderedDict maintains insertion order. `popitem(last=False)` removes the oldest-inserted key in O(1) — that's the LRU key among equal-frequency keys."
+
+**Result:** "All three operations are O(1). For a cache of 100,000 entries at 50,000 req/sec, eviction takes microseconds instead of 1.7 million comparisons. The design scales to any cache size without degrading."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer freq→OrderedDict + min_freq |
+|-------------|---------------------------|----------------------------------------|
+| Sort by (freq, timestamp) on eviction | Cache is tiny (< 100 entries) | O(k log k) eviction — catastrophic at scale |
+| LRU only (LC 146) | Access pattern is temporal, not frequency-based | Doesn't track frequency — wrong eviction policy |
+| MinHeap of (freq, timestamp, key) | Acceptable O(log k) eviction | Lazy deletion complicates `put`; O(log k) not O(1) |
+
+**Why NOT a heap:** A min-heap of `(freq, timestamp, key)` gives O(log k) eviction, not O(1). It also requires lazy deletion to handle key updates, adding complexity. The OrderedDict approach achieves true O(1) for all operations.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 1657: strings of different lengths → always False (Counter values will differ)
 - LC 451: single char string; all same chars (one bucket)
@@ -144,8 +176,18 @@ Maps each word (token) to the list of document IDs (and positions) containing th
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to design a system that prioritised the most-used resources and discarded the least-used ones to stay within capacity — exactly the LFU eviction problem.
-- Leadership principle: Customer Obsession
+
+**Leadership principle: Customer Obsession**
+
+**STAR Story — Prioritising the most-used resources under a capacity constraint**
+
+**Situation:** I was working on a recommendation engine that precomputed similarity scores for 8 million product pairs and cached them in memory for sub-millisecond serving. The cache had a hard 2 GB memory budget, but the naive LRU policy we were using kept warm cache entries for popular winter products long after the season ended — because they had been recently accessed during the previous week's spike. Meanwhile, evergreen products that were queried consistently throughout the year kept getting evicted. Customer-facing recommendation latency was spiking to 400 ms for those evergreen products because every cache miss triggered a cold database scan.
+
+**Task:** I was asked to replace the LRU eviction policy with one that better matched our access patterns, with the goal of reducing P95 recommendation latency from 400 ms to under 50 ms for evergreen products — without increasing the memory budget.
+
+**Action:** I analysed the access logs and confirmed that 15% of products accounted for 80% of queries (classic power-law distribution). I proposed switching the cache eviction policy to LFU: products queried more frequently would survive evictions while seasonal spikes wouldn't permanently displace high-frequency items. I implemented the LFU cache using the freq→OrderedDict + min_freq pattern to maintain O(1) eviction — critical because the service handled 30,000 lookups per second and couldn't afford O(log n) overhead. I shadow-tested both policies simultaneously on 5% of traffic for a week, measuring hit rate, P95 latency, and eviction rate per product category. LFU achieved a 91% hit rate versus LRU's 74% for the evergreen segment, while seasonal products' hit rate dropped from 68% to 41% — an acceptable trade-off since they had fallback logic.
+
+**Result:** After full rollout, P95 recommendation latency for evergreen products dropped from 400 ms to 31 ms, exceeding the 50 ms target. Overall cache hit rate improved from 78% to 88%, reducing database read load by 45% and saving roughly $12,000 per month in DB compute costs. Customer click-through rate on recommendations increased by 6% over the following month, which the product team attributed to more relevant, lower-latency results.
 
 ---
 

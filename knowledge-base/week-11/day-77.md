@@ -114,6 +114,39 @@ class WordFilter:
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Trie BFS on Word-Only Paths / Wildcard Trie DFS / Wrapped Suffix Trie in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given three advanced Trie variants: finding the longest word where every prefix is also a valid word (LC 720), searching with '.' as a wildcard (LC 211), and answering combined prefix AND suffix queries (LC 745). Each requires extending the base Trie with a different traversal strategy or structural transformation."
+
+**Task:** "My goal was to recognise that each variant extends the Trie in one specific dimension — BFS restricted to valid paths, DFS branching on wildcards, and a structural trick (suffix wrapping) to support two-dimensional lookups — and to implement each extension without redundant data structures."
+
+**Action:** Walk the interviewer through these steps:
+1. *Classify the pattern:* "Longest word with all-valid prefixes → Trie BFS, but only traverse edges where `child.is_end = True`. Wildcard pattern matching → Trie DFS that branches to ALL children on '.'. Prefix + suffix lookup → insert `suffix#word` for all suffixes; query `suffix#prefix`."
+2. *Initialize:* "For LC 720: standard Trie insert, then BFS with a queue of `(node, accumulated_word)`. For LC 211: standard Trie insert with an extra `search` method that recurses. For LC 745: use a nested dict Trie where each node also stores the `latest_index` of any word passing through it."
+3. *Core loop logic:* "LC 720 BFS: for each child, only enqueue if `child.is_end = True` — this guarantees the invariant that every prefix on the path is a valid word. LC 211 wildcard: at a '.' character, iterate all children and OR together the recursive results. LC 745 query: traverse `suffix#prefix` as a single string; the stored index at the terminal node is the answer."
+4. *Convergence guarantee:* "LC 720 BFS explores each node at most once; breadth-first guarantees that we find longer words as we go deeper. LC 211 worst case is O(26^L) when the pattern is all '.'s — in practice, most real words limit branching. LC 745 build is O(n × L²) one-time cost; each query is O(L)."
+5. *Duplicate handling / edge case proactivity:* "LC 745: when the same word appears multiple times, later insertions overwrite `latest_index` at each node — we store the latest index, which the problem requires. The '#' separator is critical: it prevents a suffix of one word from accidentally matching the start of another word's key."
+
+**Result:** "LC 720: O(total_chars) BFS vs O(n² × L) brute-force checking all prefixes of all words. LC 211: O(L) for literal patterns vs O(26^L) worst-case for all-wildcard patterns — acceptable since real dictionary words have bounded branching. LC 745: O(L) per query vs O(n × L) linear scan of all (prefix, suffix) combinations — for a dictionary of 10^4 words with 10^4 queries, that's 10^4 vs 10^8 operations."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer Trie here |
+|-------------|---------------------------|----------------------|
+| Sort + HashSet for LC 720 | Small word list (n ≤ 1000) | Sort and check all prefixes in HashSet: O(n log n + n × L); Trie BFS: O(total_chars) — asymptotically equivalent but Trie is cleaner |
+| Regex for LC 211 | Quick prototype or n ≤ 100 | O(n × L) per query scanning all words; Trie DFS prunes branches early |
+| HashMap of (prefix, suffix) pairs for LC 745 | Dictionary is tiny (≤ 100 words) | O(n × L²) precomputation + O(1) query; Trie also O(n × L²) build but O(L) query and handles prefix-only or suffix-only queries separately |
+
+**Why NOT regex for LC 211:** Regex matches scan all n words for each query — O(n × L) per query. With n = 10^4 words and 10^4 queries, that's 10^8 character comparisons vs O(L) per Trie query.
+**Why NOT HashMap for LC 745 at scale:** Precomputing all (prefix, suffix) pairs requires O(n × L²) space and time. For n = 10^4 words of average length 10, that's 10^6 HashMap entries. The Trie is the same build cost but more space-efficient due to shared prefixes.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 720: single character words only → return the lexicographically smallest (all are valid); empty words list → return ""; word "a" in list but "ab" not → "a" is valid, "ab" is not
 - LC 211: search(".") → True if any single-char word exists; search("...") → True if any 3-char word exists; no words added → all searches False
@@ -189,8 +222,24 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to choose between a simple chronological ordering and a more complex ranking algorithm — what drove the decision?
-- Leadership principle: Think Big
+
+**Leadership Principle:** Think Big
+
+**STAR Story: Choosing Algorithmic Feed Ranking Over Chronological Ordering for a Content Platform**
+
+**Situation (20%):** "I was the lead engineer on the feed team for an internal content platform used by 12,000 employees to share knowledge articles, project updates, and learning resources. The feed was chronological — most recent first — and engagement metrics showed that only 8% of users clicked on feed items, while user surveys consistently said 'the feed shows me things I don't care about.'"
+
+**Task (part of S/T):** "I was asked to investigate whether a ranked feed would improve engagement. My goal was to design and A/B test a ranking model without over-engineering the first iteration — we had 6 weeks and one data engineer."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I analysed the engagement data and identified that three signals were strongly predictive of clicks: recency (posts from the last 24 hours), team affinity (posts from teams you'd interacted with in the past 30 days), and content type match (articles vs. updates vs. events based on the viewer's historical preference).
+Then, I designed a simple weighted scoring formula — not a full ML model — that combined these three signals with tunable weights, making it interpretable and adjustable without retraining.
+Next, I built the ranking as a server-side post-processing step: the feed still fetched the top 50 chronological posts and re-ranked them by score before returning. This avoided any architectural changes to the fanout system.
+Finally, I ran a 3-week A/B test splitting employees into control (chronological) and treatment (ranked) groups, measuring CTR, session length, and 'hide this' negative feedback."
+
+**Result (10-20%):** "The ranked feed increased feed CTR from 8% to 21% — a 162% improvement. Average session time increased by 3.4 minutes per week per user. Negative feedback ('hide this') dropped by 44%. I presented the results to leadership with a recommendation to roll out the ranked feed to all users, which was approved. The ranking formula remained interpretable — users could see 'why am I seeing this?' explanations — which reduced complaints about the algorithm by 67% compared to black-box approaches at peer companies."
+
+**Interview tip:** Interviewers want to hear about *your* contribution. Say "I analysed", "I designed", "I built", "I ran" — not "we did". Prepare this story for questions about: Think Big, data-driven decisions, building for the future, and delivering measurable impact.
 
 ---
 

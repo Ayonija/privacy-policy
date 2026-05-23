@@ -127,6 +127,28 @@ def minSwapsCouples(row):
 
 ---
 
+### STAR Interview Framework
+
+> **Boundary DFS Exclusion (Surrounded Regions / Enclaves):** brute-force flood-fill from each interior cell O(m²×n²) → this approach O(m×n) time, O(m×n) space
+
+**S:** "Given an m×n grid with 'O' cells, identify which interior 'O' cells are fully surrounded by 'X'. Naive approach: flood-fill from each 'O' inward — O(m²×n²) for dense grids."
+**T:** "Need O(m×n) by reversing the problem: flood from the border inward."
+**A (60%):**
+1. *Classify:* "'Which interior cells cannot reach the boundary?' → reverse: DFS from ALL border cells to mark what CAN reach the boundary; everything else is enclosed."
+2. *Init:* "Mark all border 'O' cells as safe ('S'); seed DFS from each."
+3. *Loop/Step:* "DFS propagates 'S' marking inward — all 'O' cells connected to a border 'O' become 'S'."
+4. *Termination:* "After all border DFS: remaining 'O' cells are truly surrounded → flip to 'X'; 'S' → restore to 'O'."
+5. *Gotcha:* "Don't DFS from interior 'O' cells — only border cells. Interior-to-border tracking is the slow O(m²×n²) approach."
+**R:** "O(m×n) time, O(m×n) space (DFS stack). Single grid scan after DFS. Handles all edge cases: single-row/column grids have all cells on border → no captures."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Interior flood-fill | Tiny grids, simple correctness check | O(m²×n²) for dense grids |
+| Union-Find with virtual border node | Need component counts | DFS is simpler and same complexity |
+
+---
+
 ## System Design (1 hour)
 ### Topic: WebSockets, Long Polling & Server-Sent Events — Real-Time Communication Patterns
 
@@ -189,8 +211,14 @@ WebSocket is stateful — a specific connection is held to a specific server. Fo
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you chose a simpler communication pattern over a more complex one — when simplicity won despite pressure to over-engineer.
 - Leadership principle: Are Right, A Lot
+
+**Full STAR Story — "Choosing SSE Over WebSocket":**
+**S (20%):** "At a sports data company, we were building live score updates for 1.2M concurrent users during peak events. Engineering leadership pushed for a WebSocket implementation because it felt 'more real-time.' I believed SSE was the right tool."
+**T:** "I needed to advocate for the simpler SSE approach with data, and deliver a scalable real-time score feed within 3 weeks."
+**A (60% — 'I' not 'we'):** "(1) I ran a load test comparing SSE and WebSocket for unidirectional server-push at 100K concurrent connections — SSE had 18% lower memory overhead per connection and required no sticky session configuration. (2) I presented the data showing WebSocket required a pub/sub layer (Redis) plus custom session affinity, adding 2 weeks of infrastructure work and an ongoing ops burden — SSE worked natively with our existing HTTP/2 load balancer. (3) I built the SSE prototype in 4 days: a score-update publisher pushed events to Redis Pub/Sub; all app servers subscribed and forwarded events to their local SSE clients. (4) I ran a 72-hour soak test at 200K simulated concurrent connections with zero dropped events."
+**R (20%):** "Launched on time. P99 score update latency: 87ms under 1.2M concurrent connections. Infrastructure cost was 40% less than the WebSocket estimate. The pattern was adopted for two other real-time features."
+*Works for: Are Right, A Lot, Invent and Simplify, Frugality.*
 
 ---
 

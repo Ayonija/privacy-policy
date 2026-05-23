@@ -104,6 +104,38 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining LCA in a General Binary Tree in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a binary tree and two nodes p and q, and asked to find their lowest common ancestor — the deepest node that has both p and q as descendants. Unlike a BST, there's no ordering property to exploit, so I can't navigate left or right based on values. Brute-force would be to find the root-to-p path and the root-to-q path, then find the last common node — O(n) time but O(n) extra space for the path lists."
+
+**Task:** "My goal was to solve this in O(n) time and O(h) space using a single post-order DFS pass without storing any paths."
+
+**Action:** Walk the interviewer through these steps:
+1. *Post-order DFS:* "I use post-order traversal — process children before the current node — because I need to know what's in the subtrees before making a decision at the current node."
+2. *Base case:* "If the current node is null, return null. If the current node equals p or q, return it immediately — we don't need to search further; we've found one of the targets."
+3. *Query left and right:* "I recursively call `dfs(left)` and `dfs(right)`. Each returns either null (neither p nor q in that subtree) or a non-null node (p, q, or their LCA)."
+4. *Decision logic:* "If both `left` and `right` are non-null → p is in one subtree and q is in the other → the current node is their LCA, return it. If only one side is non-null → the LCA is in that subtree → propagate the non-null result upward. If both are null → return null."
+5. *Why this handles one-is-ancestor-of-the-other:* "If p is an ancestor of q, when we reach p we return it immediately (base case 2), without searching further. The left/right calls above p will bubble that p node all the way to the root — the correct answer."
+
+**Result:** "O(n) time — each node visited exactly once. O(h) space for the recursion stack — O(log n) for balanced trees. No extra path storage needed. The three-case return logic is the key pattern: null/null → null; one non-null → propagate; both non-null → current node is LCA."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer post-order DFS |
+|-------------|---------------------------|--------------------------|
+| Store root-to-node paths, find last common node | If paths are needed for other purposes | O(n) extra space for paths; two DFS passes |
+| Euler tour + range minimum query | Ultra-fast repeated LCA queries on same tree | O(n log n) preprocessing; overkill for single queries |
+| Post-order DFS (single pass) | Single or few LCA queries | O(n) time, O(h) space, no preprocessing |
+
+**Why NOT path storage:** Two separate DFS passes (one for p, one for q) plus path comparison is correct but uses O(n) space for paths. Post-order DFS finds the LCA in one pass with O(h) space.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 235: one node IS the ancestor of the other (e.g., p = root) → the while loop hits `p.val == node.val` and returns immediately; both nodes equal root → returns root
 - LC 236: p or q does not exist in tree — problem guarantees both exist; one is ancestor of the other → the first-found node is returned upward and becomes the answer
@@ -173,8 +205,18 @@ Set a TTL to ensure freshness + use LRU as the eviction policy within the TTL wi
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to balance recency vs. frequency of use when prioritising resources — analogous to choosing between LRU and LFU eviction.
-- Leadership principle: Dive Deep
+
+**Leadership principle: Dive Deep**
+
+**STAR Story — Balancing recency vs. frequency when prioritising limited resources**
+
+**Situation:** Our team maintained an API gateway that cached JWT validation results for incoming tokens. The cache held a maximum of 500,000 tokens at any given time using LRU eviction. We began observing a pattern where legitimate long-session users — enterprise customers who kept sessions open for 8+ hours — were getting randomly logged out during business hours. Investigation revealed that a batch import job was generating thousands of short-lived one-off API tokens every hour, flooding the LRU cache and evicting the long-session enterprise tokens that were being used continuously.
+
+**Task:** I was asked to investigate the root cause and propose a solution that kept both enterprise long-session users and high-volume batch jobs working correctly without increasing the cache size budget.
+
+**Action:** I pulled cache access logs for 72 hours and built a frequency-vs-recency scatter plot for cached tokens. The pattern was clear: enterprise tokens had very high access frequency (hundreds of hits per session) but moderate recency (last hit minutes ago). Batch tokens had access frequency of 1 and very recent timestamps. LRU was perfectly preserving the batch tokens — they had just been inserted — while evicting the enterprise tokens that were in active use. I prototyped a switch to LFU eviction policy in a staging environment. I then realised LFU alone wasn't enough: new enterprise tokens would still start at frequency 1 and be vulnerable during their first minute of existence. I added a hybrid: use LFU for keys with frequency > 5 (proven to be in active use), and LRU as a fallback for new entries below that threshold. I implemented this as a two-tier eviction policy in our custom caching layer and load-tested it with both enterprise session patterns and batch import patterns simultaneously.
+
+**Result:** Enterprise session cache evictions dropped from 340 per hour to zero during the following week. Batch import continued to work correctly. Enterprise user "unexpected logout" support tickets dropped from 12 per week to 0. The two-tier eviction policy added 3% memory overhead but eliminated the entire class of problem.
 
 ---
 

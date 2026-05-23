@@ -244,8 +244,34 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you identified a data consistency issue between two systems — how did you diagnose it and what was your fix?
 - Leadership principle: Earn Trust
+
+**Full STAR Story — "Outbox Pattern to Fix Silent Payment Gaps":**
+**S (20%):** "At PaymentCo, an audit surfaced 47 payment records in MySQL that never appeared in our Kafka analytics pipeline — silent data gaps spanning 3 weeks and affecting $14,000 in revenue attribution."
+**T:** "I was assigned to diagnose the inconsistency and implement a durable fix within one sprint."
+**A (60% — 'I' not 'we'):** "(1) I traced the gap to a race condition: the payment service wrote to MySQL and published to Kafka in separate operations — a crash between them left MySQL committed but Kafka unpublished. (2) I designed and implemented the Outbox Pattern: added an outbox table written in the same MySQL transaction as each payment. (3) I built a polling outbox worker that read and published pending events every 100ms, then marked them sent. (4) I back-filled the 47 missing events by querying the payment table and replaying them through the outbox worker manually."
+**R (20%):** "Zero consistency gaps in the following 8 weeks of monitoring. The pattern was adopted by two other services. I presented the root cause analysis to the full engineering org, building trust with the payments team lead."
+*Works for: Earn Trust, Insist on the Highest Standards, Ownership.*
+
+### STAR Interview Framework
+
+> **N-Queens row-by-row with constraint sets:** brute-force O(n^n) → constraint-set backtracking O(n!) time, O(n) space
+
+**S:** "Place n queens on n×n board so none attack each other. Brute-force O(n^n) tries every cell without pruning attacked squares."
+**T:** "Need O(n!) by tracking attacked columns and diagonals with O(1) lookup sets per row."
+**A (60%):**
+1. *Classify:* "Constraint-satisfaction placement → N-Queens row-by-row backtracking."
+2. *Init:* "cols set, diag1 set (r-c), diag2 set (r+c); place one queen per row."
+3. *Loop/Recurrence:* "For each col: skip if in cols/diag1/diag2; place queen, add to sets, recurse row+1."
+4. *Termination:* "row == n → collect board."
+5. *Gotcha:* "The r-c and r+c diagonal formulas — confusing which is ↘ vs ↗. Memorize: same ↘ diagonal = same r-c value."
+**R:** "O(n!) time, O(n) space. n=8 → 92 solutions found in microseconds vs. minutes for brute-force."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Bitmask DP | Count solutions only (not enumerate) | We need full board configurations |
+| Constraint propagation (AC-3) | Very large n with sparse solutions | Overkill for interview; sets give same pruning benefit |
 
 ---
 

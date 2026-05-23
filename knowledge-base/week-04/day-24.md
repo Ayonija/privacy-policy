@@ -65,6 +65,33 @@ class Solution {
 }
 ```
 
+### Interview Tips
+
+- **Undo/cancel semantics:** "The stack models a running 'last-in, first-out' cancel — whenever the new character would cancel the previous one (same char in adjacent duplicates, backspace `#`, or `..` in paths), pop instead of push."
+- **Split on `/` edge cases for Simplify Path:** "Multiple consecutive slashes produce empty strings after split — skip them. A trailing slash also produces a trailing empty token — skip it. These two edge cases together mean filtering `!part.isEmpty()` handles all slash noise."
+- **Two-pass approach for Minimum Remove:** "Pass 1 pairs each `)` with the most recent unmatched `(` (stack of indices); any `)` that can't be paired goes straight into the remove set. Pass 2 dumps the remaining unmatched `(` indices into the remove set. Pass 3 rebuilds. Interviewers expect you to name all three passes."
+- **Brute force baseline:** O(n²) for adjacent duplicates (repeatedly scan for adjacent pairs) → stack is O(n).
+
+### STAR Interview Framework
+
+> **Stack — String Processing with Undo/Cancel Semantics:** brute-force O(n²) → this approach O(n) time, O(n) space
+
+**S:** "Given a string of n characters with special cancel tokens (backspace, adjacent duplicates, or `..` in paths). Repeatedly scanning for cancel pairs is O(n²) — too slow for n=10^5."
+**T:** "Need O(n) by processing characters left to right with a stack that models the 'live' state after cancellations. Goal: return the fully simplified string."
+**A (60% of answer time):**
+1. *Classify:* "The trigger is 'characters cancel each other' or 'navigate a hierarchy with undo' — stack with push/pop on cancel condition."
+2. *Init:* "Empty stack (or deque) to hold surviving characters. For Simplify Path, split on `/` first and iterate tokens."
+3. *Loop/Step:* "For each token: if it is a cancel signal (same char as top, `#`, or `..`), pop if non-empty; otherwise push. For Minimum Remove: also maintain a remove-index set alongside the stack."
+4. *Termination:* "After one pass, the stack contains exactly the result — join and return. For paths, prepend `/`."
+5. *Gotcha:* "For Minimum Remove, don't forget to drain the stack into the remove set after the loop — any `(` still in the stack is unmatched and must also be removed."
+**R:** "O(n) time, O(n) space. At n=10^5 this processes in ~1ms vs ~10 seconds for the naive repeated-scan approach — essential for real-time log sanitisation or code editor path resolution."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Repeated string replace in a loop | n ≤ 100, simplicity preferred | O(n²) due to repeated scanning and string copy |
+| Two-pointer in-place | Backspace Compare O(1) space special case | Cannot generalise to path simplification with multi-char tokens |
+
 ## System Design (1 hour)
 ### Topic: CAP — Partition Tolerance & the C vs A Trade-off
 - **Partition Tolerance** is non-negotiable in any real distributed system — network delays and packet drops happen; you cannot build a system that assumes a perfect network.
@@ -77,8 +104,15 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Tell me about a time you had to choose between being correct and being responsive under pressure — analogous to the CP vs AP trade-off where you cannot have both at once during a failure.
 - Leadership principle: Have Backbone; Disagree and Commit
+
+**Full STAR Story — "Pushing Back on a Fast-Ship Decision That Would Break Path Validation in CI":**
+
+**S (20%):** "At a developer-tools company, the VP of Engineering wanted to ship a new CI pipeline configuration parser in 3 days for a customer demo. The parser handled Unix-style path normalization — but I discovered during code review it used a naive repeated-replace loop that failed on paths with consecutive slashes and `..` sequences, producing incorrect output for ~15% of real-world repo paths in our test corpus."
+**T:** "I was the code owner for the CI path-resolution module. Goal: either fix the correctness issue before the demo or document the risk clearly enough for leadership to make an informed call — without delaying the demo unilaterally."
+**A (60% — use 'I' not 'we'):** "(1) I wrote a one-page technical note showing the failure cases — paths like `//a/../b` — with expected vs. actual output, and estimated a 15% incorrect-result rate on real repos. (2) I proposed a stack-based O(n) rewrite I could deliver in 4 hours, and presented both options to the VP: ship the fix, or demo on a curated path set that avoids the edge cases. (3) When the VP initially pushed to demo on curated paths, I respectfully disagreed in the meeting — explaining that if a customer ran a live demo with their own repo, the failure would be visible and harder to recover from than a 4-hour delay. (4) I offered to stay late and have the fix reviewed and merged by midnight."
+**R (20%):** "The VP agreed to the 4-hour fix. I shipped the stack-based rewrite, it passed all tests, and the demo ran without issues on real customer repos. The VP later told my manager it was the right call and referenced it as an example of good technical judgment under pressure."
+*Works for LP questions on: Have Backbone; Disagree and Commit; Earn Trust; Insist on the Highest Standards.*
 
 ## Flashcards
 

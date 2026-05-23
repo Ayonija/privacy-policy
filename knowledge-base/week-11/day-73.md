@@ -131,6 +131,39 @@ def medianSlidingWindow(nums, k):
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Max-Heap Top-K by Distance / Greedy Max-Heap Interleaving / Two-Heap Sliding Window Median in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given three heap extension problems: finding the K closest points to the origin among millions of coordinates, reorganizing a character string so no two adjacent characters are identical, and computing the running median over a sliding window of size k. The naive approaches — sorting all points, checking every arrangement, or re-sorting the window on each slide — all give O(n log n) or worse per operation."
+
+**Task:** "My goal was to recognize that distance comparison, greedy character selection, and sliding-window median all reduce to heap operations: the same data structure solves all three with appropriate configuration."
+
+**Action:** Walk the interviewer through these steps:
+1. *Classify the pattern:* "K closest to origin → max-heap of size K (pop the farthest when size exceeds K). Reorganize String → max-heap greedy (always place the two most frequent chars, alternating). Sliding Window Median → two heaps with lazy deletion for outgoing elements."
+2. *Initialize:* "For K closest: push `(-x²-y², x, y)` — negating distance makes Python's min-heap behave as a max-heap. For Reorganize String: push `(-freq, char)` pairs. For sliding window median: initialize the two-heap structure plus a `delayed` counter for lazy deletion."
+3. *Core loop logic:* "For K closest: pop when size > K. For Reorganize String: pop the two most-frequent chars simultaneously, append both, push back if count > 0 — this guarantees no triple run without checking the last placed char. For sliding window median: on each slide, add the new element (standard two-heap add) and mark the outgoing element in `delayed` — only truly remove it when it reaches the heap top."
+4. *Convergence guarantee:* "The lazy deletion for sliding window median is O(log k) amortized because each element is pushed and popped at most once — even if it stays 'marked' for several steps before reaching the top."
+5. *Duplicate handling / edge case proactivity:* "For Reorganize String, the key edge case is when max_freq > (n+1)//2 — then no valid arrangement exists. I check this immediately before entering the heap loop to fail fast."
+
+**Result:** "K Closest Points: O(n log K) vs O(n log n) for full sort — for n = 10^6 points with K = 50, that's 3× fewer comparisons. Reorganize String: O(n log n) but with small constant (max 3 chars in heap). Sliding Window Median: O(n log k) vs O(n×k) for naive sliding sort — for n = 10^5, k = 1000, that's 100× faster."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer heap here |
+|-------------|---------------------------|----------------------|
+| `heapq.nsmallest(k, points)` | n is small (n ≤ 10^4) | Built-in convenience; same O(n log K) but no learning signal |
+| Interleave at even positions (LC 767) | Guaranteed feasibility known | Simpler O(n) but less generalizable to variable limits |
+| Re-sort window each slide (LC 480) | k is tiny (k ≤ 10) | O(k log k) per slide = O(nk log k) total; lazy deletion wins for large k |
+
+**Why NOT re-sort for sliding window median:** O(nk log k) vs O(n log k) — for k=1000, n=10^5, that's 1000× slower.
+**Why NOT just `sorted()` for K closest:** O(n log n) every time vs O(n log K) with heap — when K = 10 and n = 10^6, the heap is 100× fewer comparisons.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 973: k = len(points) → return all points; all points at same distance → any K valid; k = 1 → return single closest
 - LC 767: single unique character with count > 1 → impossible; "aab" → "aba" (valid); "aaab" → impossible (3 a's in length 4 → max = 2 → impossible)
@@ -230,8 +263,24 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you optimised a data pipeline that was processing media or large files — what bottleneck did you resolve?
-- Leadership principle: Frugality
+
+**Leadership Principle:** Frugality
+
+**STAR Story: Optimising a Media Transcoding Pipeline Using Lazy Deletion and Priority Queues**
+
+**Situation (20%):** "Our video transcoding service maintained a priority queue of upload jobs sorted by file size, processing smaller files first to maximize throughput. When a user cancelled an upload mid-flight, we were removing their job by scanning the entire queue — an O(n) operation that caused 200–400ms stalls on our priority queue during high-traffic periods when the queue held 50,000+ jobs."
+
+**Task (part of S/T):** "I was asked to eliminate the stalls without introducing a more complex data structure (we didn't have budget for a rewrite). My goal was to reduce cancelled-job removal from O(n) to O(log n) amortized without changing the external API."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I profiled the service and confirmed that O(n) scans during cancellation were causing cascading delays — when 5 cancellations arrived simultaneously, we had 5 serial O(n) scans, each taking 150ms.
+Then, I proposed lazy deletion: instead of removing the cancelled job from the heap, I'd mark its ID in a `cancelled_set`. When the job reached the heap top during the processing loop, I'd skip it and pop it in O(log n).
+Next, I implemented the `cancelled_set` as a Redis set (to survive server restarts) and modified the dequeue loop to check membership before processing each job. The check was O(1) with Redis.
+Finally, I measured that each job could be cancelled and lazily evicted with two Redis operations — one SET write on cancel, one DELETE on eviction — replacing the O(n) heap scan with O(log n) amortized work."
+
+**Result (10-20%):** "Queue stall time on cancellation dropped from 150–400ms to under 5ms. At 50,000 jobs in the queue, we went from O(50,000) = O(n) scans to O(log 50,000) ≈ 16 heap operations per cancellation. Transcoding throughput increased by 18% during peak hours because the queue was no longer blocking on cancellations. The solution cost zero additional infrastructure — just a Redis key per cancelled job, which we already had Redis for."
+
+**Interview tip:** Interviewers want to hear about *your* contribution. Say "I profiled", "I proposed", "I implemented", "I measured" — not "we did". Prepare this story for questions about: Frugality, engineering efficiency, bottleneck identification, and clever use of existing infrastructure.
 
 ---
 

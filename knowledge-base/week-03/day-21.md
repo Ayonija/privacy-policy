@@ -58,6 +58,26 @@ def decode_string(s):
 - **Multi-digit numbers in LC 394:** `"12[a]"` → the `isdigit` branch must accumulate: `curr_num = curr_num * 10 + int(ch)`. Forgetting this gives wrong results for counts > 9.
 - **Common mistake:** in LC 150 (Evaluate RPN), division must be truncated toward zero in Python — use `int(a / b)` not `a // b`. Python's `//` floors toward negative infinity, but the problem requires truncation toward zero (e.g., `-7 // 2 == -4` in Python, but the answer should be `-3`).
 
+### STAR Interview Framework
+
+> **Stack — LIFO Matching:** brute-force O(n²) scan → stack O(n) time, O(n) space
+
+**S:** "Given a string of brackets or an encoded expression with nested brackets. Naive O(n²) re-scan for matching pairs is too slow for n=10⁵."
+**T:** "Need O(n) by processing each character once using LIFO order. Goal: validate nesting or reconstruct the decoded string."
+**A (spend 60% of answer time here):**
+1. *Classify:* "Most-recently-seen item must be resolved first" → reach for a stack.
+2. *Init:* Empty stack; for LC 394, also `curr_str = ""` and `curr_num = 0`.
+3. *Loop decision:* On open bracket/digit, push current state; on close bracket, pop and combine; on operators, pop two operands, compute, push result.
+4. *Termination:* Stack holds exactly zero unmatched opens → return `stack == []` for validation, or the single accumulated string for decode.
+5. *Proactive gotcha:* "In LC 394, multi-digit counts like `12[a]` require `curr_num = curr_num * 10 + int(ch)` — single-digit accumulation is the most common bug. In LC 150, Python's `//` floors toward −∞, not toward zero — use `int(a / b)`."
+**R:** "O(n) time, O(n) space. At n=10⁵: microseconds vs ~50ms for O(n²) rescanning."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Recursion | Deep nesting, tree structure | Stack overflow risk at n=10⁴ nesting depth; iterative stack is safer |
+| Regex | Simple fixed patterns | Cannot handle arbitrary nesting depth |
+
 ### Edge Cases to Trace Before Coding
 - LC 20: empty string `""` → stack is empty at end; return `True` ✓
 - LC 20: opening brackets only `"((("` → stack non-empty at end; return `False` ✓

@@ -105,6 +105,27 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **Sliding Window — Exact-K via "At-Most-K Minus At-Most-(K-1)":** brute-force O(n²) → this approach O(n) time, O(1) space
+
+**S:** "Given an integer array, count subarrays containing exactly k odd numbers. A direct window approach has no clean shrink condition because removing one element from the left might not reduce the odd count. Brute force O(n²) times out at n=10⁵."
+**T:** "Need O(n) by decomposing the exact constraint: `exactly(k) = at_most(k) − at_most(k−1)`, where `at_most` is a standard shrinkable window."
+**A (60% of answer time):**
+1. *Classify:* "'Count subarrays with exactly k of something' → exact-K trick. 'Longest substring where all chars appear ≥ k times' → fix unique-char count (1..26) + standard window. 'All substrings = concatenation of words' → word-level window × L offsets."
+2. *Init:* "Write a reusable `atMost(nums, goal)` function. If `goal < 0` return 0. `left = 0, curr = 0, count = 0`."
+3. *Loop/Step:* "Expand `right`: `curr += nums[right] % 2` (1 if odd, 0 if even). Shrink `left` while `curr > goal`. `count += right − left + 1` (all subarrays ending at right with a valid left boundary)."
+4. *Termination:* "Call `atMost(k) − atMost(k−1)`. Each element enters and exits the window at most once per call → O(n) total."
+5. *Gotcha:* "For `atMost(-1)` (when k=0 and we call `atMost(k-1)`), return 0 immediately — a negative goal is impossible. Forgetting this guard causes an infinite shrink loop. State this before coding."
+**R:** "O(n) via two-pass trick vs O(n²) brute force. For LC 395 (≥ k repeating): iterating unique counts 1..26 adds a constant factor — still O(26n) = O(n). Word-level window: O(n·L) where L = word length — typically small."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Prefix sum + HashMap | Count subarrays with sum = k | Works for sum constraints; "odd count" converts to sum via `num%2` — same technique applies |
+| Direct exact-k window | Shrink condition is clean (e.g., distinct chars = k) | No clean shrink when removing an element doesn't guarantee the count drops |
+| Divide & conquer (LC 395 original) | Only correct approach before the unique-count insight | O(n log n) — the fixed-unique-count window is strictly better |
+
 ### Edge Cases to Trace Before Coding
 - LC 1248: k=0 — `atMost(-1)` should return 0; handle in `atMost` by returning 0 for negative goal
 - LC 395: k=1 — every substring is valid; answer = len(s)
@@ -145,8 +166,14 @@ If the index contains all columns referenced in the query, the DB never reads th
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a situation where the order in which you addressed sub-problems mattered — solving the wrong one first wasted significant effort — analogous to column ordering in a composite index where the wrong order makes the index useless.
 - Leadership principle: Are Right, A Lot
+
+**Full STAR Story — "Getting Sub-Problem Ordering Right Before Committing to Implementation":**
+**S (20%):** "At a logistics company, a team of four engineers spent two weeks building a routing optimiser that assumed real-time GPS coordinates were always available. When QA tested offline mode, the entire system broke — the GPS dependency was baked into every layer."
+**T:** "I joined as the technical lead for a re-architecture sprint. We had 3 weeks to deliver offline-capable routing without a full rewrite."
+**A (60% — 'I' not 'we'):** "(1) I ran a dependency mapping session: I insisted we enumerate all constraints and their dependencies before touching code — analogous to identifying equality vs range columns before building a composite index. (2) I identified that the 'offline GPS fallback' sub-problem had to be solved first because it was a dependency of every other module; solving UI or caching first would create throwaway work. (3) I sequenced the sprint: GPS fallback (week 1) → route calculation with fallback input (week 2) → UI and caching on top (week 3). (4) I created a written dependency graph shared with the team so the ordering rationale was visible, not tribal knowledge."
+**R (20%):** "We delivered offline-capable routing in 3 weeks with zero rework from mis-sequenced dependencies. The dependency-first planning approach was adopted as the team's standard for any cross-cutting feature, reducing wasted sprint effort by an estimated 30% over the next two quarters."
+*Works for: Are Right, A Lot, Think Big, Earn Trust.*
 
 ---
 

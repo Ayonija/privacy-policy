@@ -99,6 +99,37 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining BST Inorder Invariant patterns in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a binary tree and asked to validate that it is a valid BST. The naive approach — running an inorder traversal and checking if the output is sorted — works but silently misses an edge case: a node can satisfy the 'left child < parent < right child' rule locally but still violate BST property at a grandparent level. For example, `[5, 4, 6, null, null, 3, 7]` — node 3 is less than its parent 6 but also less than the grandparent 5, making it invalid."
+
+**Task:** "My goal was to validate the entire BST structure in one O(n) DFS pass by propagating the allowed range of values into every subtree, not just checking each node against its immediate parent."
+
+**Action:** Walk the interviewer through these steps:
+1. *Key insight:* "Every node in a BST must satisfy a range constraint from its entire ancestor chain — not just its parent. A node in the left subtree of the root must be less than every ancestor on the right path to it."
+2. *Propagate bounds:* "I perform DFS with parameters `(node, low, high)`. At each node, I verify `low < node.val < high`. If true, recurse: left child gets `(low, node.val)` — upper-bounded by the current node. Right child gets `(node.val, high)` — lower-bounded by the current node."
+3. *Initial bounds:* "I seed with `(Long.MIN_VALUE, Long.MAX_VALUE)` to handle root and to correctly handle nodes with value `Integer.MIN_VALUE` or `Integer.MAX_VALUE` without false positives."
+4. *Short-circuit:* "If any node fails its bounds check, I return `false` immediately — the tree is invalid and further traversal is wasted work."
+5. *Base case:* "A null node returns `true` — absent children don't violate any constraint."
+
+**Result:** "O(n) time, O(h) space — O(log n) for balanced trees, O(n) for skewed. This single-pass approach correctly handles all edge cases including nodes with extreme integer values and all-left or all-right skewed trees."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer range-bound DFS |
+|-------------|---------------------------|---------------------------|
+| Inorder traversal + sorted check | Simple to implement | Misses the edge case where local parent-child relationship is valid but global BST property is violated |
+| Compare each node to previous inorder value | Also correct | O(n) but requires stateful traversal; range-bound DFS is cleaner and more interview-friendly |
+
+**Why NOT inorder + sorted check:** The inorder output being sorted is necessary but there's a subtle implementation bug risk — if you do a pure comparison during inorder and forget to initialise `prev` correctly, you'll miss the root. Range-bound DFS is harder to get wrong.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 98: `[5, 1, 4, null, null, 3, 6]` — node 4 violates `(5, inf)` bound; single-node tree → valid; `INT_MIN`/`INT_MAX` values — use `float('-inf')/float('inf')` not integer bounds
 - LC 230: k = n (last element = largest); use iterative version if recursion depth is a concern for skewed tree
@@ -171,8 +202,18 @@ class Solution {
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you chose a simpler tool over a more feature-rich one — or vice versa — and how you made the call. Relate to the Redis vs. Memcached trade-off.
-- Leadership principle: Bias for Action
+
+**Leadership principle: Bias for Action**
+
+**STAR Story — Choosing the right tool quickly under time pressure**
+
+**Situation:** We had a 72-hour window to implement session storage for a new authentication flow before a major product launch. The team was split between using Redis (rich data structures, persistence, pub/sub) and Memcached (simpler, multi-threaded, already in our infrastructure). We had no time for extended evaluation — we needed to decide and start implementation immediately.
+
+**Task:** As the backend lead, I was responsible for making the call and justifying it. My goal was to pick the right tool for our specific use case, not the theoretically superior one, so we could move fast without regret.
+
+**Action:** I spent 20 minutes mapping our actual requirements against both tools. Session data: a flat key-value blob (user ID → JSON object) — both tools handle this equally. Persistence: sessions needed to survive restarts — Redis wins (AOF). Pub/Sub: not needed for session storage — tie. Multi-key operations: occasionally needed for "delete all sessions for user" — Redis wins (SCAN + bulk DEL). CPU scaling: our session store would be on a single 4-core node — Memcached's multi-threading is an advantage, but Redis 6's I/O threading partially closes this gap. We already had Redis deployed for our rate limiter, so operational overhead was zero to add session storage on the same cluster. Memcached would be a new dependency to install, configure, and monitor. I made the call in the meeting: Redis, shared cluster with our rate limiter, `allkeys-lru` eviction policy, 30-minute TTL per session, AOF persistence enabled.
+
+**Result:** We had session storage live in 4 hours. The launch went ahead on schedule. Session throughput reached 8,500 reads/sec at peak without tuning. Three months later, we added a "force logout all devices" feature that used Redis's SCAN pattern — a feature that would have required significant extra engineering if we'd chosen Memcached's simpler model. Bias for action with a focused 20-minute analysis proved more valuable than two weeks of benchmarking.
 
 ---
 

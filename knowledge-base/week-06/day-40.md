@@ -88,6 +88,37 @@ def max_points(points):
 - **Custom Sort String alternative:** instead of `sorted`, use a counting approach — count chars in `order` that appear in `s`, output in order order, then append remaining chars. O(n + |order|) vs O(n log n) for sort — offer both.
 - **Common mistake in LC 299:** counting a bull position's character in the cow frequency maps — the two-pass approach avoids this by only adding non-bull positions to the freq maps.
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Multi-Pass HashMap Counting & Slope Normalisation patterns in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a secret number and a guess — both 4-digit strings — and had to compute bulls (exact position matches) and cows (right digit, wrong position). The tricky constraint is that each digit can only be counted once: if the secret is `'1122'` and the guess is `'1111'`, the answer is `2A0B` — not `2A2B` — because the second pair of 1s in the guess doesn't correspond to a real cow in the secret."
+
+**Task:** "My goal was to count bulls and cows correctly in O(n) without double-counting, using two separate frequency passes."
+
+**Action:** Walk the interviewer through these steps:
+1. *Pass 1 — exact matches:* "I iterate over both strings simultaneously. Wherever `secret[i] == guess[i]`, I increment `bulls` and skip those characters — they're fully resolved."
+2. *Pass 2 — build frequency maps:* "For each non-bull position, I add `secret[i]` to `s_freq` and `guess[i]` to `g_freq`. This isolates the pool of 'available' characters for cow counting."
+3. *Count cows:* "For each digit `d` in `g_freq`, the number of valid cows is `min(s_freq.get(d, 0), g_freq[d])` — the overlap between what the secret has left and what the guess has left. Sum over all digits."
+4. *Why two passes, not one:* "A single-pass approach risks including bulls in the cow count if you're not careful about when you decrement. Separating the passes eliminates that entire class of bug."
+5. *Return:* "`f'{bulls}A{cows}B'` — format and return."
+
+**Result:** "O(n) time, O(1) space (digit alphabet is fixed at 10 characters). For secret and guess strings of length n, this handles all duplicates and position overlaps correctly with zero risk of double-counting."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer two-pass HashMap |
+|-------------|---------------------------|------------------------------|
+| Single-pass with inline cow tracking | Only if you're very careful about bull exclusion | Error-prone — easy to count bulls twice; two-pass is safer and equally fast |
+| Character counting array (size 10) | When alphabet is known and fixed | Slightly more cache-friendly than HashMap, but functionally identical |
+
+**Why two passes:** Separating exact-match detection (pass 1) from frequency overlap counting (pass 2) eliminates the most common bug (double-counting bulls as cows). The cost is negligible — still O(n) with very low constant.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 299: `secret = "1122"`, `guess = "2211"` — bulls = 0, cows = 4; trace pass 1 and pass 2 explicitly
 - LC 791: chars in `order` that don't appear in `s` — safe to include in priority map; `priority.get(c, len(order))` defaults to end position ✓
@@ -141,8 +172,18 @@ New query is slow?
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Walk through a performance problem you diagnosed end-to-end — from noticing the symptom to identifying the root cause to applying the fix — mirroring the full index decision framework from symptom to solution.
-- Leadership principle: Dive Deep
+
+**Leadership principle: Dive Deep**
+
+**STAR Story — Diagnosing a performance problem end-to-end**
+
+**Situation:** About three months after launching a new user-search feature, I noticed that the API's P99 latency for `/search/users` had crept from 120 ms to over 2,000 ms over a span of six weeks. The symptom was gradual — no alarm fired immediately — but users started filing support tickets about the search being "broken." The feature searched a `users` table of 15 million rows by partial name match using a `LIKE '%query%'` clause.
+
+**Task:** I volunteered to own the investigation. My goal was to identify the exact root cause and restore P99 latency to under 200 ms without a schema change that would require a maintenance window.
+
+**Action:** I started by running `EXPLAIN ANALYZE` on the slow query: `SELECT id, name FROM users WHERE LOWER(name) LIKE '%alice%'`. The output showed `Seq Scan` — 15 million rows, 1.8 seconds. I checked `pg_stat_user_indexes` and found a B+Tree index on `name` that looked applicable but was being ignored. The issue: the query applied `LOWER()` to `name`, which broke index use (a B+Tree on `name` cannot answer a query on `LOWER(name)` without a functional index). Additionally, the leading wildcard `%alice%` would preclude a standard B+Tree even with the right index. I walked through the full decision tree: full-text substring search → the right structure is an inverted index or a trigram index. I created a GIN trigram index: `CREATE INDEX CONCURRENTLY ON users USING gin(name gin_trgm_ops)`. This ran without locking the table (took 4 minutes on our 15 M rows). After creation, I re-ran `EXPLAIN ANALYZE` — the planner switched to `Bitmap Index Scan` using the trigram index. I also removed the now-unused B+Tree index on `name` to recover write throughput.
+
+**Result:** P99 latency on `/search/users` dropped from 2,000 ms to 85 ms — a 23× improvement — within 15 minutes of the index creation completing. The old B+Tree index removal recovered 12% write throughput on the users table. I wrote an internal guide summarising the decision tree: "LIKE with leading wildcard → trigram GIN index, not B+Tree" and ran a 30-minute knowledge-share with the team to prevent recurrence.
 
 ---
 

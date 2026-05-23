@@ -236,8 +236,34 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to scale a system under unexpected load — what signals told you there was a problem, what did you do, and what did you learn?
 - Leadership principle: Think Big
+
+**Full STAR Story — "Traffic Spike Autopilot During Product Launch":**
+**S (20%):** "At ScaleCo, an unannounced product launch drove 40× normal traffic in 8 minutes, saturating our message queue consumers and causing API p99 latency to spike from 80ms to 4.2 seconds."
+**T:** "As the on-call engineer, I needed to restore sub-200ms p99 within 30 minutes to avoid customer escalations."
+**A (60% — 'I' not 'we'):** "(1) I identified the bottleneck as consumer throughput, not the queue itself, by checking Kafka consumer lag — it had grown to 800K messages in 6 minutes. (2) I increased max.poll.records from 100 to 500 per worker, immediately doubling per-pod throughput without adding infrastructure. (3) I triggered a Kubernetes HPA manual scale-up from 8 to 32 consumer pods, reaching the 40-partition ceiling. (4) I added a circuit breaker at the API gateway to shed non-critical read traffic and protect the write path during recovery."
+**R (20%):** "p99 latency recovered to 140ms within 22 minutes. Consumer lag cleared in 35 minutes. I proposed and implemented a permanent HPA rule tied to consumer lag metric, which prevented a recurrence during two subsequent spikes."
+*Works for: Think Big, Deliver Results, Bias for Action.*
+
+### STAR Interview Framework
+
+> **Expression Add Operators with prev_mult tracking:** brute-force O(4^n × n) → operator-insertion backtracking O(4^n × n) time, O(n) space
+
+**S:** "Insert +, −, × between digits of a string to reach a target. Naive eval-from-scratch fails because multiplication breaks left-to-right associativity."
+**T:** "Need O(4^n × n) backtracking that correctly tracks multiplication chains using a prev_multiplier."
+**A (60%):**
+1. *Classify:* "Operator insertion with expression evaluation → backtracking with prev_mult state."
+2. *Init:* "path='', evalVal=0, prevMult=0; for first token: recurse with curr as both eval and prevMult."
+3. *Loop/Recurrence:* "For +: new_eval=eval+curr, prev=curr. For −: eval-curr, prev=-curr. For ×: eval-prev+prev*curr, prev=prev*curr."
+4. *Termination:* "index==len(num) and eval==target → collect path."
+5. *Gotcha:* "The multiply formula eval-prev+prev*curr — the most common bug is forgetting to undo the prior addition before applying multiplication."
+**R:** "O(4^n × n) time, O(n) space. Correctly handles chained multiplication like 2*3*4 by propagating prevMult through each step."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Memoized DP | Overlapping subproblems | Expression evaluation has no reusable subproblems — each path is unique |
+| Stack-based eval | Single expression evaluation | We're generating expressions, not evaluating one fixed one |
 
 ---
 

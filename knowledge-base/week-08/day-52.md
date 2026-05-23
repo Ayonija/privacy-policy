@@ -103,6 +103,38 @@ def ladderLength(beginWord, endWord, wordList):
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Multi-Source BFS patterns in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a grid of oranges — fresh (1), rotten (2), and empty (0) — and asked to find the minimum number of minutes until all fresh oranges rot. Rot spreads to 4-directional neighbours each minute. The naive approach of running BFS from each rotten orange separately and taking the minimum is O(R × m × n) where R is the number of rotten oranges — up to O(m²×n²) in the worst case."
+
+**Task:** "My goal was to solve this in O(m×n) by recognising that all rotten oranges spread simultaneously, not sequentially — this is exactly multi-source BFS."
+
+**Action:** Walk the interviewer through these steps:
+1. *Initialise with ALL sources at time 0:* "I scan the grid and add every rotten orange's position to the BFS queue at time 0, and count all fresh oranges. This single queue initialisation replaces R separate BFS runs."
+2. *BFS levels = time units:* "Each BFS level represents one minute. I process all nodes at the current level before advancing to the next. A fresh neighbour reached at level k becomes rotten at minute k."
+3. *Mark visited on enqueue:* "When I convert a fresh orange to rotten and enqueue it, I immediately decrement `fresh` and set `grid[nr][nc] = 2`. This prevents re-queuing the same cell from multiple rotten neighbours."
+4. *Termination:* "After BFS completes, if `fresh > 0`, some orange was unreachable (isolated from all rotten sources) — return -1. Otherwise, return the number of levels processed minus 1 (the last BFS level runs even if it queues nothing)."
+5. *Off-by-one:* "The most common bug: I increment `minutes` after each full level, so when the queue empties I've incremented once too many. Correct answer = `minutes - 1` when fresh = 0."
+
+**Result:** "O(m×n) time — each cell processed at most once. For a 100×100 grid: 10,000 operations instead of potentially 10,000 × 10,000 = 100 million with per-source BFS."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer multi-source BFS |
+|-------------|---------------------------|------------------------------|
+| BFS from each rotten orange separately | R = 1 (single source) | O(R × m × n) — R separate scans; multi-source is always at least as fast |
+| DFS from each rotten orange | Never | DFS doesn't guarantee shortest-distance (BFS level property) |
+| Multi-source BFS | Multiple simultaneous sources | O(m×n) — optimal; all sources share the queue |
+
+**Why NOT per-source BFS:** If there are 100 rotten oranges in a 50×50 grid, per-source BFS does 100 × 2,500 = 250,000 operations vs. multi-source BFS doing 2,500 — a 100× improvement.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 994: no fresh oranges at start → return 0 immediately; fresh oranges unreachable from any rotten → return -1; grid with a single fresh, single rotten, not adjacent → -1
 - LC 1091: start or end cell is `1` (blocked) → return -1 immediately; n=1 and grid[0][0]=0 → return 1 (start = end)

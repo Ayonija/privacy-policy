@@ -89,6 +89,38 @@ def minTaps(n, ranges):
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Jump Game variants / Min Taps (greedy coverage window) in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given three coverage reachability problems: Jump Game I (can you reach the end?), Jump Game II (minimum jumps to reach the end?), and Minimum Number of Taps to Water a Garden (minimum taps to cover the full garden). All three share the same greedy insight — coverage window expansion — but require understanding when to count a 'jump' and how to handle the reduction from interval coverage to the jump game formulation."
+
+**Task:** "My goal was to identify the unifying O(n) greedy pattern across all three: track the furthest reachable index within the current window; count window transitions as 'jumps'; stop when coverage exceeds the target. For Min Taps, the additional step is reducing it to Jump Game II by building a `max_right` coverage array."
+
+**Action:** Walk the interviewer through these steps:
+1. *Jump Game I — reachability check:* "Maintain `max_reach`. For each index `i`: if `i > max_reach` → stuck, return False (we can never reach this index). Update `max_reach = max(max_reach, i + nums[i])`. Return True if the loop completes — we never got stuck."
+2. *Jump Game II — minimum jumps:* "Maintain `current_end` (end of the current jump window) and `farthest` (furthest reachable from inside the current window). At each index i < n-1: update `farthest = max(farthest, i + nums[i])`. When `i == current_end`: we MUST jump — increment jumps, extend `current_end = farthest`. Count = number of window boundary crossings."
+3. *Why window expansion gives MINIMUM jumps:* "At each window, we take the jump that maximises future reach. We never jump early (that can't reduce total jumps). We never jump late (we jump exactly when forced, at the window boundary). This is equivalent to the activity-selection greedy: from each position within the window, we pick the one that extends coverage furthest."
+4. *Min Taps → Jump Game II reduction:* "For tap at position i with range r: it covers `[max(0, i-r), min(n, i+r)]`. From position `left = max(0, i-r)`, the furthest we can reach is `right = min(n, i+r)`. Build `max_right[left] = max(max_right[left], right)` for all taps. Now `max_right[i]` is the furthest reachable from position i — identical to `nums` in Jump Game II. Run the same window expansion algorithm. If `farthest == current_end` at a window boundary → stuck → return -1."
+5. *Convergence guarantee:* "All three algorithms are O(n) — single left-to-right scan. No recursion, no backtracking. The greedy correctness is proven by exchange argument: any solution using more jumps can be improved by taking the farthest-reach jump within each window."
+
+**Result:** "All three O(n) vs O(n²) DP or O(n!) exhaustive search. For Jump Game II at n = 10^5, greedy gives 10^5 operations; DP gives 10^10. For Min Taps at n = 10^4, the reduction adds O(n) preprocessing; the algorithm itself is O(n). The key insight that Min Taps and Jump Game II are the same problem reduces implementation time in an interview — once you see the `max_right` array, the rest is a one-line adaptation."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer this approach |
+|-------------|---------------------------|--------------------------|
+| BFS level-order for Jump Game II | Unfamiliar with greedy | O(n²) worst case if intervals overlap heavily; greedy is O(n) always |
+| DP `dp[i] = min jumps to reach i` | Need to reconstruct the jump path | DP is O(n²) without binary search; greedy is O(n) when only the count is needed |
+| Interval covering via sorting for Min Taps | Prefer classical interval covering | Sort + greedy by coverage is O(n log n); `max_right` array approach is O(n) — strictly better |
+
+**Why NOT DP for Jump Game II at scale:** `dp[i] = min(dp[j] + 1)` for all reachable j requires O(n) per index → O(n²) total. For n = 10^5, that's 10^10 operations — will time out. The greedy window expansion is O(n) always.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 55: `nums = [0]` → n=1, already at end → True; `nums = [0, 1]` → stuck at 0, can't reach index 1 → False; all zeros except start → only reach if n=1
 - LC 45: `nums = [1]` → already at end, 0 jumps; `nums = [2, 3, 1, 1, 4]` → 2 jumps; array of length 1 → 0 jumps (stop at n-2 in loop)
@@ -191,8 +223,28 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to balance reliability (ensuring every event is processed) against performance (not re-processing duplicates) in a distributed system.
-- Leadership principle: Bias for Action
+
+**Leadership Principle:** Bias for Action
+
+**STAR Story: Shipping an At-Least-Once Event Processing Fix Under Production Pressure**
+
+**Situation:** At my previous company, we had a payment confirmation event pipeline that was dropping roughly 0.3% of events during peak traffic hours. The pipeline used a custom in-memory queue (not Kafka) built by a previous engineer. During traffic spikes, the consumer process would restart due to memory pressure, and because offsets were committed before processing, any in-flight events at the time of the restart were lost — at-most-once semantics where we needed at-least-once. On high-volume days, 0.3% event loss translated to approximately 150 missed payment confirmations per day, each requiring manual customer support intervention — a 2-3 hour resolution time per case.
+
+**Task:** The business expected this to be fixed within two weeks. I could choose between two paths: (1) a full migration to Kafka (correct long-term solution, estimated 6 weeks), or (2) a targeted fix to the existing pipeline to flip from at-most-once to at-least-once semantics (estimated 3 days). I chose to act on path (2) first — ship the fix now, pursue the migration later — rather than wait 6 weeks to solve the problem correctly.
+
+**Action:**
+
+*First,* I instrumented the existing pipeline to confirm the root cause. I added logging around offset commits and correlated restart timestamps with event loss windows. Within 2 hours I confirmed: offsets were committed before `process(event)` returned — classic at-most-once. The fix was to move the commit to AFTER successful processing.
+
+*Then,* I implemented the fix: swap the order of `commit_offset()` and `process(event)`, add a try/except so failed processing did not commit the offset (the event would be retried on next startup). I added an idempotency check in the payment service — the downstream consumer would ignore re-delivered events with the same `payment_id` already marked confirmed in the database. This was critical: moving to at-least-once without idempotency would create duplicate payment confirmations.
+
+*Next,* I tested the fix in staging by deliberately killing the consumer process mid-processing and verifying that events were reprocessed on restart with no duplicates reaching the payment service. I ran the test 20 times across different traffic loads.
+
+*Finally,* I deployed to production with a feature flag so I could instantly revert if the fix caused unexpected behavior. I monitored event loss rate, duplicate detection rate, and consumer restart frequency in real time for 4 hours after deployment.
+
+**Result:** Event loss dropped from 0.3% to 0.0% within 24 hours of deployment (confirmed over 3 days of monitoring). Zero duplicate payment confirmations reached the payment service (idempotency check worked perfectly). Customer support tickets for missed payment confirmations dropped from ~150/day to 0. The fix took 3 days to ship — 3 days vs 6 weeks for the full Kafka migration. I then initiated the Kafka migration as a separate workstream, which shipped 7 weeks later and replaced the custom pipeline entirely. The bias for action — ship the targeted fix now, pursue the better architecture in parallel — reduced customer impact by 42 days.
+
+*In an interview, say:* "The temptation was to say 'we'll fix this properly with Kafka.' But customers were experiencing real impact every day we waited. I shipped the minimal viable fix in 3 days — at-least-once with idempotency — and started the migration in parallel. That's what Bias for Action means to me: act on what you can do now while pursuing the better solution simultaneously." Use this for "Tell me about a time you acted quickly to solve a customer problem," "Tell me about a time you managed a reliability incident," or "Tell me about a technical trade-off under time pressure."
 
 ---
 

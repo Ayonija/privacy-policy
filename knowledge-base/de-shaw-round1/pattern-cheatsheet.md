@@ -176,3 +176,40 @@ Read the problem title only. Guess the pattern before reading the body.
 | Kth Largest Element | Heap / QuickSelect |
 | Valid Parentheses | Stack |
 | Word Search | DFS Backtracking |
+
+---
+
+## STAR Cheatsheet: One-Line Hooks per Pattern
+
+Use these during the first 20 seconds of your answer to frame the STAR approach:
+
+| Pattern | STAR hook (say this to open) |
+|---------|------------------------------|
+| Two Pointers | "I noticed the array was sorted and needed a pair → applied two pointers → reduced from O(n²) to O(n) by converging from both ends." |
+| Sliding Window (fixed) | "I noticed a fixed-size window constraint → applied fixed sliding window → reduced from O(n×k) to O(n) by maintaining a rolling aggregate." |
+| Sliding Window (variable) | "I noticed 'longest/shortest subarray with constraint' → applied variable sliding window → reduced from O(n²) to O(n) by shrinking only when the window became invalid." |
+| Binary Search | "I noticed a monotonic feasibility function on a sorted range → applied binary search on the answer → reduced from O(n) linear scan to O(log n)." |
+| Prefix Sum + HashMap | "I noticed 'count subarrays summing to k' on an unsorted array → applied prefix sum + HashMap → reduced from O(n²) pair enumeration to O(n) with O(1) lookups." |
+| Monotonic Stack | "I noticed 'next greater element' / pending unresolved indices → applied decreasing monotonic stack → reduced from O(n²) to O(n) since each element is pushed and popped at most once." |
+| BFS (graph/grid) | "I noticed shortest path / level-order traversal on an unweighted graph → applied BFS → guaranteed O(V+E) with correct shortest-path semantics." |
+| DFS (tree/graph) | "I noticed a path-sum / subtree property that required post-order information → applied DFS → O(V+E) with O(h) stack space by processing children before the parent." |
+| HashMap / Frequency Map | "I noticed grouping or complement lookup was the bottleneck → applied HashMap → reduced from O(n²) search to O(1) amortized lookup per element." |
+| Sorting + Greedy | "I noticed an interval scheduling / ordering problem → sorted by [key] and applied a greedy scan → O(n log n) dominated by sort, with O(n) greedy pass provably optimal by exchange argument." |
+| Kadane's (Max Subarray) | "I noticed 'maximum sum contiguous subarray' → applied Kadane's local/global max reset → reduced from O(n²) enumeration to O(n) with O(1) space." |
+
+## The 70/20/10 Timing Rule
+- **Situation + Task (20%):** 30-40 seconds. State the problem once and move on.
+- **Action (60-70%):** 90-120 seconds. Walk through each decision in your algorithm step-by-step.
+- **Result (10-20%):** 20-30 seconds. Always end with a number (time saved, %, scale achieved).
+
+## "Why Not" Table — Most Frequent Alternatives
+| Situation | Preferred pattern | Why not the alternative |
+|-----------|------------------|------------------------|
+| Unsorted array + find pair with sum = target | HashMap O(n) | Two Pointers needs sorted input; sorting first destroys original indices |
+| "Max sum subarray" | Kadane's O(n) | DP table is O(n) space and adds no clarity over the O(1) rolling variable |
+| "Next greater element" | Monotonic Stack O(n) | Brute force O(n²) is 10^10 ops at n=10^5 |
+| "Merge overlapping intervals" | Sort + greedy O(n log n) | No O(n) solution exists without sorted input; HashMap approaches don't handle partial overlaps cleanly |
+| "Count subarrays with sum = k" (with negatives) | Prefix Sum + HashMap O(n) | Two Pointers doesn't work when negatives allow shrinking to increase the sum |
+| "Shortest path in unweighted grid" | BFS O(m×n) | DFS doesn't guarantee shortest path; Dijkstra is overkill for unit-weight edges |
+| "Validate BST" | DFS with bounds O(n) | Checking only parent-child relationships misses ancestor-boundary violations |
+| "Find anagrams in string" | Fixed sliding window + freq array O(n) | Sorting each window is O(n×k log k); HashMap with formed-counter works but is more code than needed for fixed-alphabet problems |

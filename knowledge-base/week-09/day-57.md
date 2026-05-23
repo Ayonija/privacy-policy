@@ -149,6 +149,28 @@ def sortItems(n, m, group, beforeItems):
 
 ---
 
+### STAR Interview Framework
+
+> **All-Paths DFS Backtracking on DAG:** brute-force O(2^n × n copy) without memo → this approach O(2^n × n) time (paths can be exponential), O(n) stack space
+
+**S:** "Given a DAG with n nodes, enumerate all paths from source to target. Common bug: appending path by reference means all result entries alias the same mutable list."
+**T:** "Need correct all-paths enumeration with O(n) auxiliary space (stack depth only)."
+**A (60%):**
+1. *Classify:* "'Enumerate ALL paths, not shortest path' → DFS backtracking on a DAG (no cycles to worry about)."
+2. *Init:* "Start DFS from source with `path = [source]`."
+3. *Loop/Step:* "Push neighbour before recurse; if target reached: `result.append(list(path))` (copy, not reference); pop after return (backtrack)."
+4. *Termination:* "DFS exhausts all neighbours from source; no visited set needed in a DAG (strict DAG prevents revisits)."
+5. *Gotcha:* "Always `list(path)` when appending to result — without the copy, all result entries point to the same mutating list."
+**R:** "O(2^n × n) worst case (exponential paths × path length copy). O(n) extra space for current path. The reference-vs-copy distinction is the single most common interview bug in this pattern."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| BFS all-paths | Finding shortest path | BFS stores exponentially many partial paths in queue |
+| Memoization | Count or sum of paths, not enumerate | Enumeration requires storing each path — memo doesn't help |
+
+---
+
 ## System Design (1 hour)
 ### Topic: CDN Advanced — Anycast Routing and Origin Shield
 
@@ -196,8 +218,14 @@ With Origin Shield:
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you identified a bottleneck in a multi-stage system and inserted an intermediate layer to absorb load — analogous to an Origin Shield reducing requests from edge to origin.
 - Leadership principle: Frugality
+
+**Full STAR Story — "Inserting the Intermediate Cache Layer":**
+**S (20%):** "At a media company, our origin video transcoding service was receiving 8,000 identical thumbnail generation requests per minute during peak hours — each one hitting the DB and triggering a redundant compute job. Infra costs were $34K/month and climbing."
+**T:** "I needed to reduce origin load by at least 80% within one sprint without changing the client-facing API."
+**A (60% — 'I' not 'we'):** "(1) I profiled request logs and identified that 94% of thumbnail requests were for the same 200 video IDs — a classic thundering herd with no intermediate buffer. (2) I inserted a Redis layer between the API gateway and the origin with a 10-minute TTL; the first request per video computed and cached, subsequent requests returned from Redis. (3) I used a mutex lock (SETNX) per video ID to prevent simultaneous cache-miss stampedes during the warm-up window. (4) I added a background refresh job that proactively regenerated caches for the top-100 videos 60 seconds before TTL expiry."
+**R (20%):** "Origin thumbnail requests dropped from 8,000/min to 340/min — a 96% reduction. Infrastructure cost fell from $34K to $6K/month. Cache hit rate stabilised at 98.7% within 24 hours of rollout."
+*Works for: Frugality, Invent and Simplify, Dive Deep.*
 
 ---
 

@@ -96,6 +96,29 @@ class FreqStack {
 
 ---
 
+### STAR Interview Framework
+
+> **Frequency Map → Top-K via Bucket Sort or Heap:** brute-force O(n log n) full sort → this approach O(n) bucket sort or O(n log k) heap, O(n) space
+
+**S:** "Given an array of n integers, return the k most frequent elements. Sorting all n elements and slicing the top k is O(n log n) — for n=10⁶ and k=5 that's paying for the full sort when we need a tiny fraction."
+**T:** "Need O(n) via bucket sort (when input is bounded) or O(n log k) via a min-heap of size k."
+**A (60% of answer time):**
+1. *Classify:* "'k most/least frequent elements with bounded input' → bucket sort O(n). 'Top-k with unbounded or string keys' → min-heap of size k, O(n log k). 'Pop most recent max-frequency element' → Maximum Frequency Stack (two HashMaps)."
+2. *Init:* "Build `freq` HashMap in one pass. For bucket sort: `buckets[i]` = list of elements with frequency i (size n+1). For heap: min-heap capped at size k."
+3. *Loop/Step:* "Bucket sort: place each element in `buckets[freq[elem]]`; scan from right to collect k elements. Heap: push `(freq, elem)`; if `heap.size() > k`, poll min — smallest-frequency element is evicted."
+4. *Termination:* "Bucket sort: O(n) single scan. Heap: O(n log k) with k≪n being essentially O(n) in practice."
+5. *Gotcha:* "For Top K Frequent Words with lexicographic tie-breaking, push `(-count, word)` as a tuple — Python/Java tuple comparison breaks ties on the second element automatically. Forgetting `-count` inverts the frequency order. State this before coding."
+**R:** "O(n) bucket sort vs O(n log n) full sort. At n=10⁶: ~10ms vs ~60ms. Maximum Frequency Stack: O(1) push and pop via freq-indexed stacks — the critical insight is that `max_freq` can only decrease by 1 after a pop."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Full sort + slice | n is small, k is close to n | O(n log n) — unnecessary for small k |
+| QuickSelect (nth element) | k-th largest by value | Doesn't handle frequency; wrong problem shape |
+| TreeMap ordered by frequency | Need dynamic updates with ordered traversal | O(log n) per op vs O(1) for bucket/stack approach |
+
+---
+
 ## System Design (1 hour)
 ### Topic: B+Tree Structure — The Heart of Every Relational DB Index
 
@@ -130,8 +153,14 @@ class FreqStack {
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to quickly surface the most impactful items from a large backlog — analogous to extracting the top-k most frequent elements without sorting the entire dataset.
 - Leadership principle: Deliver Results
+
+**Full STAR Story — "Surfacing Top-K Impactful Issues Without a Full Sort":**
+**S (20%):** "At an e-commerce company, customer support filed 3,000+ tickets per week. Leadership wanted the top-10 most frequently reported issues surfaced in a weekly summary — the existing approach sorted all 3,000 tickets alphabetically, taking 4 minutes, and was replaced weekly by manual review anyway."
+**T:** "I was tasked with building an automated top-10 surfacing tool that ran in under 10 seconds and required no manual intervention."
+**A (60% — 'I' not 'we'):** "(1) I profiled the pipeline: the bottleneck was sorting all tickets before slicing — we paid O(n log n) when we only needed the top 10. (2) I replaced the full sort with a frequency map + min-heap of size 10: I counted occurrences for each issue category in O(n), then maintained a heap that kept only the top-10 — O(n log 10) = O(n). (3) I added a bucket-sort fallback for when category count ≤ 50, reducing that path to O(n). (4) I deployed the tool with a scheduled job and added a Slack digest so leadership saw results each Monday morning without opening a dashboard."
+**R (20%):** "Runtime dropped from 4 minutes to 6 seconds. The tool surfaced actionable insights 48 hours earlier than the previous manual review cycle. Leadership used the output to prioritise two product fixes that reduced ticket volume by 23% over the next quarter."
+*Works for: Deliver Results, Customer Obsession, Invent and Simplify.*
 
 ---
 

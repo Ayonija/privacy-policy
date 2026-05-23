@@ -98,6 +98,38 @@ class RandomizedCollection:
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Sliding Window + HashMap Last-Seen patterns in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a deck of cards and asked to find the minimum number of consecutive cards to pick up that contains at least one matching pair. The brute-force approach of checking every contiguous subarray for a duplicate is O(n²) — for a deck of 10⁵ cards that's 10¹⁰ comparisons, which times out."
+
+**Task:** "My goal was to solve this in O(n) by maintaining a last-seen index for each card value so I could detect the most recent duplicate in a single pass."
+
+**Action:** Walk the interviewer through these steps:
+1. *Key insight:* "When I see card value `c` at index `i`, if I've seen `c` before at index `j`, then the subarray `cards[j..i]` contains exactly one duplicate pair. Its length is `i - j + 1`. I want the minimum such length."
+2. *Data structure:* "I use a `last_seen = {}` HashMap mapping each card value to the most recent index where it appeared. Initialised empty."
+3. *Single-pass logic:* "For each card at index `i`: if `last_seen[card]` exists, candidate window = `i - last_seen[card] + 1`; update the running minimum. Then always set `last_seen[card] = i` — even for the first occurrence — so the next appearance of this card checks against the most recent position."
+4. *Why update even on first occurrence:* "If I only wrote to `last_seen` on duplicates, I'd miss the chance to tighten the window when the same card appears a third time at an even closer position."
+5. *Return value:* "If no duplicate was found, `result` stays at `inf` — return -1. Otherwise return the minimum window length."
+
+**Result:** "Single pass, O(n) time, O(n) space for the HashMap. For n = 10⁵ cards that's 100,000 operations instead of 10 billion — the algorithm runs in under 1 ms."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer last-seen HashMap here |
+|-------------|---------------------------|----------------------------------|
+| Brute force (nested loops) | n ≤ 1,000 | O(n²) — times out for n ≥ 10⁴ |
+| Sliding window with set | Variable-size window up to first duplicate | Correct but requires shrink logic; last-seen is simpler and faster |
+| Sort + scan | Find any duplicate, not minimum window | Sorting destroys positional information — can't recover window length |
+
+**Why NOT sliding window with a set:** a set-based variable-window approach works for "does a duplicate exist" but requires a shrink loop that in the worst case processes each element twice. The last-seen HashMap is one clean forward pass.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 2260: no duplicates at all → return -1
 - LC 2461: k = 1 → every single element is a valid subarray; answer = max(nums) when all distinct
@@ -133,8 +165,18 @@ Index only rows matching a condition: `CREATE INDEX ON orders(user_id) WHERE sta
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you identified and removed something in a system (a process, a tool, an abstraction) that was adding overhead without sufficient benefit — analogous to dropping unused indexes that slow writes without helping reads.
-- Leadership principle: Insist on the Highest Standards
+
+**Leadership principle: Insist on the Highest Standards**
+
+**STAR Story — Removing overhead that was adding cost without benefit**
+
+**Situation:** Our data pipeline had an audit-logging middleware that wrote a structured JSON log entry for every API request — including internal health-check pings from our load balancer. Load balancers were hitting each of our 40 service instances 60 times per minute for health checks, generating 2,400 log writes per minute — 3.4 million per day — to a shared PostgreSQL audit table. The table had grown to 120 GB over eight months and its two broad indexes (one on `timestamp`, one on `service_name`) were consuming an additional 18 GB. Write throughput on the audit table had degraded to the point where the audit insert was adding 80 ms of latency to every real user request, because the connection pool was frequently saturated by health-check writes.
+
+**Task:** I was assigned to reduce the overhead of the audit logging system to below 5 ms per request without losing any audit data that compliance required.
+
+**Action:** I first mapped which log entries were actually read during audits by querying `pg_stat_user_indexes` and interviewing the compliance team. I found: (1) health-check entries had never been queried in any audit — they were pure noise. (2) The `timestamp` index was used in every audit query, so it stayed. (3) The `service_name` index was used in only 3 of 200 queries per month — compliance agreed it could be dropped and they'd filter in application code for those 3 cases. I implemented a middleware filter that skipped audit logging for requests matching the health-check User-Agent, then dropped the `service_name` index using `DROP INDEX CONCURRENTLY` to avoid table locks. I also added a 90-day partition-expiry policy to prune old rows automatically, capping the table at 15 GB steady-state.
+
+**Result:** The health-check filter eliminated 3.4 million unnecessary writes per day — write load on the audit table dropped by 78%. Dropping the `service_name` index reduced write overhead per remaining log entry from 80 ms to under 4 ms, meeting the 5 ms target. The table shrank from 120 GB to 15 GB over the following quarter with no compliance gaps, freeing up 120 GB of disk and reducing monthly storage costs by $340.
 
 ---
 

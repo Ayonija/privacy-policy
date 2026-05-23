@@ -82,6 +82,39 @@ def palindrome_pairs(words):
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining HashMap Pair / Complement Counting patterns in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given four arrays of n integers each and had to count tuples (a, b, c, d) — one from each array — whose sum equals zero. The naive approach of iterating all four arrays together is O(n⁴) — for n = 500 that's 62.5 billion operations, which at 10⁹ operations per second would take over a minute to run."
+
+**Task:** "My goal was to solve this in O(n²) time by recognising a split-and-lookup structure: any 4-element sum is really two 2-element sums that are complements of each other."
+
+**Action:** Walk the interviewer through these steps:
+1. *Split the problem:* "I noticed that `a + b + c + d = 0` is equivalent to `a + b = -(c + d)`. So I can precompute all `n²` pair sums from arrays 1 and 2 and store them in a HashMap with their counts."
+2. *Build the complement map:* "I iterate over every (a, b) pair and increment `ab_map[a + b]`. This takes O(n²) time and O(n²) space for the map."
+3. *Query the complement:* "For each (c, d) pair from arrays 3 and 4, I look up `-(c + d)` in `ab_map`. Each lookup is O(1), so the second loop is also O(n²) total."
+4. *Handle duplicates:* "The count stored in `ab_map` already accounts for repeated sums — if three (a, b) pairs sum to 5, the lookup for -5 correctly adds 3 to the total count."
+5. *Edge cases:* "If all values are 0, the map has one entry — `{0: n²}` — and each of the n² (c, d) pairs contributes n² to the count, giving n⁴ tuples. I verified this matches brute force on a small case."
+
+**Result:** "This reduces time from O(n⁴) to O(n²). For n = 500 that's 250,000 operations versus 62.5 billion — the algorithm finishes in milliseconds instead of timing out."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer split + HashMap here |
+|-------------|---------------------------|---------------------------------|
+| Brute force (4 nested loops) | When n ≤ 50 | O(n⁴) is fine for tiny n; eliminates HashMap overhead |
+| Sort two arrays + two-pointer | Possible for 4Sum on one array | Requires sorting; harder to count duplicate tuples correctly |
+| Split + HashMap | n up to 500 | O(n²) time and space — the standard approach |
+
+**Why NOT brute force:** O(n⁴) on n = 500 is ~62.5 billion ops at 10⁹ ops/sec ≈ 62 seconds; split + HashMap is O(n²) ≈ 250 K ops.
+**Why NOT sort + two-pointer across four arrays:** the complement relationship breaks down when all four arrays are separate — sorting doesn't help find cross-array pairs without degenerating back to O(n³).
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 454: all zeros — `0+0 = 0`, `-(0+0) = 0`; map will have entry 0 with count n²
 - LC 1010: duration exactly 60 → `60 % 60 = 0`; complement `(60 - 0) % 60 = 0` (self-pairing allowed)
@@ -125,8 +158,18 @@ If a table has many new rows since the last `ANALYZE`, the planner may use wrong
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you found that a solution you prepared for a problem was actually ignored in practice because its cost outweighed its benefit — analogous to an index that the query planner bypasses due to low selectivity.
-- Leadership principle: Dive Deep
+
+**Leadership principle: Dive Deep**
+
+**STAR Story — Discovering that a solution's cost outweighed its benefit**
+
+**Situation:** Our team had built a composite database index on a `notifications` table covering `(user_id, status, created_at)` specifically to speed up a dashboard query that fetched unread notifications per user. Six months after deployment, a DBA flagged that write throughput on the notifications table had dropped by 35% compared to baseline — from 12,000 inserts/sec to about 7,800/sec. The team assumed the index was helping reads, so nobody questioned it.
+
+**Task:** I owned the notifications service and volunteered to investigate. My goal was to determine whether the index was actually being used by the query planner and whether the write-cost trade-off made sense.
+
+**Action:** I started by running `EXPLAIN ANALYZE` on the dashboard query in both staging and production. I noticed the query planner was choosing a sequential scan despite the composite index existing. I pulled the `pg_stat_user_indexes` view and found the index had zero index scans in the past 30 days — it had been built but never used. I dug further: the `status` column had only two distinct values (`read` / `unread`) out of 180 million rows — selectivity of 0.000001%. The planner correctly determined that a sequential scan on the 12 GB table was cheaper than random I/O through an index pointing to ~90 million rows. I documented the finding, proposed dropping the index, and also proposed a partial index `CREATE INDEX ON notifications(user_id, created_at) WHERE status = 'unread'` — indexing only the 2% of rows that were actually unread, cutting index size from 8 GB to under 200 MB.
+
+**Result:** Dropping the old index and creating the partial index recovered the 35% write-throughput loss immediately — writes returned to 12,200/sec within the first hour after deployment. The dashboard query went from a 4.2-second sequential scan to a 28-millisecond index scan, and the partial index used 97% less disk space than the old composite index. I documented the selectivity analysis so the team would apply `EXPLAIN ANALYZE` before creating any future index.
 
 ---
 

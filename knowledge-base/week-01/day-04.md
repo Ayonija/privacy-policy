@@ -50,6 +50,36 @@ class Solution {
 - **Brute force baseline:** "O(n² · 26) checking all substrings and counting character frequencies" → sliding window + freq map reduces to O(n).
 - **Common mistake:** for LC 567 (Permutation in String), forgetting that the window size is *fixed* at `len(s1)` — you always slide by one, never grow or shrink; it's not a variable window.
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Sliding Window + Character Frequency Map in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a string and an integer k, and asked to find the length of the longest substring that can be made into a single repeating character by replacing at most k characters. The brute-force approach of checking all O(n²) substrings and computing character frequencies for each is O(n²·26), which for n = 10⁵ means ~2.6×10¹¹ operations — clearly infeasible."
+
+**Task:** "My goal was to solve this in O(n) time and O(26) = O(1) space by recognising that the 'valid window' condition has a clean mathematical form I can check in O(1) per step by maintaining a running frequency map."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "I noticed I need the longest substring satisfying an internal constraint — the number of characters to replace. Internal state (frequency counts) → sliding window + frequency map."
+2. *Initialize:* "I set `left = 0`, `maxFreq = 0`, and a HashMap `count`. The window is valid when `window_size - maxFreq <= k` — the number of non-dominant characters must be within our replacement budget."
+3. *Core loop logic:* "For each `right`, I add `s[right]` to `count` and update `maxFreq = max(maxFreq, count[s[right]])`. If `(right - left + 1) - maxFreq > k`, I shrink by removing `s[left]` from `count` and `left++`. Then I record `right - left + 1` as a candidate."
+4. *Convergence guarantee:* "`maxFreq` only ever increases (we want the longest window, so a smaller maxFreq can't extend our best result). This means we shrink by at most 1 per iteration — the window size never decreases, just slides forward."
+5. *Duplicate handling / edge case proactivity:* "The `maxFreq` trick is the key subtlety: I never decrease `maxFreq` after a shrink. This is intentional — not a bug — because the window can only get longer if it finds a higher `maxFreq` in the future."
+
+**Result:** "This reduces time complexity from O(n²·26) to O(n). For n = 10⁵, brute force takes ~2.6×10¹¹ operations (~4+ minutes); the sliding window completes in ~2×10⁵ operations (~0.2ms). The `maxFreq` monotonicity argument is the senior-level insight that separates this from a naive sliding window solution."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer Sliding Window + Freq Map here |
+|-------------|---------------------------|-------------------------------|
+| Brute force — all substrings O(n²·26) | When n ≤ 200 | Times out at n = 10⁵; sliding window is O(n) |
+| Binary search on answer length O(n log n) | When you can validate a given length efficiently | Works but adds O(log n) factor; sliding window achieves O(n) directly and is standard |
+
+**Why NOT brute force:** Checking all O(n²) substrings and counting chars in each is O(n²·26) — for n = 10⁵ that's ~2.6×10¹¹ operations, far too slow.
+**Why NOT binary search on length:** While binary search on the answer works here (check if a window of size L is valid in O(n)), it's O(n log n) vs O(n) for sliding window — no advantage and more code.
+
 ### Edge Cases to Trace Before Coding
 - LC 424: `k = 0` → any window with more than one distinct character is invalid; answer = longest run of one character
 - LC 424: all same characters → `maxFreq = window_size`, condition never violated; answer = `s.length()`
@@ -68,8 +98,24 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Tell me about a time you optimised a repeated computation by caching intermediate results — analogous to maintaining a running frequency map instead of recomputing from scratch.
-- Leadership principle: Deliver Results
+
+**Leadership Principle:** Deliver Results
+
+**STAR Story: Caching Intermediate Frequency Counts to Eliminate Redundant Computation**
+
+**Situation (20%):** "At my previous company, we ran a daily content moderation pipeline that scanned comment threads for anomalous character pattern distributions — a signal for spam bots. The pipeline re-computed character frequency distributions for every sliding 50-message window by re-reading all 50 messages from scratch. For threads with 10K+ messages, this made each thread take 8–12 minutes, and we had 50K threads to process daily."
+
+**Task (part of S/T):** "I owned the moderation pipeline's throughput. My goal was to process all 50K threads within a 2-hour daily window, down from the current 6–8 hours, without increasing server costs."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I benchmarked the pipeline and confirmed that re-computing the frequency map from scratch on each window slide was 97% of the CPU cost.
+Then, I redesigned it to maintain an incremental frequency map — on each slide, I added the new message's characters and subtracted the evicted message's characters, exactly like the sliding window + freq map approach. I also introduced a `matches` counter tracking how many character slots met the anomaly threshold, so validation was O(1) per step instead of O(26).
+Next, I ran the new pipeline on a 1K-thread sample and validated that it produced identical output to the old pipeline while running 60× faster.
+Finally, I replaced the production pipeline with a gradual rollout over 3 days, monitoring output correctness against a shadow run of the old pipeline."
+
+**Result (10-20%):** "Processing time for the full 50K-thread daily run dropped from 6.5 hours to 40 minutes — an 89% reduction. We could now run the pipeline 3× per day instead of once, catching spam patterns 8 hours earlier on average. Server costs stayed flat because we eliminated the redundant computation, not added machines."
+
+**Interview tip:** Ground the story in concrete before/after numbers. "I redesigned the freq map update to be O(1) per slide" is more credible than "we made it faster." Prepare for questions about: delivering results, optimization, pipeline design, or ownership.
 
 ## Flashcards
 

@@ -181,6 +181,68 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **0-1 BFS (Deque):** brute-force Dijkstra O((V+E) log V) → this approach O(V+E) time, O(V+E) space
+
+**S:** "Given an m×n grid where cells contain 0 (free) or 1 (obstacle), find minimum obstacles to remove to reach bottom-right from top-left. Edge weights are binary (0 or 1). Dijkstra works but adds unnecessary O(log(m×n)) heap overhead."
+**T:** "Need O(m×n) — linear in grid size — by exploiting the binary edge-weight structure with a deque instead of a heap."
+**A (60% of answer time):**
+1. *Classify:* "'Minimum cost path where edge costs are 0 or 1' — 0-1 BFS signal: replace min-heap with a deque."
+2. *Init:* "dist[0][0] = 0, all others = MAX_VALUE; deque = [(0, 0, 0)]; 4-directional movement."
+3. *Loop/Step:* "For each (cost, r, c): for each neighbour (nr, nc): newCost = cost + grid[nr][nc]; if newCost < dist[nr][nc]: update and addFirst if grid[nr][nc]==0, addLast if grid[nr][nc]==1."
+4. *Termination:* "Each cell processed at most twice (once from front, once stale — skip via cost > dist guard); terminates at bottom-right."
+5. *Gotcha:* "Must check `if (cost > dist[r][c]) continue` at the top of the loop — stale entries accumulate in the deque because we don't have a decrease-key operation. Without this guard, you process obsolete states and get wrong (too-high) distances."
+**R:** "O(m×n) time, O(m×n) space. Removes the log overhead of Dijkstra — for a 1000×1000 grid: ~10^6 operations vs ~20×10^6 with a heap."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Dijkstra with min-heap | Arbitrary non-negative weights | Works correctly but O((V+E) log V) — 20× slower than 0-1 BFS for binary weights |
+| Standard BFS | Unweighted graph (all edges cost 1) | Edge weights 0 and 1 violate BFS's equal-cost assumption — produces wrong distances |
+
+---
+
+> **Binary Search on Answer + Multi-Source BFS Reachability:** brute-force O(m×n × max_safeness) → this approach O(m×n log(m×n)) time, O(m×n) space
+
+**S:** "Given an n×n grid with thieves, find the path from top-left to bottom-right that maximises the minimum Manhattan distance to any thief (minimax path). Naive: try all paths and track minimum safeness — exponential."
+**T:** "Need O(n² log n) by binary searching on the answer (minimum safeness threshold) and checking reachability via BFS for each candidate."
+**A (60% of answer time):**
+1. *Classify:* "'Maximise the minimum value along a path' — binary search on threshold + feasibility check signal."
+2. *Init:* "Multi-source BFS from all thieves simultaneously → safeness[r][c] for each cell. Binary search lo=0, hi=max(safeness)."
+3. *Loop/Step:* "For each mid: canReach(safeness, mid) — BFS from (0,0) using only cells with safeness ≥ mid; if reachable → lo = mid; else → hi = mid - 1."
+4. *Termination:* "Binary search converges in O(log(max_safeness)) ≤ O(log(n)) iterations; each iteration is O(n²) BFS."
+5. *Gotcha:* "Check safeness[0][0] < threshold before BFS — if the starting cell itself is below threshold, return false immediately. Forgetting this causes BFS to start from an invalid cell and return false correctly but wastes O(n²) work."
+**R:** "O(n² log n) time, O(n²) space. n=400 grid: ~640K operations per binary search step × log(400) ≈ 9 steps = ~5.7M total operations."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Dijkstra with max-safeness priority | Direct optimisation without binary search | Works (O(n² log n)) but more complex to implement; binary search + simple BFS is cleaner |
+| DFS for reachability check | Same complexity | DFS works but BFS is easier to reason about for BFS-like level structures |
+
+---
+
+> **BFS Two-Distance Tracking:** brute-force O(V! path enumeration) → this approach O((V+E) log V) time, O(V+E) space
+
+**S:** "Given a graph with n nodes and uniform edge weight `time`, traffic lights flipping every `change` seconds, find the second minimum time to reach node n from node 1. Brute force enumerates all paths — exponential."
+**T:** "Need O((V+E) log V) by BFS that tracks both the minimum and second-minimum arrival time per node."
+**A (60% of answer time):**
+1. *Classify:* "'Second minimum distance in a graph' — BFS with two distance slots per node: dist1[v] and dist2[v]."
+2. *Init:* "dist1[] = MAX, dist2[] = MAX; dist1[1] = 0; queue = [(0, node1)]."
+3. *Loop/Step:* "For each (t, u): compute departure time accounting for red lights (if in red phase, wait until next green); arrive = depart + time; accept into dist1[v] if < dist1[v], or into dist2[v] if dist1[v] < arrive < dist2[v]."
+4. *Termination:* "Each node accepted into dist2 at most once; terminates; answer = dist2[n]."
+5. *Gotcha:* "Traffic light handling: if `(t / change) % 2 == 1` (red phase), must wait until `(t/change + 1) * change` before departing. Missing this produces wrong departure times. Also: only accept into dist2 if strictly greater than dist1 — ties don't count as a 'second minimum'."
+**R:** "O((V+E) log V) time (priority queue for correct ordering with variable wait times), O(V+E) space. Handles n=10,000 nodes correctly with traffic light simulation."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Simple BFS (no wait simulation) | Uniform edge weights without traffic lights | Ignores red-light delays; produces wrong times when waiting is required |
+| DFS all paths | Find all paths to enumerate second min | Exponential; BFS with two-distance slots is O((V+E) log V) |
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 2290: all cells are 0 → dist[n-1][m-1] = 0; only path goes through many obstacles → 0-1 BFS finds minimum cost correctly
 - LC 2812: no thieves → all safeness = inf (or max manhattan) → any path is safe → answer = 0 (trivial path); single cell with a thief at start → safeness[0][0] = 0 → return 0
@@ -253,8 +315,12 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you optimised a system that had acceptable peak performance but poor worst-case performance — how did you identify and address the tail latency?
-- Leadership principle: Dive Deep
+**Full STAR Story — "0-1 BFS: Eliminating Tail Latency by Removing the Unnecessary Heap":**
+**S (20%):** "At a mapping startup, our real-time routing service had acceptable average latency (40ms) but p99 latency of 380ms — unacceptable for in-app turn-by-turn navigation. Our graph had binary-cost edges (toll/no-toll roads), but we were using full Dijkstra with a priority heap."
+**T:** "I was assigned to reduce p99 latency below 100ms without changing the product's routing quality — same optimal paths, lower overhead."
+**A (60% — 'I' not 'we'):** "(1) I profiled the routing hot path and identified that 60% of CPU cycles were spent on heap operations for what were effectively 0/1 edge weights — toll vs non-toll. (2) I replaced the priority queue with a deque-based 0-1 BFS: weight-0 edges (non-toll) appended to front, weight-1 edges (toll) appended to back — identical optimal paths, zero heap overhead. (3) I benchmarked on a 500,000-node road graph: 0-1 BFS processed each query in 4ms vs 28ms for Dijkstra — a 7× improvement. (4) I validated correctness by running both implementations on 10,000 randomly sampled routes and confirming identical optimal distances on 100% of cases before deploying."
+**R (20%):** "p99 latency dropped from 380ms to 61ms — well under the 100ms target. Average latency fell from 40ms to 6ms. The fix required changing 30 lines of code. Routing service capacity effectively increased 4× without new infrastructure."
+*Works for LP questions on: Dive Deep, Frugality, Insist on the Highest Standards.*
 
 ---
 

@@ -3,6 +3,58 @@
 ## Phase
 Phase 1: DSA Mastery | Month 1
 
+## STAR Framework — Week 1 Consolidated Patterns
+
+> This section provides a consolidated STAR framework covering the core patterns from Week 1. Use it to practice rapid pattern narration — a critical interview skill.
+
+---
+
+### Two Pointers (Days 1–2): STAR Summary
+
+**Situation:** "Given a sorted array and a sum/area constraint, brute force nested loops are O(n²) — for n = 10⁶ that's ~17 minutes. The sorted structure means we can make a guaranteed directional decision on every step."
+
+**Task:** "Reduce pair-sum to O(n) and area/greedy problems to O(n) by converging two boundary pointers inward based on the comparison at each step."
+
+**Action (key steps to narrate):**
+1. State `left = 0, right = n-1`. For pair-sum: if sum too small, `left++`; too large, `right--`. For area (Container With Most Water): always move the shorter pointer — moving the taller bar can only decrease the result.
+2. For 3Sum: sort first, fix one element with an outer loop, run two pointers inside, skip duplicates at both the fixed index AND inside the inner loop.
+3. Terminate when `left >= right`.
+
+**Result:** "O(n) vs O(n²). For n = 10⁶: ~1ms vs ~17 minutes for pair-sum."
+
+---
+
+### Sliding Window (Days 3–6): STAR Summary
+
+**Situation:** "Given an unsorted array and a subarray constraint (sum, character count, product), brute force checks all O(n²) subarrays in O(n²)–O(n³) time — timing out for n ≥ 10⁴."
+
+**Task:** "Maintain a window [left, right] with incremental state updates — O(1) per step — so total complexity is O(n) amortised."
+
+**Action (key steps to narrate):**
+1. Expand `right` on every step, updating window state (sum, freq map, product, zero count).
+2. Shrink `left` while the window violates the constraint — use `while` for minimum windows, `if` or monotone approach for maximum windows.
+3. Record the answer (length, count, or indices) at the right moment: before shrinking for minimum-window problems, after expanding for maximum-window problems.
+4. Amortised argument: each element enters once and exits at most once → total ≤ 2n operations.
+
+**Result:** "O(n) via amortised analysis. The amortised argument — 'each element enters once and exits at most once' — is the senior-level justification the interviewer expects when asking why the nested while doesn't make this O(n²)."
+
+---
+
+### Dutch National Flag / Three Pointers (Day 7): STAR Summary
+
+**Situation:** "Partition an array of 0s, 1s, and 2s in-place with a single pass — built-in sort is O(n log n), counting sort is two passes."
+
+**Task:** "Maintain three pointer invariants simultaneously: [0, low) = 0s, [low, mid) = 1s, [high+1, n) = 2s, [mid, high] = unexplored."
+
+**Action (key steps to narrate):**
+1. On `nums[mid] == 0`: swap with `low`, advance both `low` and `mid`.
+2. On `nums[mid] == 1`: advance `mid` only.
+3. On `nums[mid] == 2`: swap with `high`, advance `high` only — do NOT advance `mid` (swapped value is unknown).
+
+**Result:** "O(n) single pass, O(1) space. The critical insight: do not increment `mid` after swapping with `high` — this is the invariant that separates correct solutions from plausible-looking bugs."
+
+---
+
 ## Patterns Covered This Week
 - Two Pointers (basic: pair sum, palindrome, reverse)
 - Two Pointers (greedy shrink: container/area problems)
@@ -80,3 +132,22 @@ Aggregate of all 5-per-day cards from Days 1–7 (35 cards):
 | Date | Platform | Score / Result | Key mistake | Fixed? |
 |------|----------|---------------|-------------|--------|
 | — | — | — | — | — |
+
+---
+
+## STAR Quick Reference — Week 1
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| Two Pointers (pair sum) | "Given a sorted array of 10M integers, applied converging two pointers → O(n) vs O(n²) — 1ms vs 17min." |
+| Two Pointers (area/greedy) | "Given container widths, always moved the shorter pointer → O(n) globally optimal by elimination argument." |
+| Three Pointers (Dutch National Flag) | "Given 0s/1s/2s, maintained three invariant zones simultaneously → O(n) single pass vs O(n log n) sort." |
+| Sliding Window (fixed) | "Given k-day stock window, maintained a running sum with O(1) slide → O(n) vs O(n·k) brute force." |
+| Sliding Window (variable sum) | "Given subarray sum target, used amortised shrink — each element enters and exits once → O(n) total." |
+| Sliding Window (freq map) | "Given character replacement budget, maintained a match counter → O(1) validity check per step." |
+| Sliding Window (k-distinct) | "Given at-most-k-distinct constraint, evicted excess keys on shrink → O(n) vs O(n²) nested scan." |
+
+**Career story titles:**
+1. "Two Pointers — cut pair-search latency from 17 min to 1 ms on a 10M-row sorted customer table."
+2. "Sliding Window — reduced O(n²) log-window scan to O(n) amortised by maintaining incremental state."
+3. "Dutch National Flag — partitioned mixed-status records in a single pass, eliminating a secondary sort step."

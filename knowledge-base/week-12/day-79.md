@@ -114,6 +114,39 @@ def palindromePairs(words):
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Binary XOR Trie / Suffix Trie Deduplication / Palindrome Pair HashMap in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given three problems that extend Trie thinking to bit-level operations and string structural analysis: Maximum XOR of Two Numbers (finding the pair with the largest XOR), Short Encoding of Words (minimum encoding length via suffix sharing), and Palindrome Pairs (all pairs whose concatenation is a palindrome). Brute-force XOR checking all pairs is O(n²), scanning all suffix relationships is O(n² × L), and palindrome checking all pairs is O(n² × L)."
+
+**Task:** "My goal was to reduce each to O(n) or O(n × L) by exploiting structure: bit-level greedy traversal in a binary Trie for XOR, suffix set deduplication for encoding, and HashMap lookup with split enumeration for palindrome pairs."
+
+**Action:** Walk the interviewer through these steps:
+1. *Classify the pattern:* "Maximum XOR → binary Trie (30-bit depth, children indexed 0/1); for each number, greedily traverse choosing the OPPOSITE bit to maximise XOR. Short Encoding → reversed-word suffix deduplication: a word needing its own encoding slot is one not a suffix of any other word. Palindrome Pairs → HashMap of `{word: index}`; for each word, split at every position and check if the complement exists."
+2. *Initialize:* "Binary XOR Trie: insert all numbers as 30-bit binary strings (MSB first). Suffix dedup: build a set of all words, then remove all non-empty suffixes of each word. Palindrome Pairs HashMap: `word_map = {word: idx for idx, word in enumerate(words)}`."
+3. *Core loop logic:* "XOR Trie: for each number `a`, traverse 30 bits from MSB; at each level, try `opposite = 1 - b`; if that child exists, set that bit in XOR result and follow it. Palindrome split: for word `w`, split at position `j`; if `prefix` is palindrome and `reverse(suffix)` is in HashMap → valid pair `(HashMap[rev_suffix], i)`."
+4. *Convergence guarantee:* "XOR Trie terminates after exactly 30 levels per number. The palindrome split enumerates O(L) positions per word, and each check is O(L) for palindrome verification — total O(n × L²) which is the theoretical lower bound for this problem."
+5. *Duplicate handling / edge case proactivity:* "Palindrome Pairs: the split at position 0 (empty prefix, full word as suffix) duplicates the same word pair from the split at position n (full word as prefix, empty suffix). Adding `j > 0` to the second case avoids duplicate pairs — this is the most common bug in this problem."
+
+**Result:** "XOR Trie: O(n × 30) = O(n) vs O(n²) brute force — for n = 10^5 numbers, that's 3 × 10^6 vs 10^10 operations. Suffix encoding: O(n × L²) worst case but O(n × L) in practice when word lengths are bounded. Palindrome Pairs: O(n × L²) vs O(n² × L) naive — for n = 10^3 words of average length L = 10, that's 10^5 vs 10^7 operations."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer this approach |
+|-------------|---------------------------|--------------------------|
+| Brute force all pairs for XOR | n ≤ 1000 | O(n²) = 10^6 — fine; Trie gives O(n) — use for n ≥ 10^4 |
+| Reversed-word Trie for suffix dedup | Very large dictionary with many shared suffixes | Trie leaf counting vs set approach is equivalent O(n × L); set approach is simpler to implement |
+| Check all O(n²) pairs for palindromes | n ≤ 50 | O(n² × L) fine for small n; HashMap split is needed for n ≥ 500 |
+
+**Why NOT brute force XOR at scale:** O(n²) for n = 10^5 is 10^10 operations — will time out. Binary Trie is O(30n) = 3 × 10^6 operations.
+**Why NOT brute force palindrome pairs:** O(n² × L) for n = 10^3, L = 10 is 10^7 — borderline. For n = 5000, it's 2.5 × 10^8 — times out. HashMap split enumeration is O(n × L²) = 5 × 10^5 — comfortably within limits.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 421: all same number → XOR with itself = 0; two numbers → result = XOR of the two
 - LC 820: words list has duplicates → set deduplication; single word → length + 1; word is suffix of itself (impossible since no word is suffix of itself with strict suffix `i > 0`)
@@ -202,8 +235,28 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you built or used a recommendation system — how did you measure its effectiveness and what trade-offs did you make?
-- Leadership principle: Customer Obsession
+
+**Leadership Principle:** Customer Obsession
+
+**STAR Story: Building a Personalized Content Recommendation System That Customers Could Trust**
+
+**Situation:** At my previous company, we operated a developer documentation platform where users regularly struggled to find relevant guides among 40,000+ articles. Search was keyword-only — users had to know the exact terms. Our NPS scores for content discovery sat at 22, and exit surveys consistently cited "couldn't find what I needed" as the top frustration. Engagement with documentation beyond the first result was below 8% — users landed on one page and left.
+
+**Task:** I was asked to design and ship a content recommendation system — a "Related Articles" module that would appear at the bottom of each page. The business goal was to increase documentation engagement depth (pages per session) by at least 30%. My constraint: the system had to be interpretable. Developers distrust black-box recommendations and will ignore them if they can't understand why something was surfaced.
+
+**Action:**
+
+*First,* I audited the data we had: article text, user session logs (page sequences), and explicit signals (time on page, copy-code events). I prototyped three approaches: (1) co-occurrence counting (articles read in the same session), (2) TF-IDF cosine similarity between article texts, and (3) a hybrid scoring combining both signals with a recency decay. I rejected neural embedding approaches — we had no GPU inference infrastructure and they would have been uninterpretable to users.
+
+*Then,* I implemented the co-occurrence matrix using a sliding window over sessions: for each pair of articles (A, B) appearing in the same session within 5 hops of each other, I incremented `co_occurrence[A][B]`. I normalised by the Jaccard coefficient to avoid high-traffic pages dominating every recommendation. I ran this as a nightly Spark job on our session logs.
+
+*Next,* I combined co-occurrence with TF-IDF similarity: `score(A, B) = 0.6 × co_occurrence_jaccard(A, B) + 0.4 × cosine_similarity(A, B)`. The split was determined by a grid search on a holdout session set, optimising for click-through on the "Related Articles" panel. I stored pre-computed top-10 recommendations per article in a Redis hash (article_id → JSON list), refreshed nightly.
+
+*Finally,* I addressed interpretability explicitly. Each recommendation card displayed a one-line reason: "Developers also read this after [current article title]" (co-occurrence dominant) or "This covers a related concept: [top shared TF-IDF term]" (similarity dominant). I A/B tested the module with and without the reason labels — the reason labels increased click-through by 34% by themselves, even before the recommendation quality improvements.
+
+**Result:** After 6 weeks of rollout, documentation pages-per-session increased from 1.3 to 2.1 (62% improvement — well above the 30% target). Click-through on the Related Articles panel reached 19% (from 0% baseline). NPS for content discovery improved from 22 to 41. Critically, the interpretability labels drove a 34% higher CTR than recommendations without labels, validating the developer trust hypothesis. The system cost $0 incremental in compute — the nightly Spark job ran on existing infrastructure.
+
+*In an interview, say:* "I'd describe it this way: The customer feedback was clear — developers were leaving frustrated because they couldn't find what they needed. I chose an interpretable hybrid recommendation approach over a black-box model specifically because developer users are skeptical of opaque systems. The 'why am I seeing this' label ended up being as important as the algorithm itself." Use this for "Tell me about a time you obsessed over the customer experience," "Tell me about a data-driven decision," or "Tell me about a time you made a technical trade-off to serve the user better."
 
 ---
 

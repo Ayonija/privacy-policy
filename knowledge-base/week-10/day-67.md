@@ -152,6 +152,68 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **Unique Topological Sort Verification:** brute-force O(n! orderings) → this approach O(n + total_seq_length) time, O(n) space
+
+**S:** "Given a permutation org of 1..n and a list of constraint sequences, determine if org is the only valid topological ordering. Brute force enumerates O(n!) orderings — infeasible for n=10,000."
+**T:** "Need O(n + total_seq_length) by running Kahn's BFS with a uniqueness check at each step."
+**A (60% of answer time):**
+1. *Classify:* "'Is there a unique topological order?' — Kahn's uniqueness signal: at each step, the in-degree-zero queue must have exactly 1 element."
+2. *Init:* "Build directed graph and in-degree map from all sequences; check node sets match org."
+3. *Loop/Step:* "At each Kahn's step: if queue.size() > 1 → return false (ambiguous); dequeue the single node; verify it matches org[idx]; decrement neighbours' in-degrees."
+4. *Termination:* "If idx == org.length after processing all nodes → unique and consistent."
+5. *Gotcha:* "Two separate conditions must both pass: (a) queue never exceeds size 1, AND (b) the dequeued sequence exactly matches org. A sequence might be unique but reconstruct a different permutation — always verify against org."
+**R:** "O(n + total_seq_length) time, O(n) space. Handles n=10,000 with 10,000 sequences in milliseconds."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| DFS-based topological sort | General DAG ordering | DFS doesn't naturally expose uniqueness — requires extra bookkeeping |
+| Brute force all orderings | n ≤ 8 | O(n!) explosion; infeasible for n > 12 |
+
+---
+
+> **Topological DP — Critical Path:** brute-force O(2^V path enumeration) → this approach O(V+E) time, O(V+E) space
+
+**S:** "Given n courses with durations and prerequisite dependencies (DAG), find the minimum time to complete all courses when independent courses can run in parallel. Naive simulation of all schedule permutations is exponential."
+**T:** "Need O(V+E) by computing finish times via topological DP — each course's start time is the maximum finish time of its prerequisites."
+**A (60% of answer time):**
+1. *Classify:* "'Minimum time with parallelism and dependencies' — critical path signal; topological DP where finish_time[v] = duration[v] + max(finish_time[prereqs])."
+2. *Init:* "finishTime[v] = time[v] for all v (no prerequisites case); in-degree array; enqueue all in-degree-0 nodes."
+3. *Loop/Step:* "When processing edge (u → v): finishTime[v] = max(finishTime[v], finishTime[u] + time[v-1])."
+4. *Termination:* "After Kahn's completes, answer = max(finishTime)."
+5. *Gotcha:* "finishTime[v] must be initialised to time[v] (not 0) before processing edges. If initialised to 0, courses with no prerequisites finish at 0 — wrong. Also the update adds time[v-1] not time[u] — you're adding v's duration, not u's."
+**R:** "O(V+E) time, O(V+E) space. n=50,000 courses processed in < 100ms; exponential simulation is completely infeasible."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| DFS post-order DP | Same complexity; recursive | Recursive DFS risks stack overflow for chains of 50,000 nodes; Kahn's is iterative |
+| Bellman-Ford (longest path) | General graphs with cycles | This is a DAG; Bellman-Ford is O(V×E) — unnecessary overhead |
+
+---
+
+> **Color Frequency DP on DAG:** brute-force O(26 × V! path enumeration) → this approach O(26 × (V+E)) time, O(26 × V) space
+
+**S:** "Given a directed graph where each node has a colour ('a'–'z'), find the maximum frequency of any single colour on any path. Brute force enumerates all paths — exponential."
+**T:** "Need O(26 × (V+E)) by tracking a per-colour count array at each node during topological sort; return -1 if a cycle exists."
+**A (60% of answer time):**
+1. *Classify:* "'Maximum frequency of a property on any path in a DAG' — topological DP with per-node count array per colour."
+2. *Init:* "dp[v][c] = 0 for all; dp[v][color[v]-'a'] = 1 for each node; Kahn's queue with in-degree-0 nodes."
+3. *Loop/Step:* "For edge (u → v), for each colour c: dp[v][c] = max(dp[v][c], dp[u][c] + (1 if color[v]=='c' else 0))."
+4. *Termination:* "After processing, if processed < n → cycle detected → return -1. Answer = max over all dp[node][color[node]]."
+5. *Gotcha:* "The answer comes from dp[node][color[node]] — the node's own colour at the node itself — not max over all 26 colours at all nodes. This is because you want the maximum frequency on a path ending here, counting only one specific colour per path."
+**R:** "O(26 × (V+E)) time, O(26 × V) space. V=100,000 nodes: ~2.6M operations vs exponential path enumeration."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| 26 separate DFS runs (one per colour) | Conceptually simpler | Same asymptotic cost but 26× constant overhead; combined Kahn's does it in one pass |
+| Floyd-Warshall | All-pairs path properties, n ≤ 200 | n up to 100,000; O(n³) = 10^15 operations — impossible |
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 444: `seqs` contains a node not in `org` → return False; `seqs` are consistent but don't enforce a unique order → queue has > 1 element → return False; single node `org = [1]` with `seqs = [[1]]` → trivially True
 - LC 2050: no prerequisites (independent courses) → each course finishes at its own duration; all courses sequential (chain) → critical path = sum of all durations
@@ -229,8 +291,12 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to coordinate multiple parallel workstreams with dependencies — how did you identify and protect the critical path?
-- Leadership principle: Deliver Results
+**Full STAR Story — "Critical Path DP: Shipping a Multi-Team Feature by Protecting the Longest Dependency Chain":**
+**S (20%):** "At a SaaS company, a cross-functional feature (real-time collaboration) had 8 parallel engineering workstreams with complex prerequisites — infrastructure, auth, websocket layer, UI components, testing. The project was 3 weeks behind schedule because teams were not coordinating around the true bottleneck."
+**T:** "As tech lead, I owned end-to-end delivery. Goal: ship the feature within 4 weeks — a fixed external commitment to a major enterprise customer worth $1.2M ARR."
+**A (60% — 'I' not 'we'):** "(1) I mapped all workstreams and prerequisites into a directed dependency graph and computed the critical path (the longest dependency chain) using topological DP — identified the websocket layer as 11 days on the critical path, auth integration as 7 days, UI as 5 days. (2) I reassigned two engineers from non-critical-path work (analytics dashboard) to unblock the websocket team, reducing that leg from 11 to 6 days. (3) I introduced a daily 15-minute standup scoped only to critical-path owners, cutting decision latency from 48 hours to same-day. (4) I tracked finish-time estimates daily and re-ran the critical path calculation when scope or estimates changed — adjusting priorities proactively rather than reactively."
+**R (20%):** "Delivered the feature in 3.5 weeks, 2.5 days ahead of commitment. The enterprise customer signed the expanded contract. Post-mortem established critical-path tracking as a standard practice for all cross-team projects at the company."
+*Works for LP questions on: Deliver Results, Bias for Action, Ownership.*
 
 ---
 

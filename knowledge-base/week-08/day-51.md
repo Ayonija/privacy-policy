@@ -106,6 +106,38 @@ def largestIsland(grid):
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Grid DFS / Flood Fill patterns in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a 2-D grid of 1s (land) and 0s (water) and asked to count the number of distinct islands. The grid can be up to 300×300 = 90,000 cells. A brute-force approach of checking every cell against every other cell for connectivity is O(n⁴) — completely intractable."
+
+**Task:** "My goal was to count connected components of land cells in O(m×n) time using DFS flood fill — visiting each cell at most once."
+
+**Action:** Walk the interviewer through these steps:
+1. *Outer loop — scan every cell:* "I iterate every `(r, c)` in the grid. When I find a land cell (`grid[r][c] == '1'`), I increment the island count and launch a DFS from that cell."
+2. *DFS — sink and recurse:* "On entry to `dfs(r, c)`: first I check bounds and that the cell is still land. Then I mutate `grid[r][c] = '0'` — 'sinking' the cell to mark it visited. Then I recurse in all 4 directions."
+3. *Why mutate in-place:* "Mutating the grid to '0' on entry is equivalent to a visited set but uses zero extra memory. Each cell can only be sunk once — it's O(m×n) total work across all DFS calls."
+4. *Count:* "Each DFS launch from the outer loop corresponds to one island. The count of DFS launches is the number of islands."
+5. *Four-directional movement:* "I use `dirs = [(0,1),(0,-1),(1,0),(-1,0)]` — horizontal and vertical only. Diagonal connectivity would require 8 directions."
+
+**Result:** "O(m×n) time — each cell is visited at most twice (once to discover it, once to sink it). O(m×n) space in the worst case for the recursion stack on a fully-land grid. For a 300×300 grid: 90,000 operations instead of 8.1 billion for brute force."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer DFS flood fill |
+|-------------|---------------------------|--------------------------|
+| BFS flood fill | Stack overflow risk for very deep grids | Equivalent O(m×n); BFS uses a queue (no stack depth issue); trade-off is slightly more code |
+| Union-Find | When you need to query connectivity dynamically | More complex; O(α(n)) per operation; overkill for static grid counting |
+| DFS flood fill | Standard | O(m×n) time, zero extra space for visited tracking |
+
+**Why mutate in-place rather than using a separate visited set:** A `visited` set adds O(m×n) extra memory and O(1) lookup overhead per cell. Mutating in-place achieves the same O(1) lookup with zero extra space — the grid itself becomes the visited marker.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 200: grid with all water → 0; grid with all land → 1 island
 - LC 695: no land cells → return 0 (use `default=0` in max())
@@ -174,8 +206,18 @@ CDNs typically have 50–200+ PoPs worldwide (Cloudflare: 300+, AWS CloudFront: 
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you improved system latency or reduced load by moving computation or data closer to where it was needed — analogous to CDN edge caching.
-- Leadership principle: Invent and Simplify
+
+**Leadership principle: Invent and Simplify**
+
+**STAR Story — Reducing latency by moving computation closer to where it was needed**
+
+**Situation:** Our mobile app displayed a personalised product feed that required fetching catalogue metadata, pricing, and inventory status — all from separate microservices located in our US-East datacenter. Mobile users in Europe and Asia-Pacific were experiencing 2.8–4.2 second feed load times due to 12–18 round-trip API calls, each crossing the Atlantic or Pacific (180–280 ms RTT per round trip).
+
+**Task:** I was the mobile backend lead and was asked to reduce feed load time to under 1 second for international users without adding engineering complexity to the mobile clients or the microservices themselves.
+
+**Action:** I analysed the API call pattern: 80% of the data in the feed (catalogue metadata, category information, non-personalised content) was identical across users and changed at most a few times per day. Only inventory status and personalised rankings were user-specific. I proposed a two-layer solution: first, deploy a GraphQL gateway with a feed aggregation endpoint to the CDN edge (Cloudflare Workers) — this reduced 12 round trips to 1 round trip by doing fan-out at the edge, close to the user. Second, I implemented fragment-level caching at the edge: catalogue metadata for each product was cached at the edge with a 1-hour TTL, tagged with `product:{id}` for instant purge on price changes. Only the personalised ranking layer made a round trip to the US-East origin. I built this using Cloudflare Workers KV for edge caching and Cloudflare D1 for lightweight edge-side data. I measured the improvement using synthetic monitoring from Frankfurt, Tokyo, and São Paulo at 15-minute intervals.
+
+**Result:** Feed load time dropped from 2.8–4.2 seconds to 650–820 ms for European and Asia-Pacific users — a 4× improvement. Edge cache hit rate for catalogue fragments was 91% at peak. Origin requests from the CDN dropped by 78%, reducing our US-East origin load. Mobile session length increased by 22% for international users in the following month, which the product team attributed directly to the latency improvement.
 
 ---
 

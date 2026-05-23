@@ -209,8 +209,34 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you set up alerting and on-call procedures for a critical system — what signals did you monitor, and how did you reduce alert fatigue?
 - Leadership principle: Dive Deep
+
+**Full STAR Story — "Alert Fatigue Elimination in the Feed Pipeline":**
+**S (20%):** "At FeedCo, our on-call rotation was receiving 80–120 alerts per week, 90% of which were false positives — engineers were spending 3 hours per on-call shift triaging noise, causing real incidents to be missed."
+**T:** "I was tasked with reducing alert fatigue by 70% without increasing mean time to detect real incidents."
+**A (60% — 'I' not 'we'):** "(1) I audited all 140 alert rules and found 60% fired on transient spikes lasting under 90 seconds — well within auto-recovery time. (2) I changed alert thresholds to require sustained breach for 5 minutes before paging, eliminating transient spike alerts. (3) I introduced composite alerts that only fired when consumer lag AND error rate both exceeded thresholds simultaneously, reducing correlated noise alerts. (4) I set up a Dead Letter Queue depth alert as the single high-fidelity signal for real processing failures — DLQ messages indicated confirmed unrecoverable errors."
+**R (20%):** "Alert volume dropped from 110/week to 18/week (84% reduction). Mean time to detect real incidents improved from 12 minutes to 4 minutes. Zero missed P1 incidents over the following 3 months."
+*Works for: Dive Deep, Insist on the Highest Standards, Ownership.*
+
+### STAR Interview Framework
+
+> **Remove K Digits monotone stack:** brute-force O(n×k) → monotone increasing stack O(n) time, O(n) space
+
+**S:** "Given a number string and k removals, produce the smallest possible number. Naive O(n×k) scan-and-remove is too slow for large n."
+**T:** "Need O(n) by using a monotone increasing stack to greedily remove larger digits from the left."
+**A (60%):**
+1. *Classify:* "Minimize a number by k digit removals → monotone increasing stack greedy."
+2. *Init:* "Stack (deque); k remaining removals."
+3. *Loop/Recurrence:* "For each digit: while k>0 and stack non-empty and stack.top > digit → pop, k--. Then push digit."
+4. *Termination:* "After scan: if k>0, pop from right (remove largest suffix digits). Strip leading zeros."
+5. *Gotcha:* "After main loop, if k>0 still, pop from the RIGHT (the tail is now sorted ascending, so tail digits are largest). Forgetting this leaves k unspent removals."
+**R:** "O(n) time, O(n) space. '1432219' k=3 → '1219' correctly in one pass."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Sort and remove largest | No adjacency constraint | Digit significance is position-dependent — can't just sort |
+| Priority queue | Need dynamic min/max | Stack gives O(1) access to the most recent (leftmost) candidate |
 
 ---
 

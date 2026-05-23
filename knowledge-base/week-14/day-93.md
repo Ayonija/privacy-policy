@@ -186,7 +186,32 @@ Tell me about a time you proposed a simpler solution when your team was over-eng
 
 **Target LP:** *Frugality* (Amazon) — accomplish more with less; simplicity is a feature.
 
-**Tip:** This question tests whether you can push back constructively. The "Action" should include *how* you made the case — data, prototype, analogy — not just *that* you made it.
+**Full STAR Story — "O(n) Greedy vs. O(n²) DP for Jump Game Routing":**
+**S (20%):** "At RouteOptCo, the team was building a path-feasibility checker using an O(n²) DP that was taking 800ms for 10K-node graphs — 4× over the 200ms SLA."
+**T:** "I proposed replacing the DP with an O(n) greedy max-reach scan, claiming it would bring latency under 50ms. I needed to convince two skeptical seniors."
+**A (60% — 'I' not 'we'):** "(1) I proved the greedy exchange argument in writing: at each index, expanding max_reach is always at least as good as any alternative choice — no future decision depends on which path led to the current index. (2) I benchmarked both on 100K-node synthetic graphs: O(n) greedy ran in 12ms vs. 8.2 seconds for O(n²) DP. (3) I acknowledged the DP's advantage — it can reconstruct the exact path — and proposed adding optional path reconstruction as a separate O(n) back-trace pass only when explicitly needed. (4) I ran the greedy solution through all existing test cases and added 5 new edge cases for zero-length jumps and stranded positions."
+**R (20%):** "Team adopted the greedy solution. P99 latency dropped from 800ms to 18ms. The optional path reconstruction was never needed in production — saving the team from building unnecessary complexity."
+*Works for: Frugality, Invent and Simplify, Are Right A Lot.*
+
+### STAR Interview Framework
+
+> **Jump Game VI deque-optimized DP:** naive O(nk) → monotonic deque DP O(n) time, O(k) space
+
+**S:** "Array nums; jump 1 to k positions forward, maximize score. Naive O(nk): for each position check all k prior positions for max dp value."
+**T:** "Need O(n) by maintaining a sliding window maximum over the prior k dp values using a monotonic deque."
+**A (60%):**
+1. *Classify:* "Max score with sliding window recurrence → monotonic deque DP."
+2. *Init:* "dp[0]=nums[0]; deque holding index 0."
+3. *Loop/Recurrence:* "For i 1 to n-1: remove indices outside window [i-k, i-1] from front. dp[i]=nums[i]+dp[deque.front]. Remove from back all indices with dp ≤ dp[i]. Append i."
+4. *Termination:* "Return dp[n-1]."
+5. *Gotcha:* "Pop from deque BACK before appending — maintain decreasing dp values front-to-back. Forgetting this makes the deque give wrong max values."
+**R:** "O(n) time, O(k) space. Pattern: 'max/min of sliding window in a DP recurrence' → always reach for monotonic deque."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Segment tree | Non-sliding window range max | Overkill; deque achieves same O(n) for sliding window |
+| Sparse table | Static array range max | DP array is built dynamically — can't precompute |
 
 ---
 

@@ -117,6 +117,28 @@ def longestIncreasingPath(matrix):
 
 ---
 
+### STAR Interview Framework
+
+> **Directed Graph Cycle Detection + Topological Sort:** brute-force O(V! orderings) → this approach O(V+E) time, O(V) space
+
+**S:** "Given V tasks and E prerequisite edges. Naive enumeration of all orderings is O(V!) — impossible at V=40."
+**T:** "Need O(V+E) valid ordering (or cycle detection) using the graph's inherent structure."
+**A (60%):**
+1. *Classify:* "Prerequisite edges form a directed graph — check for DAG before sorting."
+2. *Init:* "Build adjacency list and in-degree array; seed queue with all in-degree-0 nodes."
+3. *Loop/Step:* "Dequeue node u; decrement in-degree of each neighbour v; enqueue v when in-degree hits 0."
+4. *Termination:* "If `len(result) == V`, no cycle — result is a valid topological order."
+5. *Gotcha:* "If `len(result) < V` after BFS completes, a cycle exists — return [] or False."
+**R:** "O(V+E) time, O(V) space. For 40 services with 90 edges: microseconds vs V!=8×10^47 for brute force."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| DFS 3-colour | Need cycle detection only, no ordering needed | Less natural for producing order; same complexity |
+| Reverse post-order DFS | Prefer DFS over BFS | Harder to detect cycle (need GRAY set) |
+
+---
+
 ## System Design (1 hour)
 ### Topic: HTTP & HTTPS Fundamentals — Protocol, TLS, and Status Codes
 
@@ -185,8 +207,14 @@ TLS 1.3 completes in 1 round-trip (1-RTT). 0-RTT is possible for resumed session
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to understand dependencies between tasks or components to determine the correct order of execution — analogous to topological sort.
 - Leadership principle: Think Big
+
+**Full STAR Story — "Dependency-Ordered Service Migration":**
+**S (20%):** "At a mid-size fintech, our monolith had 40 services being extracted into microservices with implicit startup dependencies — teams were deploying in wrong order, causing cascading failures across 3 environments."
+**T:** "I was responsible for defining the safe deployment order across all 40 services within a 6-week migration window."
+**A (60% — 'I' not 'we'):** "(1) I mapped every service's explicit and implicit dependency edges into a directed graph with 40 nodes and ~90 edges. (2) I wrote a script to run Kahn's topological sort on the graph, detecting two circular dependency cycles that teams hadn't noticed. (3) I refactored those cycles by extracting a shared config service that broke both loops. (4) I generated the final deployment order and codified it as a pipeline gate in CI — no service could deploy unless all its topological predecessors had passed health checks."
+**R (20%):** "Zero cascading failures across 6 subsequent deployment windows. Migration completed 4 days ahead of schedule. The cycle detection caught bugs that would have caused production outages affecting 12,000 daily active users."
+*Works for: Think Big, Deliver Results, Invent and Simplify.*
 
 ---
 

@@ -239,8 +239,34 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to scale a consumer or worker pool to keep up with a message backlog — what was the bottleneck, how did you identify it, and how did you resolve it?
 - Leadership principle: Deliver Results
+
+**Full STAR Story — "Kafka Backlog Recovery Under SLA":**
+**S (20%):** "At StreamCo, our fanout worker pool developed a 2-million-message Kafka lag spike during a celebrity post event, delaying follower feed updates by 45 minutes against a 10-minute SLA."
+**T:** "I was on-call and responsible for restoring SLA within two hours without losing any events."
+**A (60% — 'I' not 'we'):** "(1) I identified the bottleneck as processing throughput — each worker was doing synchronous Redis ZADD calls, capping throughput at 800 msgs/sec per pod. (2) I pipelined the Redis writes into batches of 500 using a single round-trip, raising throughput to 6,400 msgs/sec per pod. (3) I scaled the consumer group from 12 to 40 pods using kubectl scale, up to the partition count limit of 40. (4) I monitored consumer lag every 5 minutes and confirmed it dropped from 2M to zero within 80 minutes."
+**R (20%):** "SLA restored 40 minutes early. Pipelining change permanently raised baseline throughput 8×, preventing recurrence at the same traffic level. I documented the runbook and presented the postmortem to the team."
+*Works for: Deliver Results, Bias for Action, Dive Deep.*
+
+### STAR Interview Framework
+
+> **Permutations (visited array) vs. Combinations (start index):** brute-force O(n^n) → visited-array backtracking O(n! × n) time, O(n) space
+
+**S:** "Given distinct integers, generate all orderings. Naive O(n^n) tries every slot for every position without tracking reuse."
+**T:** "Need O(n! × n) by using a visited array so each element appears exactly once per permutation."
+**A (60%):**
+1. *Classify:* "All orderings of distinct elements → Permutations visited-array backtracking."
+2. *Init:* "visited[n] = false; path = []; loop from 0 to n (not from start)."
+3. *Loop/Recurrence:* "Skip if visited[i]; set visited[i]=true, add, recurse, remove, set false."
+4. *Termination:* "len(path) == n → collect."
+5. *Gotcha:* "Loop starts at 0, not start — that's the key difference from Combinations; forgetting this generates combinations, not permutations."
+**R:** "O(n! × n) time, O(n) space. For Permutations II: sort + skip when nums[i]==nums[i-1] AND NOT visited[i-1]."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Factorial number system (LC 60) | Need k-th permutation directly | Generates all permutations — enumerate, not select |
+| Heap's algorithm | Generating permutations in-place | Harder to adapt for duplicates or constraints |
 
 ---
 

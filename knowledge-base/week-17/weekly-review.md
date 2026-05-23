@@ -153,3 +153,20 @@ Fill in after review session:
 - [ ] Can name all 5 cache invalidation strategies and give a one-line use case for each
 - [ ] Sliding window sum pattern for LC 837 memorized: window_sum add/subtract conditions
 - [ ] Can explain ARC policy (T1, T2, B1, B2) and when it outperforms pure LRU or LFU
+
+---
+
+## STAR Quick Reference — Week 17
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| TSP Bitmask DP | "Given n=12 word fragments, applied TSP DP+overlap precompute → O(2^n × n²) vs O(n! brute force)." |
+| Digit DP | "Given 10^9 range query, applied digit DP with tight flag → O(log N × states) vs O(N) scan." |
+| Game Theory DP | "Given adversarial scheduling problem, applied score-based interval DP → optimal P1 strategy in O(n²)." |
+| XOR + Binary Trie | "Given 2×10^4 numbers, applied XOR Trie MSB-greedy → O(n×32) vs O(n²) brute force XOR pairs." |
+| AND Subarray Monotone | "Given streaming bit-AND queries, applied O(log V) distinct set → O(n log V) vs O(n²) naive." |
+| Probability DP + Sliding Window | "Given card-draw scoring model, applied sliding window prob DP → O(n) vs O(n × maxPts)." |
+
+**Career stories:**
+1. "XOR Trie Greedy — identified that a max-XOR feature for a recommendation engine could run in O(n×32) not O(n²), saving 40 minutes of nightly batch time."
+2. "Sliding Window Probability DP — cut scoring service latency from 210ms to 18ms p99 by maintaining a rolling window sum instead of recomputing it per request."

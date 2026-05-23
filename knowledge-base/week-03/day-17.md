@@ -60,6 +60,49 @@ class Solution {
 }
 ```
 
+### Interview Tips
+
+- **Add Two Numbers II — justify the stack before coding:** "Since digits are stored most-significant first, I need to add from the least-significant end. I push both lists onto stacks to get O(1) access to digits in reverse order. The alternative — reverting the lists — modifies the input which is usually undesirable."
+- **Split in Parts — compute `base` and `extra` first:** "State `base = length / k; extra = length % k` before touching any code. The first `extra` parts get `base + 1` nodes; the remaining `k - extra` parts get `base` nodes. If `length < k`, some parts are empty (null head)."
+- **Brute force for Split in Parts:** there is no brute force — this is an O(n + k) algorithm by nature. The value is in computing the distribution correctly, not in optimizing complexity.
+- **Common mistake in Add Two Numbers II:** using a queue instead of a stack — the deque's `push()` adds to the front in most implementations; confirm the data structure gives LIFO access, not FIFO.
+
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Delete Without Head + List Splitting in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a linked list and an integer k, and asked to split it into k parts where each part is as equal-length as possible, with earlier parts getting the extra node if the length isn't divisible. A brute-force approach — collect all nodes into an array, then slice — is O(n + k) time but O(n) space. The in-place approach achieves O(n + k) time and O(k) space (just the output array of heads)."
+
+**Task:** "My goal was to split the list in-place by computing the exact size of each part upfront: `base = length / k; extra = length % k`. The first `extra` parts get `base + 1` nodes; the rest get `base` nodes."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "Divide a list into k parts in-place → length computation + remainder distribution. No sorting, no extra storage."
+2. *Initialize:* "Count the length in one pass. Compute `base = length / k; extra = length % k`. Allocate `result = new ListNode[k]`."
+3. *Core loop logic:* "For each part `i` from 0 to k-1: the part size is `base + (i < extra ? 1 : 0)`. Store `curr` as `result[i]`. Advance `curr` by `partSize - 1` steps. Cut: `next = curr.next; curr.next = null; curr = next`."
+4. *Convergence guarantee:* "Total nodes distributed = `base * k + extra = length`. Each node is visited at most twice — once for length counting, once for distribution. O(n + k)."
+5. *Duplicate handling / edge case proactivity:* "If `length < k`, some parts are empty — their result entry stays null. The cut step `if curr != null: curr.next = null` must guard against null to avoid NullPointerException when the list runs out."
+
+**Result:** "O(n + k) time, O(k) output space. The key insight is computing the distribution formula `base + (i < extra ? 1 : 0)` upfront — this eliminates all per-step conditional logic during splitting and makes the algorithm deterministic."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer In-Place Splitting here |
+|-------------|---------------------------|-------------------------------|
+| Collect all nodes to array, slice | When code clarity matters more than space | O(n) extra space vs O(k) for in-place; in-place is standard for linked list problems |
+| Recursive splitting | When a functional style is preferred | Recursive uses O(k) call stack and is harder to reason about for unequal splits |
+
+**Why NOT array collection:** O(n) extra space. The in-place approach allocates only `result[k]` — O(k) output.
+**Why NOT recursive:** Recursive splitting is harder to reason about for the unequal-length case and doesn't gain any asymptotic advantage.
+
+### Edge Cases to Trace Before Coding
+- LC 445 (Add Two Numbers II): one list is empty → stack is empty; `val += 0` correctly handles the empty side
+- LC 725: `k = 1` → one part containing the entire list; `base = length, extra = 0`
+- LC 725: `k > length` → the first `length` parts are single-node lists; the remaining `k - length` parts are null
+- LC 203 (Remove Elements): all nodes match `val` → every node is removed; return null
+
 ## System Design (1 hour)
 ### Topic: Scaling Bottlenecks — Beyond the DB
 - **Application tier:** CPU-bound tasks (image processing, ML inference) bottleneck here; solution is horizontal scaling + queue-based async processing.
@@ -72,8 +115,24 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you distributed work unevenly across a team because some members had more capacity — analogous to the base+extra distribution in Split Linked List in Parts.
-- Leadership principle: Hire and Develop the Best
+
+**Leadership Principle:** Hire and Develop the Best
+
+**STAR Story: Distributing Unequal Work Loads to Match Engineer Skill and Capacity**
+
+**Situation (20%):** "During a sprint planning session, our team had 7 high-priority tasks to distribute across 5 engineers with significantly different experience levels — from a senior engineer with 8 years of distributed systems experience to a new grad in their third month. Equal task distribution (1-2 tasks each, chosen arbitrarily) would have over-loaded the junior engineers and left the senior engineer under-utilized."
+
+**Task (part of S/T):** "As the tech lead, my goal was to distribute the 7 tasks across 5 engineers in a way that maximized team throughput while simultaneously giving each engineer tasks just above their current level — the 'stretch' principle. No engineer should have tasks so far above their level that they'd stall, or so far below that they'd be unchallenged."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I scored each task on two dimensions: complexity (1-5) and impact (1-5). I scored each engineer on their current demonstrated skill level (1-5) based on their last 3 PRs.
+Then, I distributed tasks using a 'base + remainder' approach: everyone got at least 1 task. The 2 remaining tasks went to the 2 most senior engineers who had bandwidth — analogous to the first `extra` parts in the Split in Parts algorithm getting the larger slice.
+Next, I paired each junior engineer with a senior engineer on adjacent tasks, so the junior could ask questions without a formal mentoring overhead.
+Finally, I held a daily 15-minute standup check on task status, and I explicitly re-assigned tasks mid-sprint when one engineer hit a blocker that another could absorb faster."
+
+**Result (10-20%):** "All 7 tasks shipped in the sprint — the first time in 3 sprints that 100% of planned tasks were completed on time. The new grad engineer shipped their task independently for the first time. The senior engineer noted they felt more productive than in the previous sprint where they'd been paired on lower-complexity work. I formalized the skill-weighted distribution approach and used it in the next 4 sprints."
+
+**Interview tip:** Hire and Develop answers should show you invested in people's growth, not just task completion. "I matched task complexity to just above each engineer's current level" is the growth investment. Prepare for: hire and develop, dive deep, delivering results, or building teams.
 
 ## Flashcards
 

@@ -128,6 +128,28 @@ def numSimilarGroups(strs):
 
 ---
 
+### STAR Interview Framework
+
+> **Graph 2-Colouring (Bipartite Check):** brute-force O(2^V subsets) → this approach O(V+E) time, O(V) space
+
+**S:** "Given V nodes and E conflict edges, need to determine if nodes can be split into 2 groups with no conflicts within a group. Brute-force subset enumeration is O(2^V)."
+**T:** "Need O(V+E) bipartite check using BFS 2-colouring."
+**A (60%):**
+1. *Classify:* "'Can you 2-partition nodes with conflict edges?' → bipartite check. Conflict graph = dislike graph."
+2. *Init:* "`color = [-1] * n`; iterate all uncoloured nodes (handles disconnected graph)."
+3. *Loop/Step:* "BFS from each uncoloured start node; assign colour 0 to start; assign `1 - color[node]` to each uncoloured neighbour; if neighbour already has same colour → odd cycle → not bipartite."
+4. *Termination:* "If all nodes are coloured without conflict, graph is bipartite."
+5. *Gotcha:* "Must iterate ALL nodes in the outer loop — disconnected components won't be reached from a single BFS start."
+**R:** "O(V+E) time, O(V) space. Handles disconnected graphs and self-loops correctly."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| DFS 2-colouring | Same complexity, preferred recursively | Stack overflow risk for deep graphs |
+| Union-Find | Transitive grouping (not partitioning) | Can't detect odd cycles directly |
+
+---
+
 ## System Design (1 hour)
 ### Topic: HTTP/2 and HTTP/3 — Multiplexing, QUIC, and Head-of-Line Blocking
 
@@ -173,8 +195,14 @@ HTTP/3 replaces TCP with QUIC (Quick UDP Internet Connections) — a custom tran
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time one failing component blocked an unrelated part of the system — analogous to TCP HOL blocking in HTTP/2 — and how you isolated or decoupled them.
 - Leadership principle: Bias for Action
+
+**Full STAR Story — "Decoupling the Blocking Dependency":**
+**S (20%):** "At a logistics startup, our order status updates and our shipment tracking pipeline shared a single synchronous RPC call to a third-party carrier API. When the carrier's API had a 2-minute brownout, ALL order status updates stalled — including those for carriers completely unrelated to the brownout."
+**T:** "I needed to decouple unrelated services so that one carrier's failure could not block others — while keeping the fix scoped to a single sprint."
+**A (60% — 'I' not 'we'):** "(1) I identified that the synchronous RPC was the shared bottleneck — equivalent to a single TCP connection with HOL blocking. (2) I replaced the synchronous call with a per-carrier async job queue: each carrier got its own isolated queue, so a slow or failing carrier only blocked its own queue. (3) I added a circuit breaker per carrier with a 30-second trip threshold and exponential backoff on retry. (4) I deployed behind a feature flag and ran both paths in parallel for 48 hours to validate latency and error rates."
+**R (20%):** "Next carrier brownout: zero cross-carrier impact. P99 order status update latency dropped from 3.2s to 280ms. The isolation pattern was adopted for 3 other third-party integrations within the following quarter."
+*Works for: Bias for Action, Invent and Simplify, Customer Obsession.*
 
 ---
 

@@ -98,8 +98,100 @@ This week covered the core of the Trees & BST slot, from BST validation and stru
 
 ---
 
+---
+
+## STAR Framework — Week 07 Pattern Synthesis
+
+> Use these consolidated STAR talking points to bridge DSA patterns to real-world interview stories. Each maps to the week's core algorithm family.
+
+---
+
+### Pattern 1: BST Inorder Invariant + Range Bounds (Day 43)
+
+**Trigger phrase:** "validate BST" or "kth element without sorting"
+
+**STAR talking point:**
+- **S/T:** "Needed to validate a BST in O(n). Naive inorder + sorted check misses the grandparent constraint edge case."
+- **A:** "DFS with `(low, high)` bounds propagated into every subtree — left child gets upper bound = node.val, right child gets lower bound = node.val. Seed with `(Long.MIN_VALUE, Long.MAX_VALUE)`. Short-circuit on first failure."
+- **R:** "O(n) time, O(h) space. Handles all edge cases including Integer.MIN/MAX values. Same bounds pattern used in BST serialization deserialization (LC 449)."
+
+---
+
+### Pattern 2: LCA — Post-order DFS (Day 44)
+
+**Trigger phrase:** "lowest common ancestor of two nodes"
+
+**STAR talking point:**
+- **S/T:** "LCA of general binary tree (not BST). Can't navigate by value comparison."
+- **A:** "Post-order DFS: process children first. Base cases: null → null; node == p or q → return node. Decision: both sides non-null → current is LCA; one side non-null → propagate it. One pass, no path storage."
+- **R:** "O(n) time, O(h) space — vs O(n) time + O(n) extra space for path-based approach. Handles one-is-ancestor-of-the-other automatically via base case 2."
+
+---
+
+### Pattern 3: DFS Backtracking / Path Collection (Day 45)
+
+**Trigger phrase:** "collect all root-to-leaf paths matching a condition"
+
+**STAR talking point:**
+- **S/T:** "Find all root-to-leaf paths summing to target. Common bug: appending path by reference → all result entries point to same mutated list."
+- **A:** "Push node on entry, pop on exit (backtrack). At qualifying leaf: `result.add(new ArrayList<>(path))` — copy, not reference. Recurse left and right with reduced remaining sum."
+- **R:** "O(n) time, O(h) space for path and stack. The copy-on-collection pattern is the single most common source of bugs in path collection problems."
+
+---
+
+### Pattern 4: Divide-and-Conquer Tree Construction (Day 46)
+
+**Trigger phrase:** "reconstruct binary tree from preorder + inorder"
+
+**STAR talking point:**
+- **S/T:** "Reconstruct tree from preorder + inorder arrays. Linear scan for root in inorder at every level is O(n²) — times out for n = 100,000."
+- **A:** "Precompute `inorder_idx = {val: index}` once — O(n). Recurse: `root = preorder[pre_start]`, `left_size = inorder_idx[root_val] - in_start`. Each recursion processes disjoint slices — O(n) total."
+- **R:** "O(n) time with HashMap vs O(n²) without. For n = 10⁵: the difference between sub-millisecond and ~10 seconds."
+
+---
+
+### Pattern 5: Tree DP — Rob/Skip Tuple (Day 48)
+
+**Trigger phrase:** "maximum sum of non-adjacent nodes in a binary tree"
+
+**STAR talking point:**
+- **S/T:** "House Robber on a tree. Brute force: 2ⁿ subsets — 2³⁰ ≈ 1 billion for 30 nodes."
+- **A:** "Post-order DFS returning `(rob_this, skip_this)`. `rob_this = node.val + skip_left + skip_right`. `skip_this = max(rob_left, skip_left) + max(rob_right, skip_right)`. Answer = `max(rob_root, skip_root)`."
+- **R:** "O(n) time, O(h) space. Zero extra memo table. Same two-choice tuple pattern generalises to any binary-state tree DP."
+
+---
+
+### Pattern 6: BST Serialization Without Null Markers (Day 49)
+
+**Trigger phrase:** "serialize BST with minimum data"
+
+**STAR talking point:**
+- **S/T:** "Serialize a BST to a string and deserialize exactly. Null markers double the output size unnecessarily."
+- **A:** "Serialize: preorder values only (no nulls). Deserialize: bounds-based reconstruction — accept next token if within `(low, high)`, else return null without consuming. Shared mutable index advances only on token consumption."
+- **R:** "O(n) both directions. ~50% smaller output than general tree serialization. BST property replaces null markers."
+
+---
+
 ## Checklist
 - [ ] Reviewed all 35 flashcards
 - [ ] Able to state trigger conditions for all patterns without looking
 - [ ] Rewrote at least 3 skeletons from memory (choose: Validate BST, LCA of BT, House Robber III, Recover BST, Duplicate Subtrees)
 - [ ] Identified which problems you could not solve in 20 min and logged them
+- [ ] Practised delivering each STAR talking point above cold in under 90 seconds
+
+---
+
+## STAR Quick Reference — Week 7
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| BST Range Bounds DFS | "Given BST validation, O(n) DFS with (low, high) bounds → handles all edge cases single pass." |
+| LCA Post-order DFS | "Given LCA of general tree, post-order single pass → O(n) vs O(n) + O(n) extra space path approach." |
+| DFS Backtracking Path Collection | "Given all root-to-leaf paths, copy-on-collection pattern avoids reference aliasing bug." |
+| Divide-and-Conquer Tree Construction | "Given tree reconstruction, precomputed HashMap → O(n) vs O(n²) linear scan." |
+| Tree DP Rob/Skip Tuple | "Given house robber on tree, 2^n enumeration → O(n) post-order DP with zero memo table." |
+| BST Serialization Without Nulls | "Given BST encode/decode, bounds-based reconstruction → 50% smaller output vs general tree." |
+
+**Career stories:**
+1. "Tree Construction — eliminated O(n²) root-search bottleneck with HashMap; n=100K went from ~10s to sub-ms."
+2. "Tree DP — replaced exponential subset enumeration with post-order rob/skip DP; pattern used in 3 downstream features."

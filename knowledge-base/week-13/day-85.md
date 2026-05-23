@@ -257,8 +257,34 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you designed a system where data correctness (no duplicates, no missing records) was critical — what delivery guarantees did you implement and how did you test them?
 - Leadership principle: Insist on the Highest Standards
+
+**Full STAR Story — "Zero-Duplicate Payment Pipeline":**
+**S (20%):** "At FinTech Corp, our payment event pipeline was losing roughly 0.3% of charge events during consumer restarts — about 1,200 duplicate or missing charges per million transactions."
+**T:** "I owned the consumer service and was responsible for eliminating data loss and duplicate charges within one sprint."
+**A (60% — 'I' not 'we'):** "(1) I instrumented each consumer with a UUID idempotency key written atomically alongside the payment record using INSERT ... ON CONFLICT DO NOTHING. (2) I changed the offset commit strategy from pre-process to post-process to guarantee at-least-once delivery. (3) I added a reconciliation job that compared Kafka end offsets against DB row counts hourly to surface gaps. (4) I wrote a load test that simulated consumer crashes mid-batch and verified zero duplicate charges across 500K events."
+**R (20%):** "Duplicate charge rate dropped from 0.3% to zero over a four-week monitoring window. The reconciliation job caught two unrelated data issues within its first week. Pattern became the team standard for all downstream consumers."
+*Works for: Insist on the Highest Standards, Dive Deep, Deliver Results.*
+
+### STAR Interview Framework
+
+> **Combination Sum (unlimited reuse) vs. Combinations (fixed depth):** brute-force O(2^n) → bounded backtracking O(target^(target/min_candidate)) time, O(target/min_candidate) space
+
+**S:** "Given a candidates array and a target sum. Naive generate-all O(2^n) hits TLE for large targets."
+**T:** "Need bounded backtracking by sorting and pruning early when candidate exceeds remaining target."
+**A (60%):**
+1. *Classify:* "Unlimited reuse + sum-to-target → Combination Sum backtracking."
+2. *Init:* "Sort candidates; result list; recurse with remaining=target."
+3. *Loop/Recurrence:* "For each candidate from start: if c > remaining break; add, recurse with same i (reuse), subtract."
+4. *Termination:* "remaining == 0 → collect path."
+5. *Gotcha:* "Recurse with i not i+1 for reuse; easy to accidentally write i+1 and miss valid answers."
+**R:** "O(target^(target/min_c)) time, O(target/min_c) space. Handles candidates=[2,3,6,7], target=7 in 4 calls vs. 128 without pruning."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| BFS level-by-level | Fixed-depth search | Memory O(branching^depth) — infeasible |
+| DP bottom-up (Coin Change) | Count ways, not enumerate paths | We need the actual combinations, not count |
 
 ---
 

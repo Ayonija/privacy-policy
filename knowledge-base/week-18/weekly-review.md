@@ -118,3 +118,20 @@ Phase 3 — Mock Interviews, Month 5. Focus shifts from pattern learning to inte
 - Any pattern with comfort < 3/5 above: schedule a targeted re-drill day in Week 19
 - Review the Twitter system design components covered this week (Days 121–126) — you should be able to draw the full write path + timeline read path + notification flow from memory
 - Week 19 continues with advanced sliding window, two-pointer hard problems, and completes the Twitter system design coverage (media, caching, rate limiting)
+
+---
+
+## STAR Quick Reference — Week 18
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| Variable SW + Frequency Map | "Given 400K/day autocomplete requests, applied `have` counter sliding window → O(n+m) vs O(n²), 340ms → 22ms p99." |
+| Exactly-K = AtMost-K − AtMost-(K-1) | "Given 50M session rows, applied atMost reduction → two O(n) passes vs O(n×k), 40 min → 4.2 sec." |
+| Two Pointer + Running Max | "Given on-call incident with wrong boundary comparison, applied two-pointer running max fix → resolved in 14 minutes." |
+| Binary Search on Answer + SW Count | "Given O(n²) k-th distance metric, applied binary search on value + two-pointer count → O(n log n), 8s → 0.04s." |
+| Two-Heap + Lazy Deletion | "Given 3% median drift on $2B positions, found lazy-deletion bug in heap balance → zero drift post-fix." |
+| Difference Array + Deferred Effect | "Given O(nk) bit-flip validator bug, applied difference array → O(n), prevented $300K chip re-spin." |
+
+**Career stories:**
+1. "Minimum Window Substring — redesigned search autocomplete have-counter, driving CPU utilization down 18% and p99 from 340ms to 22ms."
+2. "Difference Array Bit Flips — proactively fixed a cross-team firmware validation bug before chip tape-out, saving $300K in potential re-spin costs."

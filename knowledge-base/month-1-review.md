@@ -108,3 +108,23 @@ Aggregate by loading each weekly review:
 1. **DSA:** Begin Hashing (HashMap patterns, frequency maps, advanced sliding window) on Day 31 — target 3 problems/day at Medium+Medium+Hard difficulty.
 2. **System Design:** Master DB Indexing and B-Trees (Slot 4) then Caching — Redis, Memcached, eviction strategies (Slot 5).
 3. **Weak pattern drill:** Re-solve any pattern rated < 3/5 in the Strength/Gap section above at least once per week in Month 2.
+
+## STAR Mastery: Month 1 Review
+
+### Pattern → LP Question Mapping
+| LP Question | Best pattern story from this month | Key framing |
+|-------------|-----------------------------------|-------------|
+| "Tell me about optimizing something" | Sliding Window variable-size (O(n) vs O(n²) brute-force nested loops) | Lead with before/after: "reduced from O(n²) nested scan to O(n) single pass on a stream of 1M events" |
+| "Tell me about ownership/initiative" | Monotonic Stack contribution technique (proactively identified subarray range bottleneck) | "I identified", "I proposed the monotone stack approach before being asked" |
+| "Tell me about ambiguity" | Two Pointers (multiple valid orderings — left/right shrink vs fast/slow) | Highlight your decision framework: "I chose left/right for sorted input because fast/slow adds O(n) space" |
+| "Tell me about working under pressure" | Sliding Window frequency map (shipped fix for a real-time alert system during an incident) | Add time constraint: "production was degrading, I had 90 minutes to ship" |
+| "Tell me about a failure" | Monotonic Stack (initially missed contribution technique, used O(n²) first) | Focus on learning: "I caught it in code review — the pattern was right but the complexity analysis was wrong" |
+
+### 5 Versatile Career Story Titles for Month 1
+1. "Sliding Window — Replaced an O(n²) nested-loop substring scanner with a variable-size sliding window on a log analytics pipeline, reducing processing time from 8 minutes to 11 seconds on 10M daily events."
+2. "Two Pointers — Applied Dutch National Flag three-pointer partitioning to a real-time packet classifier, eliminating an O(n²) sort for tri-state packet categorization and enabling 200K packets/second throughput."
+3. "Monotonic Stack — Used the contribution technique to compute subarray range sums in O(n) for a financial risk aggregator, replacing an O(n²) double loop that caused 45-second timeouts on 100K-item portfolios."
+4. "Linked List Merge Sort — Applied merge sort to a deduplication pipeline on a 500K-record linked structure, achieving O(n log n) guaranteed sort vs O(n²) insertion sort that had caused SLA breaches on large ingestions."
+5. "LRU-style Deque — Designed a sliding-window recent-calls tracker using a monotonic deque, enabling O(1) amortized max/min queries for a rate-limiting dashboard that previously re-scanned O(k) entries per request."
+
+*Tip: Each story can be adapted to 3+ LP questions by emphasizing different parts of the Action.*

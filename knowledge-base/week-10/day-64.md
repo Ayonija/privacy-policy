@@ -174,6 +174,28 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **Floyd-Warshall All-Pairs Shortest Path:** brute-force O(V² × Dijkstra) = O(V² × (V+E) log V) → this approach O(V³) time, O(V²) space
+
+**S:** "Given n nodes and E edges, need shortest path between ALL pairs (e.g., for a 80-city network). Running Dijkstra from every source is O(V × (V+E) log V). For dense graphs where E ≈ V², this is O(V³ log V) — Floyd-Warshall gives O(V³) with a tiny constant."
+**T:** "Need O(V³) all-pairs shortest path using the DP over intermediate nodes."
+**A (60%):**
+1. *Classify:* "'All-pairs shortest path, n ≤ ~200' → Floyd-Warshall. n > 200 or sparse → V × Dijkstra."
+2. *Init:* "`dist[i][i] = 0`; `dist[i][j] = edge weight` if edge exists, else `INF`. 2D n×n matrix."
+3. *Loop/Step:* "For each intermediate node k (outer loop): for each pair (i, j): `dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])`."
+4. *Termination:* "After all k: `dist[i][j]` = shortest path between every pair i, j."
+5. *Gotcha:* "Guard against integer overflow: only relax if `dist[i][k] != INF && dist[k][j] != INF`. Otherwise INF + positive → negative overflow in Java."
+**R:** "O(V³) time, O(V²) space. For n=80: 512K ops — runs in microseconds. Answer all-pairs queries in O(1) from the precomputed matrix."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| V × Dijkstra | Sparse graph (E << V²), any n | O(V × (V+E) log V) — worse on dense graphs |
+| Johnson's algorithm | Negative edges + all-pairs | More complex; same O(V² log V + VE) |
+
+---
+
 ## System Design (1 hour)
 ### Topic: Key-Value Store — Single-Node Design (MemTable, WAL, SSTable)
 
@@ -235,8 +257,14 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you chose a well-known algorithm or design pattern over a custom solution — what made the standard approach the right call?
 - Leadership principle: Are Right, A Lot
+
+**Full STAR Story — "Choosing the Standard Algorithm Over a Custom Solution":**
+**S (20%):** "At a logistics network company, we needed to compute travel-time budgets between every pair of 80 distribution centres for route planning. A junior engineer had built a custom BFS-based solution that ran in 12 minutes per query — too slow for the real-time dispatcher UI."
+**T:** "I was asked to replace the ad-hoc solution with something that could precompute all-pairs travel times and answer queries in under 5ms."
+**A (60% — 'I' not 'we'):** "(1) I recognised this was a textbook all-pairs shortest path problem on a dense graph with n=80 nodes — Floyd-Warshall was the right tool (O(n³) = 512K ops, negligible). (2) I implemented Floyd-Warshall with integer overflow guards (`dist[i][k] != INF && dist[k][j] != INF` before summing) and ran it as a nightly batch job, storing the 80×80 result matrix in Redis. (3) I added a matrix invalidation hook on any road closure or new centre addition — the nightly job re-ran and refreshed Redis. (4) I replaced the dispatcher UI's BFS call with a single Redis GET on the precomputed matrix."
+**R (20%):** "Query latency: 12 minutes → 0.4ms. Dispatcher UI perceived as instant. The nightly Floyd-Warshall job ran in 80ms. Two engineers told me they had been planning a custom multi-source Dijkstra implementation — the standard algorithm saved 3 weeks of engineering."
+*Works for: Are Right, A Lot, Invent and Simplify, Frugality.*
 
 ---
 

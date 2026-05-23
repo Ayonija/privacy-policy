@@ -200,6 +200,38 @@ Choose Kafka when you need: (1) multiple independent consumer groups (pub/sub fa
 
 ---
 
+## STAR Framework Consolidated Review — Week 12
+
+### How to Use Your Week 12 STAR Stories in Interviews
+
+This week covered advanced Tries and Heap synthesis (Days 78–80), Greedy patterns (Days 81–83), and Backtracking (Day 84). Each day built a full STAR story tied to the specific algorithm. Here is a consolidated guide to adapting them across LP question types.
+
+**Pattern → LP Question Matrix**
+
+| LP Question Type | Which STAR story to use | Key adaptation |
+|-----------------|------------------------|----------------|
+| "Tell me about a time you obsessed over the customer experience" | Day 79 (Recommendation system with interpretable 'why' labels — 62% pages/session increase) | Emphasise that the interpretability labels were as impactful as the algorithm — developer trust was the user need |
+| "Tell me about a time you thought bigger than your immediate assignment" | Day 80 (Unified personalisation platform across 3 product lines — 136% documentation CTR improvement) | Lead with: "The ask was fix one product; I built a platform that served every product we'd ever build" |
+| "Tell me about a time you simplified a process" | Day 81 (CI/release pipeline decoupling — 90% reduction in blocked deployments) | Frame the invention as decoupling CI test outcomes from release decisions; simplicity was the invention |
+| "Tell me about a time you acted quickly under pressure" | Day 82 (At-least-once fix for payment event loss — 3 days vs 6 weeks, 0 event drops) | Emphasise: shipped targeted fix in 3 days, started proper migration in parallel — both things at once |
+| "Tell me about a time you owned a problem outside your scope" | Day 83 (Kafka incident ownership across 3 teams — email/fulfillment restored in 10 min) | Be explicit: "This was not my system. I acted anyway." Leads naturally into the cross-team coordination story |
+| "Tell me about a time you disagreed with your team and were right" | Day 84 (Kafka vs RabbitMQ decision — 6 engineer-weeks saved, 4 successful replays in 18 months) | Frame the decision matrix and 2-week empirical spike as the methodology; data won the debate |
+| "Tell me about a data-driven decision" | Day 79 (A/B test: recommendations with vs without labels — 34% CTR lift from labels alone) | Lead with the split-test design; unexpected finding (labels as important as algorithm) was the key insight |
+
+**5 Versatile STAR Stories from Week 12**
+
+1. **Story 1 — Interpretable Recommendation System (Day 79):** "Built a hybrid content recommendation engine (co-occurrence + TF-IDF) for a 40,000-article developer documentation platform. Added interpretability labels ('developers also read this after...') that increased recommendation CTR by 34% independently of algorithm quality. Overall: pages-per-session from 1.3 to 2.1 (62% improvement), NPS for content discovery from 22 to 41."
+
+2. **Story 2 — Unified Personalisation Platform (Day 80):** "Designed a three-layer personalisation service (Feature Store + FAISS retrieval + XGBoost ranking) shared across three product lines. Cross-product signal sharing drove 15% additional lift through cross-domain embeddings. Documentation recommendations: 11% → 26% CTR (136%). Decommissioned two independent codebases, saving 8 engineer-weeks/quarter."
+
+3. **Story 3 — CI/Release Pipeline Decoupling (Day 81):** "Decoupled CI test outcomes from deployment release decisions using a Redis sorted-set release queue. Reduced blocked deployments from 4–6/day to 0.4/day (90% reduction), deployment frequency from 8/day to 14/day (75% improvement), pipeline debugging time from 45 min/day to under 5 min. Zero new infrastructure required."
+
+4. **Story 4 — Kafka Consumer Group Incident (Day 83):** "Took ownership of a cross-team Kafka incident where a crashing inventory worker's rebalances disrupted email and fulfillment consumers for 3 hours. Isolated the faulty consumer group in 15 minutes; restored notifications in 10 minutes. 3,200 customers received proactive apology emails — CX ticket volume 40% lower than comparable prior incident. Proposed and implemented consumer-group isolation across all four teams within one sprint."
+
+5. **Story 5 — Kafka vs RabbitMQ Decision (Day 84):** "Advocated for Kafka over team consensus on RabbitMQ for a 5-consumer event pipeline with 30-day replay requirements. Built a decision matrix; ran a 2-week empirical spike (250K msgs/sec, sub-5ms P99). Kafka's native log retention replaced an entire separate event store, saving approximately 6 engineer-weeks across four schema migration replays in 18 months. Decision matrix framework became a team standard."
+
+---
+
 ## Patterns Mastered This Week
 Rate yourself 1–5 after this review.
 
@@ -222,3 +254,23 @@ Rate yourself 1–5 after this review.
 | Pattern | Problem | Retry date |
 |---------|---------|------------|
 | (learner fills in) | | |
+
+## STAR Quick Reference — Week 12
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| Reversed-word Trie streaming | "Given a character stream needing real-time word detection, applied reversed-word Trie → O(L) per character vs O(n·L) re-scan of all words per character." |
+| Binary XOR Trie | "Given N numbers needing maximum XOR pair, applied 30-bit Trie greedy traversal → O(30n) vs O(n²) brute-force pair check." |
+| Max-heap lazy-deletion event sweep | "Given building events needing real-time skyline, applied lazy deletion on max-heap → O(n log n) vs O(n²) rebuilding heap on each event end." |
+| Interval merge (sort by start) | "Given overlapping deployment windows needing consolidation, applied sort + single-pass merge → O(n log n) vs O(n²) pairwise comparison." |
+| Non-overlapping intervals (sort by end) | "Given conflicting meetings needing minimum cancellations, applied activity selection greedy → O(n log n) vs O(2^n) brute-force subset search." |
+| Course Schedule III max-heap swap | "Given courses with deadlines needing maximum enrollment, applied greedy heap swap → O(n log n) vs O(2^n) subset DP." |
+| Jump Game I/II greedy | "Given jump lengths needing reachability or minimum jumps, applied greedy max_reach → O(n) vs O(n²) DP." |
+| Max Profit Job Scheduling DP + binary search | "Given non-overlapping jobs needing maximum profit schedule, applied DP + binary search for last compatible job → O(n log n) vs O(n²) DP." |
+| Subsets backtracking | "Given N items needing all 2^N subsets, applied pruned backtracking → generate exactly what is needed vs iterative bitmask with same complexity but less readable." |
+| Partition K Equal Subsets backtracking | "Given N numbers needing K equal-sum buckets, applied sort-desc + symmetric pruning backtracking → dramatically reduced search tree vs naive backtracking." |
+
+**Career story titles:**
+1. "CI/Release Pipeline Decoupling — Decoupled interval-style CI test outcomes from release decisions using Redis sorted-set queue, reducing blocked deployments 90% and increasing deployment frequency 75% at a SaaS company."
+2. "Kafka vs RabbitMQ Decision — Advocated for Kafka over team consensus using a decision matrix and 2-week empirical spike, saving ~6 engineer-weeks across four schema migration replays in 18 months."
+3. "Kafka Consumer Group Incident — Took cross-team ownership of a crashing consumer group that disrupted email and fulfillment for 3 hours; isolated fault in 15 minutes, restored notifications in 10, reducing CX tickets 40% vs a comparable prior incident."

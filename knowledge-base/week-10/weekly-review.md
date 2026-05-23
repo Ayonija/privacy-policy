@@ -219,3 +219,33 @@ Rate yourself 1–5 after this review.
 | Pattern | Problem | Retry date |
 |---------|---------|------------|
 | (learner fills in) | | |
+
+---
+
+## STAR Quick Reference — Week 10
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| Bitmask BFS (keys+locks) | "Given a maze with k ≤ 6 keys, I applied (r, c, bitmask) state BFS → O(m×n×2^k) vs O(m×n×k!) brute force." |
+| Boustrophedon board BFS | "Given a zigzag-numbered board with teleporters, I BFS-ed on cell numbers with boustrophedon conversion → O(n²) vs O(6^n²) brute force." |
+| Dijkstra + restricted path count DP | "Given a weighted graph, I combined Dijkstra from dest with DAG memoization → O((V+E) log V) count of restricted paths vs O(V!) path enumeration." |
+| BFS with edge-type state | "Given a red/blue edge graph, I encoded (node, last_colour) into BFS state → O(V+E) alternating-colour shortest paths vs exponential brute force." |
+| BFS on route hypergraph | "Given bus routes, I BFS-ed over routes not stops → O(stops × routes) minimum-transfer count vs O(stops²) naive stop-BFS." |
+| Unique topological sort (Kahn's) | "Given dependency sequences, I verified uniqueness by checking queue size == 1 at each Kahn's step → O(n + seq_length) vs O(n!) enumeration." |
+| Critical path DP | "Given parallel courses with prerequisites, I computed finish_time[v] = duration[v] + max(finish_time[prereqs]) → O(V+E) minimum makespan." |
+| Color frequency DP on DAG | "Given a coloured DAG, I propagated dp[v][c] in topological order → O(26×(V+E)) maximum colour frequency on any path vs exponential path scan." |
+| 0-1 BFS (deque) | "Given a grid with binary edge costs (obstacle removal / direction override), I replaced a heap with a deque → O(V+E) vs O((V+E) log V) Dijkstra." |
+| Binary search + multi-source BFS | "Given a thief-grid, I binary searched on safeness threshold and BFS-checked reachability → O(n² log n) maximum-minimum-safeness path." |
+| BFS two-distance tracking | "Given a graph with traffic lights, I tracked dist1[v] and dist2[v] per node → O((V+E) log V) second-minimum arrival time." |
+| Equation weighted graph DFS | "Given ratio equations, I built a weighted directed graph and DFS-multiplied edge weights → O((V+E)×Q) for all ratio queries vs O(Q×k!) brute force." |
+| Dijkstra + sub-node counting | "Given a subdivided graph with a step budget, I ran Dijkstra on the original graph and computed reachable sub-nodes per edge analytically → O((V+E) log V) vs O(10^9) on the full subdivided graph." |
+| Two-DFS functional graph | "Given two source nodes in a functional graph, I walked each source's reachable chain in O(V) and minimised max(dist1, dist2) over all meeting nodes → O(V) vs O(V²) pairwise BFS." |
+| In-degree analysis | "Given a DAG, I collected all nodes with in-degree 0 as the minimum starting set → O(V+E) vs O(2^V) subset enumeration." |
+| Multi-source Dijkstra Y-shape | "Given two sources and a shared destination, I ran three Dijkstras (src1, src2, reverse from dest) and minimised d1[v]+d2[v]+d3[v] → O((V+E) log V) minimum weighted subgraph." |
+
+**5 career story titles from this week:**
+1. "Bitmask BFS — At a fintech platform, I eliminated approval-with-missing-stage incidents using a 32-state bitmask, dropping production incidents from 3 in 6 months to zero."
+2. "Dijkstra + Count DP — At a logistics company, I used shortest-path ground-truth to identify a timezone bug in a billing pipeline, preventing $160K in errors per quarter."
+3. "Critical Path DP — At a SaaS company, I modelled cross-team dependencies as a DAG, identified the websocket bottleneck, and shipped a $1.2M enterprise feature 2.5 days early."
+4. "0-1 BFS — At a mapping startup, I replaced a Dijkstra heap with a deque on a binary-cost road graph, reducing p99 routing latency from 380ms to 61ms with 30 lines of code."
+5. "Multi-Source Dijkstra Y-shape — At a cloud infrastructure company, I modelled two team pipelines as a Y-shape graph, consolidated the shared segment, and saved $162K/year in infrastructure cost."

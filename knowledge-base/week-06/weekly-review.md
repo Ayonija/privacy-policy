@@ -98,8 +98,100 @@ This week closed out the Hashing slot (Days 36–40) and opened the Trees & BST 
 
 ---
 
+---
+
+## STAR Framework — Week 06 Pattern Synthesis
+
+> Use these consolidated STAR talking points to bridge DSA patterns to real-world interview stories. Each maps to the week's core algorithm family.
+
+---
+
+### Pattern 1: Prefix Sum / In-Place Hashing (Day 36)
+
+**Trigger phrase:** "find in O(n) time and O(1) space" or "longest subarray with equal counts"
+
+**STAR talking point:**
+- **S/T:** "I had a 50M-event batch pipeline that was allocating a 400 MB auxiliary boolean array to track which IDs had been processed — pushing the server into swap and inflating runtime from 8 minutes to 40 minutes."
+- **A:** "I recognised the input array was idle after the first read pass. I used the in-place sign-marking trick: normalise out-of-range values (pass 1), negate `arr[id-1]` for each seen ID (pass 2), scan for positive entries (pass 3). Zero auxiliary allocation."
+- **R:** "Memory footprint halved from 850 MB to 420 MB. Runtime: 6 minutes (6.7× speedup). Avoided an $18,000/year hardware upgrade."
+
+---
+
+### Pattern 2: HashMap Pair / Complement Counting (Day 37)
+
+**Trigger phrase:** "count pairs summing to target" or "split a 4-way problem into two 2-way problems"
+
+**STAR talking point:**
+- **S/T:** "A 4-array tuple-count problem was O(n⁴) — 62 billion ops for n = 500. Needed O(n²) or less."
+- **A:** "Split into two halves: precompute all n² sums from arrays 1+2 into a HashMap, then for each n² sum from arrays 3+4 look up its negation in O(1). Two nested loops instead of four."
+- **R:** "From ~62 seconds (O(n⁴)) to milliseconds (O(n²)) for n = 500. Same pattern applied to Pairs of Songs (mod-60 complement) and 4Sum II."
+
+---
+
+### Pattern 3: LFU Cache — freq→OrderedDict (Day 38)
+
+**Trigger phrase:** "O(1) eviction of least frequently used key"
+
+**STAR talking point:**
+- **S/T:** "A recommendation cache was using LRU, which kept seasonal products alive long after the season ended. Evergreen products kept getting evicted, causing 400 ms P95 latency for 80% of queries."
+- **A:** "Switched eviction policy to LFU using freq→OrderedDict + min_freq. OrderedDict at each frequency level maintains LRU tie-breaking in O(1). Shadow-tested both policies on 5% of traffic for a week."
+- **R:** "P95 recommendation latency: 400 ms → 31 ms. Cache hit rate: 74% → 91% for evergreen products. $12,000/month DB cost reduction."
+
+---
+
+### Pattern 4: Sliding Window + Last-Seen Index (Day 39)
+
+**Trigger phrase:** "minimum window containing a duplicate" or "maximum sum distinct subarray"
+
+**STAR talking point:**
+- **S/T:** "Needed to find minimum consecutive card pickup containing a pair. Brute-force O(n²) was too slow for n = 10⁵."
+- **A:** "Maintained a `last_seen` HashMap. On duplicate at index i: candidate window = `i - last_seen[card] + 1`. Always update `last_seen[card] = i` (even for first occurrence) to track the most recent position."
+- **R:** "O(n) time — 100,000 ops vs. 10 billion for brute force. Pattern generalises to the fixed-window distinct-max variant with a `freq` map and `distinct_count` tracker."
+
+---
+
+### Pattern 5: Gain Propagation DFS (Day 41)
+
+**Trigger phrase:** "maximum sum of any path in a binary tree" or "path need not pass through root"
+
+**STAR talking point:**
+- **S/T:** "Given a tree with negative values, needed the max-sum path between any two nodes — not just root-to-leaf. Enumeration is O(n²)."
+- **A:** "Each node plays two roles: (1) apex of a bent path: update global max with `node.val + left_gain + right_gain`. (2) Contributor to parent: return `node.val + max(left_gain, right_gain)`. Clamp gains at 0 to prune negative subtrees. Initialise `max_sum = root.val` not 0 to handle all-negative trees."
+- **R:** "O(n) time, O(h) space. Single DFS pass. Generalises to Diameter of Binary Tree, Longest Path, and rerooting variants."
+
+---
+
+### Pattern 6: BFS Level-Order / Serialization (Day 42)
+
+**Trigger phrase:** "process nodes level by level" or "encode tree to string and reconstruct exactly"
+
+**STAR talking point:**
+- **S/T:** "Multi-step onboarding workflow was a decision tree — users who abandoned had to restart from scratch, causing 23% abandonment."
+- **A:** "Serialized the in-progress session tree via BFS with null sentinels: each node writes its value or 'null', children enqueued only for non-null nodes. Deserialized by parsing tokens in BFS order — queue of parents each consuming two child tokens. Verified 10,000 round-trip tests with property-based testing."
+- **R:** "Abandonment rate: 23% → 9% (61% reduction). Completed onboarding +18%. Serialize + deserialize each under 2 ms for 15-level trees."
+
+---
+
 ## Checklist
 - [ ] Reviewed all 35 flashcards
 - [ ] Able to state the trigger condition for each pattern without looking
 - [ ] Rewrote at least 3 skeletons from memory (choose: Contiguous Array, LFU Cache, Max Path Sum, BFS Serialize)
 - [ ] Identified which problems you could not solve in 20 min and logged them
+- [ ] Practised delivering each STAR talking point above cold in under 90 seconds
+
+---
+
+## STAR Quick Reference — Week 6
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| Prefix Sum + First-Seen Map | "Given equal-0s-1s subarray, replaced O(n²) scan with O(n) first-seen map → 6.7× speedup." |
+| HashMap Pair Complement | "Given 4-array tuple count, split into two O(n²) halves → from 62B ops to milliseconds." |
+| LFU Cache freq→OrderedDict | "Given seasonal product cache, switched LRU→LFU → P95 latency 400 ms → 31 ms." |
+| Sliding Window + Last-Seen | "Given minimum card pickup window, O(n²) → O(n) with last-seen HashMap." |
+| Gain Propagation DFS | "Given max-sum path in binary tree, O(n²) enumeration → O(n) single DFS pass." |
+| BFS Level-Order / Serialization | "Given session tree persistence, BFS serialize/deserialize → abandonment 23% → 9%." |
+
+**Career stories:**
+1. "LFU Cache — switched recommendation cache eviction policy; P95 latency dropped 13×; hit rate +17 pp."
+2. "BFS Serialization — persisted user onboarding session trees; completion rate up 18%; 61% abandonment drop."

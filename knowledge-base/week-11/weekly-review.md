@@ -200,6 +200,38 @@ On new like/comment: async worker updates `ZADD feed:{viewer_id} {new_score} {po
 
 ---
 
+## STAR Framework Consolidated Review — Week 11
+
+### How to Use Your Week 11 STAR Stories in Interviews
+
+This week covered Heap patterns (Days 71–75) and Trie patterns (Days 76–77). Each day built a full STAR story tied to the specific algorithm. Here is a consolidated guide to adapting them across LP question types.
+
+**Pattern → LP Question Matrix**
+
+| LP Question Type | Which STAR story to use | Key adaptation |
+|-----------------|------------------------|----------------|
+| "Tell me about a time you optimised something" | Day 72 (Two-Heap Running Median — 95% memory reduction) or Day 73 (Lazy Deletion — 300× latency drop) | Emphasise the O(n) → O(log n) or O(n²) → O(n log k) complexity jump and the concrete % improvement |
+| "Tell me about a time you showed ownership" | Day 71 (K-way Merge — fixing stream ordering under deadline) | Emphasise you didn't wait to be asked; you identified the O(n log n) bottleneck yourself |
+| "Tell me about solving an ambiguous problem" | Day 75 (IPO / Greedy Roadmap Prioritisation) | Highlight that multiple orderings were valid and you proved yours optimal via exchange argument |
+| "Tell me about working under pressure" | Day 73 (Media pipeline optimisation — reducing stalls during traffic spikes) | Add the spike context; service was degrading in production during the fix |
+| "Tell me about a time you failed" | Day 76 (Trie alert routing — original linear scan that caused 15-min escalation delays) | Frame the initial system as the failure; your Trie redesign as the fix |
+| "Tell me about customer obsession" | Day 76 (Alert routing Trie) or Day 77 (Ranked feed decision) | Focus on user/operator impact: incident detection time, alert routing latency |
+| "Tell me about a data-driven decision" | Day 77 (Ranked vs chronological feed — A/B test with 162% CTR improvement) | Lead with the before/after metrics; explain the A/B test design |
+
+**5 Versatile STAR Stories from Week 11**
+
+1. **Story 1 — K-way Merge Min-Heap (Day 71):** "Replaced a 3–4 second O(n log n) re-sort of multi-source telemetry streams with a K-way min-heap merge, reducing stream-merge latency by 95% and enabling real-time incident detection."
+
+2. **Story 2 — Two-Heap Running Median (Day 72):** "Rebuilt a monitoring anomaly detector from O(n) memory (crash at 40× traffic spike) to O(1) memory using two heaps, maintaining median accuracy while reducing memory 99.4%."
+
+3. **Story 3 — Lazy Deletion / Media Pipeline (Day 73):** "Eliminated 150–400ms cancellation stalls in a video transcoding priority queue by switching from O(n) heap scans to O(log n) lazy deletion, increasing transcoding throughput by 18%."
+
+4. **Story 4 — Trie Alert Routing (Day 76):** "Replaced an 8,000-entry linear prefix scan for on-call routing with a Trie, dropping alert routing latency from 3–4 seconds to 8–12ms and enabling real-time escalation during the next major incident."
+
+5. **Story 5 — Ranked Feed Decision (Day 77):** "Designed and A/B tested a weighted scoring formula for feed ranking, increasing feed CTR from 8% to 21% (162% improvement) while maintaining interpretability with 'why am I seeing this?' explanations."
+
+---
+
 ## Patterns Mastered This Week
 Rate yourself 1–5 after this review.
 
@@ -220,3 +252,23 @@ Rate yourself 1–5 after this review.
 | Pattern | Problem | Retry date |
 |---------|---------|------------|
 | (learner fills in) | | |
+
+## STAR Quick Reference — Week 11
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| Min-heap Top-K | "Given N log entries needing the top K frequent errors, applied min-heap of size K → O(n log k) vs O(n log n) full sort." |
+| K-way merge min-heap | "Given K sorted telemetry streams needing real-time merge, applied K-way min-heap → O(n log k) vs O(n log n) re-sort on every new event." |
+| Two-heap running median | "Given a live monitoring stream needing rolling median, applied two-heap split → O(log n) insert, O(1) query vs O(n) scan per query." |
+| Quickselect | "Given N latency samples needing the Kth percentile, applied three-way quickselect → O(n) average vs O(n log n) full sort." |
+| Lazy deletion sliding window median | "Given a sliding window of size k needing median after each eviction, applied lazy deletion → O(log k) per removal vs O(k) heap rebuild." |
+| Two-heap greedy IPO | "Given projects with capital requirements and profits, applied two-heap greedy → O(n log n) optimal selection vs O(n²) brute-force." |
+| Trie insert/search/startsWith | "Given 8000 alert routing prefixes needing O(L) lookup, applied Trie → O(L) per query vs O(n·L) linear scan." |
+| Trie + grid DFS pruning | "Given a word list and grid needing all matching words, applied Trie-guided DFS → prunes dead branches, O(n·4^L) vs O(n·4^L) with no pruning but constant factor dramatically lower." |
+| Wildcard Trie DFS | "Given dictionary with wildcard queries, applied branching DFS on Trie → O(26^k·L) worst case but pruned vs O(n·L) naive per-word scan." |
+| Suffix-wrapped Trie | "Given words needing prefix AND suffix queries simultaneously, applied suffix#word encoding → O(L²) build, O(prefix+suffix) query vs O(n·L) linear scan." |
+
+**Career story titles:**
+1. "K-way Merge Min-Heap — Replaced 3-second O(n log n) re-sort of 12 telemetry streams with heap merge, achieving 95% latency reduction for real-time incident detection at a monitoring platform."
+2. "Two-Heap Running Median — Rebuilt anomaly detector from O(n) memory (crashed at 40× spike) to O(1) memory using dual-heap split, maintaining accuracy while reducing memory 99.4%."
+3. "Trie Alert Routing — Replaced 8,000-entry linear prefix scan with Trie, dropping routing latency from 3–4 seconds to 8–12ms and enabling real-time escalation during a P0 incident."

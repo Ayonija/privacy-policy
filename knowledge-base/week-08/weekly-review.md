@@ -106,3 +106,20 @@ This week completed the Trees & BST synthesis (Day 50) and opened the Graphs slo
 - [ ] Able to write Union-Find template from memory (parent + rank + find + union)
 - [ ] Able to state the difference between DFS 3-colour and Kahn's for cycle/topological sort
 - [ ] Identified which problems you could not solve in 20 min and logged them
+
+---
+
+## STAR Quick Reference — Week 8
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| DFS 3-colour + Kahn's Topological Sort | "Given 40-service migration, Kahn's detected 2 cycles → zero cascading failures across 6 deployment windows." |
+| Union-Find (path compress + rank) | "Given online connectivity checks, O(α(n)) per op → 100K ops in milliseconds vs O(n²) brute force." |
+| BFS 2-Colouring (Bipartite) | "Given conflict partitioning, O(V+E) 2-colour BFS → detects odd cycles brute-force can't find in O(2^V)." |
+| Multi-Source BFS | "Given nearest-source distance, all sources at t=0 → O(m×n) vs O(sources × m×n) single-source repeat." |
+| Reverse BFS (Pacific Atlantic) | "Given dual-reachability, reverse BFS from both borders → intersection in O(m×n) vs exponential DFS." |
+| State-Space BFS (Sliding Puzzle) | "Given min-moves to goal, encode state as string → BFS on 720 states, guaranteed optimal." |
+
+**Career stories:**
+1. "Topological Sort — codified safe microservice deployment order; eliminated cascading failures; migration 4 days early."
+2. "Union-Find — replaced O(n²) repeated BFS for online connectivity tracking; 1000× speedup for n=10⁵ edge stream."

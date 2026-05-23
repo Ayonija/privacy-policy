@@ -110,3 +110,29 @@ All 35 cards for Days 29–35:
 | Date | Platform | Score / Result | Key mistake | Fixed? |
 |------|----------|---------------|-------------|--------|
 | — | — | — | — | — |
+
+---
+
+## STAR Quick Reference — Week 5
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| Monotonic Stack (contribution counting) | "Given sum-of-minimums over all subarrays, counted each element's contribution with two stack passes → O(n) vs O(n³) brute force." |
+| Monotonic Stack (greedy removal) | "Given remove-k-digits greedily, popped larger digits whenever a smaller arrived → O(n) single pass, smallest result guaranteed." |
+| Monotonic Stack (last-occurrence guard) | "Given lex-smallest unique subsequence, popped stack top only when it reappears later → O(n) with a critical strict-greater-than guard." |
+| HashMap canonical key grouping | "Given 8M log events to group by signature, replaced O(n²) pairwise comparison with sorted-tuple HashMap → 22 min to 47 sec." |
+| Set + streak detection | "Given longest consecutive sequence, skipped non-start elements → O(n) vs O(n²) by processing each streak exactly once." |
+| Prefix Sum + Count Map | "Given count-subarrays-summing-to-k, maintained running prefix sum + HashMap → O(n) vs O(n²), key initialisation `{0:1}` is the gotcha." |
+| Frequency Map + Bucket Sort | "Given top-k frequent elements, used bucket[freq] scan → O(n) vs O(n log n) full sort, paying only for what we need." |
+| HashMap + DLL (LRU Cache) | "Given O(1) eviction requirement, added a doubly-linked list to a HashMap → 200ms eviction spike to sub-millisecond at 10K QPS." |
+| HashMap + Array swap-to-last | "Given O(1) random delete, swapped target with last element and updated index → O(1) vs O(n) array shift." |
+| Exact-K → at_most trick | "Given count subarrays with exactly k odd numbers, decomposed into at_most(k) − at_most(k−1) → O(n) with no direct shrink condition." |
+| Fix unique-count + sliding window (LC 395) | "Given longest substring with all chars ≥ k times, fixed unique-char count 1..26 → valid shrink condition, O(26n) = O(n)." |
+| Word-level sliding window | "Given concatenation-of-all-words substrings, stepped by word_len with L starting offsets → O(n·L) without char-by-char overhead." |
+
+**Career story titles:**
+1. "Monotonic Stack Contribution Counting — reduced subarray-minimum analytics job from O(n³) to O(n) in a fintech data pipeline."
+2. "HashMap Canonical Key — cut nightly event-grouping from 22 minutes to 47 seconds by replacing O(n²) comparison with sorted-tuple lookup."
+3. "Prefix Sum + HashMap — eliminated 100K-op per-query recomputation in a fraud-detection service; P99 latency dropped 10×."
+4. "LRU Cache (DLL + HashMap) — replaced O(n) eviction scan with O(1) doubly-linked-list eviction; P99 API latency fell from 340ms to 28ms."
+5. "Exact-K Trick — reduced subarray-counting query from O(n²) nested scan to O(n) at_most decomposition in a real-time metrics pipeline."

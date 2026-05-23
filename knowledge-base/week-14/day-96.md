@@ -215,7 +215,32 @@ Tell me about a time you had to deliver a project with an unclear or changing sp
 
 **Target LP:** *Deliver Results* (Amazon) — despite ambiguity, find a path to completion.
 
-**Tip:** Show that you drove clarity rather than waiting for it. "I scheduled a meeting to align on acceptance criteria" is stronger than "I worked with what I had."
+**Full STAR Story — "Palindrome-Based Alert Deduplication Under Shifting Requirements":**
+**S (20%):** "At AlertCo, I was building an alert message deduplication system with a changing spec — the definition of 'duplicate alert' changed 3 times in 2 weeks as stakeholders debated whether alerts that were reverses of each other (A→B vs B→A) counted as duplicates."
+**T:** "I needed to ship a working system within 2 weeks while the business spec was still evolving."
+**A (60% — 'I' not 'we'):** "(1) I identified the stable core: regardless of the final spec, all definitions required a fast 'is this message a palindrome or reverse of another?' check — so I precomputed the is_pal table upfront as an invariant. (2) I parameterized the deduplication rule as a strategy interface, allowing the business logic to be swapped without touching the core data structure. (3) I shipped the invariant core in week 1, then plugged in the final business rule in week 2 once the spec stabilized. (4) I documented the three candidate rules with test cases so the next spec change would take hours, not days."
+**R (20%):** "Delivered on time. When the spec changed a 4th time post-launch, the swap took 2 hours instead of 2 days. The strategy pattern approach was adopted for two other configurable alert rules."
+*Works for: Deliver Results, Bias for Action, Ownership.*
+
+### STAR Interview Framework
+
+> **Palindrome Partitioning II (min cuts):** naive O(n³) → precomputed is_pal + 1D DP O(n²) time, O(n²) space
+
+**S:** "Minimum cuts to partition string into palindromes. Naive: check palindrome O(n) per candidate prefix → O(n³) total."
+**T:** "Need O(n²) by precomputing the is_pal[i][j] table in O(n²) then doing a single O(n²) DP pass."
+**A (60%):**
+1. *Classify:* "Repeated palindrome checks → precompute is_pal table; 1D DP for min cuts."
+2. *Init:* "is_pal[i][j] = (s[i]==s[j]) AND (j-i<2 OR is_pal[i+1][j-1]). Fill i from n-1 down to 0."
+3. *Loop/Recurrence:* "dp[i] = 0 if is_pal[0][i-1]; else min(dp[j]+1) for all j where is_pal[j][i-1]."
+4. *Termination:* "Return dp[n]."
+5. *Gotcha:* "Fill is_pal with i decreasing (bottom-right first) so is_pal[i+1][j-1] is available when computing is_pal[i][j]. Filling top-left first causes wrong results."
+**R:** "O(n²) time, O(n²) space. Min insertions to palindrome: n - LCS(s, reverse(s)) = n - LPS(s)."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Expand-around-center for palindromes | Count palindromic substrings | Doesn't give O(1) lookup for arbitrary i,j needed in DP |
+| Manacher's algorithm | Longest palindromic substring | O(n) but doesn't build full O(1)-lookup table |
 
 ---
 

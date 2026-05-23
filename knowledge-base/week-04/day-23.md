@@ -58,6 +58,33 @@ class Solution {
 }
 ```
 
+### Interview Tips
+
+- **Span accumulation insight:** "Each call to `next(price)` absorbs all previous spans that are dominated by today's price — the while loop pops in amortised O(1) over all calls because each `(price, span)` pair is pushed and popped at most once."
+- **Why store (price, span) pairs, not just prices:** "Storing the accumulated span lets you absorb multiple previous spans in a single pop — if you stored raw prices you'd need a second pass to recount days."
+- **Asteroid collision case order matters:** "Check the cases in this order: (1) no collision possible (stack empty or top is negative), (2) right-mover is destroyed (top > |current|), (3) mutual destruction (top == |current|), (4) right-mover is destroyed (pop and continue loop). Getting the order wrong is the most common bug."
+- **Brute force baseline for Stock Span:** O(n) per call (scan backward each time) = O(n²) total → monotonic stack is O(n) amortised.
+
+### STAR Interview Framework
+
+> **Monotonic Stack — Span & Collision Simulation:** brute-force O(n²) → this approach O(n) amortised time, O(n) space
+
+**S:** "Given a stream of stock prices and a need to compute each day's span in real time. Naive backward scan per call is O(n) per call = O(n²) total — too slow for n=10^4 daily calls."
+**T:** "Need O(1) amortised per call by accumulating spans inside the stack. Goal: for each price, return the number of consecutive prior days (including today) where price was ≤ today's price."
+**A (60% of answer time):**
+1. *Classify:* "The trigger is 'how far back does today's element dominate?' — span accumulation variant of monotonic stack."
+2. *Init:* "Maintain a stack of `(price, span)` pairs. Span starts at 1 (today counts)."
+3. *Loop/Step:* "While the stack top's price ≤ today's price: pop and add its span to today's span. Then push `(today_price, accumulated_span)`."
+4. *Termination:* "Each pair is pushed once and popped at most once across all calls — O(n) total work, O(1) amortised per call."
+5. *Gotcha:* "Use ≤ not < when comparing prices — a day with equal price is still dominated and its span should be absorbed."
+**R:** "O(n) amortised time over n calls, O(n) space. For 10,000 trading days, this runs in ~0.5ms vs ~100ms for the naive scan — critical for real-time streaming dashboards."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Backward linear scan per call | n is small (≤ 100 calls) | O(n²) total — too slow for a live data stream |
+| Segment tree with range-max | Arbitrary range queries in O(log n) | Overcomplicated — we only need the span ending at today, not arbitrary ranges |
+
 ## System Design (1 hour)
 ### Topic: CAP — Availability Deep Dive
 - **Availability** in CAP means every non-failing node returns a response to every request — no timeouts, no errors due to coordination.
@@ -71,8 +98,15 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to resolve a conflict between two competing updates to the same resource — analogous to asteroid collision where two items moving toward each other must be reconciled.
 - Leadership principle: Earn Trust
+
+**Full STAR Story — "Mediating a Conflicting Schema Migration Between Two Teams":**
+
+**S (20%):** "At a mid-size e-commerce company, two backend teams simultaneously submitted schema migrations to the shared orders database — one adding a `status_v2` column with a new enum, the other renaming the same column from `status` to `order_status`. Applied together they caused a constraint violation that took down the checkout service for 22 minutes during peak traffic, affecting ~$140K in GMV."
+**T:** "I was the on-call platform engineer and the only person with write access to the migration pipeline. Goal: restore checkout within 30 minutes and prevent the conflict pattern from recurring."
+**A (60% — use 'I' not 'we'):** "(1) I immediately rolled back both migrations using the pipeline's rollback command and confirmed checkout was restored within 8 minutes. (2) I held a joint postmortem with both teams the same day — I presented the conflict timeline neutrally, without assigning blame, to build trust before proposing changes. (3) I implemented a mandatory migration-preview CI check that dry-runs all pending migrations together and fails if any constraint violations are detected. (4) I wrote the postmortem doc and got sign-off from both team leads, then presented it to the CTO as a process improvement."
+**R (20%):** "Zero migration-caused outages in the following 8 months. The CI check caught 3 further conflicts before they hit staging. Both team leads cited the postmortem as a model for cross-team incident handling — I was asked to run the next two postmortems as a facilitator."
+*Works for LP questions on: Earn Trust; Ownership; Insist on the Highest Standards.*
 
 ## Flashcards
 

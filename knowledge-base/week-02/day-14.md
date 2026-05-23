@@ -74,6 +74,36 @@ class Solution {
 - **Common mistake in LC 82:** checking `curr.val == curr.next.val` without guarding `curr.next != null` — accessing `curr.next.val` when `curr.next` is null throws a NullPointerException. Always check `curr.next` first.
 - **Brute force for LC 876 (Middle):** count nodes, then traverse again to the midpoint — O(2n). Fast/slow finds the middle in one pass O(n).
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Remove, Dedup, and Gap-Pointer patterns on Linked Lists in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a linked list and asked to remove the nth node from the end in a single pass, without knowing the list length. A two-pass approach — first count length, then walk to position `length - n` — is O(n) time but requires two traversals. The gap-pointer approach achieves the same in a single pass."
+
+**Task:** "My goal was to find and remove the nth-from-last node in one pass by maintaining a gap of exactly n+1 between two pointers — so when the fast pointer reaches null, the slow pointer is precisely at the node before the target."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "Find position relative to the end of a list in one pass → gap pointer (two pointers with fixed distance). The trigger: 'nth from end' without knowing length."
+2. *Initialize:* "I use a dummy head: `dummy.next = head`. Both `fast` and `slow` start at `dummy`. I advance `fast` exactly `n+1` steps first."
+3. *Core loop logic:* "Then advance both `fast` and `slow` one step at a time until `fast == null`. At this point, `slow` is at the node just BEFORE the target (the one to delete). Execute `slow.next = slow.next.next`."
+4. *Convergence guarantee:* "The gap is exactly n+1 (fast starts n+1 ahead of slow). When fast hits null (at position `length + 1` from dummy), slow is at position `length + 1 - (n+1) = length - n` from dummy, which is the node before the nth-from-last."
+5. *Duplicate handling / edge case proactivity:* "Advancing `n+1` steps (not n) is the critical detail — this ensures slow stops at the node BEFORE the target, enabling `slow.next = slow.next.next`. Using the dummy head ensures this works even when `n == list_length` (removing the head)."
+
+**Result:** "Single-pass O(n) solution vs O(2n) two-pass. The gap-pointer technique is generalisable: any 'find position k from the end' problem uses a fast pointer k+1 steps ahead. The dummy head is non-optional here — without it, removing the head node requires special-casing that is easy to get wrong under interview pressure."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer Gap Pointer here |
+|-------------|---------------------------|-------------------------------|
+| Two-pass: count then walk O(2n) | When readability matters more than elegance | Single-pass is expected at FAANG; two-pass is also O(n) but shows less pattern fluency |
+| Store all nodes in an array then index from end | When memory is not constrained | O(n) extra space vs O(1) for gap pointer |
+
+**Why NOT two-pass:** O(2n) operations — technically still O(n), but single-pass is the pattern being tested. Two-pass signals you don't know the gap-pointer technique.
+**Why NOT array:** O(n) extra space. The interview almost always tests the O(1)-space single-pass approach.
+
 ### Edge Cases to Trace Before Coding
 - LC 19: `n` equals list length → remove head; dummy prevents crash; `slow` stays at dummy after n+1 advance ✓
 - LC 19: single-node list, `n = 1` → remove head; dummy.next becomes null ✓
@@ -93,8 +123,24 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Tell me about a time you had to remove or skip certain inputs from a process because they didn't meet a quality bar — analogous to skipping entire duplicate runs in LC 82.
-- Leadership principle: Insist on the Highest Standards
+
+**Leadership Principle:** Insist on the Highest Standards
+
+**STAR Story: Removing Low-Quality Data from a Training Pipeline Before It Reached the Model**
+
+**Situation (20%):** "At my previous company, our machine learning team was training a recommendation model on user interaction data. After an audit, I discovered that 18% of the training data was coming from internal employees and automated test accounts — interactions that didn't represent real user behavior. The model was overfitting to internal usage patterns, which caused it to recommend internal-use-only content to real users."
+
+**Task (part of S/T):** "I was the data engineering lead. My goal was to identify and remove all contaminated records — not just filter the obvious test accounts, but eliminate entire data runs that were corrupted by them — analogous to LC 82's 'remove the entire duplicate run, not just the extra copies.'"
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I built an audit query that traced each training record back to its originating user session. I found that contaminated records weren't evenly distributed — they came in clusters (entire sessions from test accounts), and sessions that overlapped with test activity were also corrupted even if the individual records looked legitimate.
+Then, I implemented a session-level filter: if any record in a session was flagged as non-user (test account or employee), I excluded the entire session — not just the flagged records. This is the 'skip the entire run' principle.
+Next, I ran the filtered dataset through a data validation pipeline I wrote, which checked statistical distributions against a holdout of known-clean sessions. All metrics fell within 2 standard deviations.
+Finally, I retrained the model on the clean dataset and ran a 2-week A/B test before promoting it to production."
+
+**Result (10-20%):** "The retrained model improved recommendation click-through rate by 14% — the previous model had been dragged down by the internal-use bias. The data contamination rate dropped from 18% to under 0.3%. I also implemented ongoing session-level monitoring that flags any session with a test-account record, preventing future contamination from accumulating silently."
+
+**Interview tip:** Insist on the Highest Standards answers should show you identified a systemic quality issue (not just a symptom) and implemented a structural fix — not a workaround. "I filtered the entire corrupted session, not just the flagged records" is the key action that shows the standard you held. Prepare for: highest standards, ownership, dive deep, or quality without compromise.
 
 ## Flashcards
 

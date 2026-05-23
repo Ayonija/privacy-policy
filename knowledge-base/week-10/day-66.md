@@ -169,6 +169,68 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **Dijkstra + Count DP on Restricted Ordering:** brute-force O(V! path enumeration) → this approach O((V+E) log V + V+E) time, O(V+E) space
+
+**S:** "Given a weighted undirected graph with n up to 20,000 nodes and e up to 200,000 edges, count paths from node 1 to node n where every consecutive pair (u, v) satisfies dist-to-n(u) > dist-to-n(v). Brute-force path enumeration is O(V!) — infeasible."
+**T:** "Need O((V+E) log V) by combining Dijkstra from the destination to induce a DAG, then counting paths via DP on that DAG."
+**A (60% of answer time):**
+1. *Classify:* "'Count paths satisfying a monotone distance property' — signals Dijkstra from destination + DP on the induced DAG."
+2. *Init:* "Run Dijkstra from node n to compute dist[]; memo[] = -1 for all nodes; result is dfsRestricted(1, n)."
+3. *Loop/Step:* "From node u: sum over all neighbours v where dist[u] > dist[v]; memoize memo[u] = count mod 10^9+7."
+4. *Termination:* "DAG structure guaranteed by strict dist decrease — no cycles; DFS terminates on base case u == n."
+5. *Gotcha:* "If dist[1] == infinity (node 1 unreachable from n's Dijkstra), return 0 immediately — not -1 or an exception. Also modulo must be applied at each addition, not only at the end, to prevent integer overflow."
+**R:** "O((V+E) log V) Dijkstra + O(V+E) DP = O((V+E) log V) overall. Handles V=20,000 in well under 1s; brute force is intractable."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| BFS path count | Unweighted graph | Edge weights exist; BFS doesn't compute weighted shortest distances |
+| Floyd-Warshall + DP | n ≤ 200, all-pairs needed | n up to 20,000; O(n³) = 8 × 10^12 operations — completely infeasible |
+
+---
+
+> **BFS with Edge-Type State (Alternating Colors):** brute-force O(2^E path enumeration) → this approach O(V+E) time, O(V+E) space
+
+**S:** "Given a graph with red and blue edges, find shortest paths from node 0 using strictly alternating edge colours. Naive try-all-paths is exponential."
+**T:** "Need O(V+E) by encoding edge colour into BFS state — (node, last_colour) — and initialising both colours at source."
+**A (60% of answer time):**
+1. *Classify:* "'Shortest path alternating between edge types' — encode type into state; BFS on (node, type) pairs."
+2. *Init:* "graph[node] = list of (neighbour, colour); visited = Set of (node, colour) pairs; queue = [(0, RED, 0), (0, BLUE, 0)]; ans[0] = 0."
+3. *Loop/Step:* "From (node, colour, steps): for each (neighbour, edgeColour) in graph[node]: if edgeColour != colour and (neighbour, edgeColour) not visited → enqueue; set ans[neighbour] = steps+1 if -1."
+4. *Termination:* "At most 2V states; each visited once; BFS terminates with shortest distances."
+5. *Gotcha:* "Initialize queue with BOTH colour states at node 0 — not just one. If you only start with RED, you miss shortest paths that begin on a blue edge. This is the #1 cause of wrong answers on LC 1129."
+**R:** "O(V+E) time, O(V+E) space. Handles V=400, E=400 instantly; generalises to any finite number of edge types."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Dijkstra | Weighted edges | All steps cost 1; BFS suffices at O(V+E) without log overhead |
+| DFS | Connectivity only | Doesn't guarantee shortest (minimum step) paths |
+
+---
+
+> **BFS on Route Hypergraph:** brute-force O(stops²) → this approach O(stops × routes) time, O(stops × routes) space
+
+**S:** "Given bus routes (each up to 1,000 stops), find minimum bus transfers from source to target stop. Naive BFS over stops counts stops on the same bus as multiple hops when they should be one transfer."
+**T:** "Need minimum bus-transfer count by BFS-ing over routes, not stops — one BFS level = one additional transfer."
+**A (60% of answer time):**
+1. *Classify:* "'Minimum transfers through groups where reaching a group gives all members' — hypergraph signal; BFS on groups (routes)."
+2. *Init:* "stop→routes map; visitedRoutes = Set; visitedStops = Set{source}; enqueue all routes containing source at level 1."
+3. *Loop/Step:* "For each route at current level: iterate all its stops; if stop == target return transfers; for each unboarded route through that stop, enqueue at transfers+1."
+4. *Termination:* "Finite routes; each route enqueued at most once; BFS terminates."
+5. *Gotcha:* "Track visitedStops AND visitedRoutes separately. Without visitedStops, a stop shared by two routes at the same level causes each route to re-enqueue all routes through that stop — O(routes²) explosion instead of O(stops × routes)."
+**R:** "O(stops × routes) time, O(stops × routes) space. Handles 500 routes × 1,000 stops in < 1ms; stop-level BFS would double-count same-bus transfers."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| BFS over stops | No transfer concept (uniform hops) | Counts stops on same bus as distance 2 instead of 1 — wrong answer |
+| Dijkstra | Transfer costs vary by route | All transfers cost 1; BFS is simpler |
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 1786: node 1 is unreachable from n's Dijkstra → `dist[1] = inf` → dfs(1) returns 0; only one restricted path → answer is 1
 - LC 1129: no blue edges → node 0 can reach via red edges starting with RED; all edges same colour → alternating impossible → return -1 for unreachable nodes
@@ -239,8 +301,12 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to resolve conflicting information from two sources — how did you determine which was correct?
-- Leadership principle: Earn Trust
+**Full STAR Story — "Dijkstra + Count DP: Auditing Conflicting Data Pipelines to Find the Canonical Source":**
+**S (20%):** "At a logistics company, two data pipelines reported route-cost summaries for our delivery network (50,000 routes). Pipeline A (SQL aggregation) and Pipeline B (Spark job) disagreed on total cost for ~8% of routes — a discrepancy affecting $2M in monthly billing adjustments."
+**T:** "I was responsible for determining which pipeline was correct and delivering a fix within one sprint — measurable goal: reduce disagreement rate from 8% to < 0.1%."
+**A (60% — 'I' not 'we'):** "(1) I modelled the route network as a weighted directed graph and ran shortest-path analysis (Dijkstra from each depot) to identify which routes had provably correct optimal costs as a ground truth. (2) I compared pipeline outputs against the shortest-path baseline — Pipeline A matched on 94% of routes, Pipeline B on 86%, identifying Pipeline A as the canonical source. (3) I traced Pipeline B's discrepancies to a timezone conversion bug that shifted delivery timestamps across day boundaries, inflating overnight route costs. (4) I deployed the fix to Pipeline B and added an automated reconciliation check — if the two pipelines diverge by > 0.5%, an alert fires before billing runs."
+**R (20%):** "Disagreement rate dropped from 8% to 0.02% within one week of the fix. The reconciliation alert caught two subsequent pipeline regressions before they reached billing. Prevented an estimated $160K in billing errors in the next quarter."
+*Works for LP questions on: Earn Trust, Dive Deep, Insist on the Highest Standards.*
 
 ---
 

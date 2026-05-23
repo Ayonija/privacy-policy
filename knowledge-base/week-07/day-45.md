@@ -110,6 +110,38 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining DFS Backtracking (Path Collection) in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a binary tree and a target sum, and asked to return all root-to-leaf paths whose node values sum to the target. A common bug is appending the current path object by reference — you get a list of lists where all entries point to the same mutated list, producing garbage output."
+
+**Task:** "My goal was to collect all valid paths in O(n) time and O(h) space using DFS backtracking, with correct path copying at the leaf."
+
+**Action:** Walk the interviewer through these steps:
+1. *DFS preorder — push before recursing:* "On entering a node, I add `node.val` to the `path` list and subtract it from `remaining`. This happens before recursing to children."
+2. *Leaf check:* "When I reach a leaf (both children null) and `remaining == node.val` at the moment of entry (equivalently, after subtraction `remaining - node.val == 0`), I copy the current path — `result.add(new ArrayList<>(path))` — and add the copy to result. **Copy, not reference** — this is the most common bug."
+3. *Recurse:* "After the leaf check, I recurse on left and right children. Both calls share the same `path` list but each DFS frame sees the correct path because we backtrack after each returns."
+4. *Backtrack — pop on exit:* "After recursing both children, I pop the current node from `path`. This restores the path to exactly the state it was in before we entered this node, so that the parent's sibling subtree sees the correct path."
+5. *Why backtrack at the leaf too:* "Even at a leaf where we added to result, we still pop. The leaf's value was pushed on entry — it must be popped on exit like every other node."
+
+**Result:** "O(n) time — each node visited once. O(h) space for the recursion stack and path (at most O(h) entries in `path` at any time). Zero risk of aliasing bugs because we copy the path at collection time."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer backtracking DFS |
+|-------------|---------------------------|------------------------------|
+| Build a new path list at each node (passing by value) | Simpler code | O(n × h) total space — creates a new list at every node call; backtracking uses O(h) |
+| BFS with path tracking | When iterative is required | Requires storing a path per queue entry — O(n × h) space |
+| DFS backtracking | Most cases | O(h) space; single shared path list; standard interview pattern |
+
+**Why NOT pass-by-value path:** Creating `new ArrayList<>(path)` at every recursive call duplicates the path O(n) times — one per node — using O(n × h) total space. Backtracking with one shared list is O(h).
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 113: no valid path exists → return `[]`; root itself is a leaf and equals targetSum → `[[root.val]]`; negative values — path sums can overshoot and come back, so you must reach a leaf before checking
 - LC 129: single node → return `node.val`; tree with all zeros → returns 0 (leaf adds 0)
@@ -185,8 +217,18 @@ Cache sits in front of DB. On miss, cache (not application code) fetches from DB
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to choose between consistency and performance for a write path — for example, deciding whether to update a secondary system synchronously or asynchronously.
-- Leadership principle: Customer Obsession
+
+**Leadership principle: Customer Obsession**
+
+**STAR Story — Choosing between synchronous and asynchronous consistency for a write path**
+
+**Situation:** We were building a checkout flow for an e-commerce platform. When a customer placed an order, we needed to: (1) write the order to the primary orders database, (2) update the inventory service to decrement stock counts, and (3) send a confirmation email. The first instinct from the team was to do all three synchronously in the same HTTP request — write order, call inventory API, trigger email — and return success only when all three succeeded. This guaranteed consistency but added up to 800 ms to checkout latency (inventory API: 200 ms, email service: 400 ms) and made checkout fail if either service was down.
+
+**Task:** I was the backend lead responsible for the checkout service's architecture. My goal was to provide customers with fast, reliable checkout confirmation while maintaining correct inventory counts and reliable email delivery.
+
+**Action:** I analysed each step by its consistency requirement. Order write: must be synchronous — without it, checkout fails. Inventory decrement: must be consistent but not necessarily synchronous — we could use an outbox pattern. Email: eventually consistent is fine — a 2-second delay is imperceptible. I designed a hybrid write path: the order write and an inventory reservation (a database row marking stock as "reserved") happened in a single local database transaction — fast (< 50 ms), atomic, no external calls. A background worker consumed the outbox and called the inventory service asynchronously, with retries and a dead-letter queue. The email trigger was a Kafka event published after commit, consumed by the email service independently. I verified that the inventory reservation model correctly prevented overselling even during the async window between reservation and final decrement.
+
+**Result:** Checkout latency dropped from 950 ms to 120 ms — a 7.9× improvement. Checkout success rate improved from 94.3% (impacted by inventory and email service downtime) to 99.8% — errors now only from our own database. Email delivery reliability actually improved from 97% to 99.6% because the retry logic in the Kafka consumer was more robust than the original synchronous attempt. Zero overselling incidents in the following six months.
 
 ---
 

@@ -81,6 +81,38 @@ def jobScheduling(startTime, endTime, profit):
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Gas Station / Queue Reconstruction / Max Profit Job Scheduling in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given three greedy problems with very different flavours. Gas Station requires a global feasibility check plus a single-pass greedy reset to find a circular route starting station. Queue Reconstruction by Height uses a counter-intuitive sort (descending height, not ascending) and inserts at a k-index — correct only because of the order guarantees. Max Profit Job Scheduling combines greedy sorting with DP and binary search for non-overlapping weighted interval selection. Each is subtle: the naive approaches (try all starts for Gas Station, try all orderings for Queue Reconstruction, try all subsets for Max Profit) are O(n²) to O(2^n)."
+
+**Task:** "My goal was to identify the specific invariant that makes each greedy correct: for Gas Station, if total gas ≥ total cost, the start after the last negative-tank reset must work. For Queue Reconstruction, taller-first insertion means every insert sees exactly the right count. For Max Profit, sort by end time + binary search enables O(n log n) DP."
+
+**Action:** Walk the interviewer through these steps:
+1. *Gas Station — global feasibility + reset:* "Compute `total_tank` in parallel. When running `tank < 0`: no station between the previous start and current index can be a valid start (they all pass through this same negative point with even less starting gas). Reset `tank = 0`, set `start = i + 1`. At the end: if `total_tank ≥ 0`, return `start`; else return -1."
+2. *Queue Reconstruction — sort and insert:* "Sort by height descending, tie-break by k ascending. Insert each person at index k in the result list. Correctness: when we insert `[h, k]`, all already-inserted people are ≥ h (because we process tallest first) — they all count toward k. People not yet inserted are shorter — when they insert at their own k-position, they don't affect `[h, k]`'s count because `[h, k]` doesn't count shorter people."
+3. *Max Profit Job Scheduling — sort by end + binary search DP:* "Sort jobs by end time. Build `end_times = [0] + [job.end for job in jobs]`. For each job i: use `bisect_right(end_times, start[i])` to find j = last job ending ≤ start[i]. DP: `dp[i+1] = max(dp[i], profit[i] + dp[j])`. O(log n) per binary search, O(n) DP states → O(n log n) total."
+4. *Why NOT try all starts for Gas Station:* "Trying all n starts: O(n²). But the global check (total_tank ≥ 0) tells us a valid start EXISTS if the check passes. The single-pass reset finds it in O(n) by eliminating all starts up to the index where the tank went negative."
+5. *Why descending sort for Queue Reconstruction:* "If we sorted ascending by height, when we insert a shorter person at index k, they might affect the k-count of taller people inserted earlier (taller people are in front of shorter ones, so shorter inserted at k shifts taller people's positions). Descending sort avoids this by always inserting into a list that only contains taller or equal people."
+
+**Result:** "Gas Station: O(n) vs O(n²) try-all-starts. Queue Reconstruction: O(n² log n) — sort O(n log n) + n insertions at O(n) each (list insertion is O(n)) — this is the unavoidable cost of list insert, but the algorithm complexity is correct for the approach. Max Profit Job Scheduling: O(n log n) vs O(2^n) subset enumeration. For n = 10^5 jobs, the DP + binary search gives 10^5 × 17 ≈ 1.7 × 10^6 operations vs 2^(10^5) — completely intractable."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer this approach |
+|-------------|---------------------------|--------------------------|
+| Try all starting stations for Gas Station | n ≤ 100 | O(n²) — fine for n ≤ 10^3; single-pass is O(n) always; use the greedy once you've seen it |
+| Binary indexed tree for Queue Reconstruction | Need O(n log n) total including insertions | Segment tree can give O(log n) inserts; standard list insert is O(n); for interview, list insert is accepted |
+| Priority queue DP for Max Profit | Online (jobs arrive in stream) | Offline (all jobs known): sort + binary search is simpler; online streaming: use a sorted structure like SortedList for O(log n) insertion and lookup |
+
+**Why NOT sort by start time for Max Profit Job Scheduling:** DP requires knowing the last compatible job (ending ≤ current start). If jobs are sorted by start time, the end times are unsorted — binary search for `last job ending ≤ start[i]` requires sorting end times separately anyway. Sorting by end time directly enables the binary search invariant.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 134: all stations valid → start = 0; single station with gas ≥ cost → return 0; total gas < total cost → -1; last station completes the circuit → start anywhere before
 - LC 406: all same height → sort by k only; k = 0 for everyone → insert all at front, result is just the sorted order; single person → trivially correct
@@ -191,8 +223,28 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you built a system that needed to fan out a single event to multiple downstream consumers — how did you handle failures in one consumer without affecting others?
-- Leadership principle: Ownership
+
+**Leadership Principle:** Ownership
+
+**STAR Story: Taking Full Ownership of a Fan-Out System Failure That Spanned Three Teams**
+
+**Situation:** At my previous company, we ran a Kafka-based event pipeline that fanned out a single "order completed" event to four downstream consumers: an email notification worker, an inventory update worker, a warehouse fulfillment worker, and an analytics worker. During a peak sales event, the inventory update worker began crashing in a tight restart loop due to a downstream database deadlock. Because all four workers shared a single Kafka consumer group, the crashing inventory worker's repeated rebalances disrupted partition assignments for the other three consumers — email notifications and fulfillment confirmations began arriving 20–45 minutes late. Customers were receiving no order confirmation emails and warehouse teams saw empty fulfillment queues. The incident lasted 3 hours before anyone fully understood the scope.
+
+**Task:** I was an engineer on the analytics team — I was not the owner of the inventory worker, the email worker, or the fulfillment system. But as the person on call that night and the person with the deepest Kafka knowledge on the team, I took ownership of coordinating the full incident response. My goal was to restore email and fulfillment within the hour and then prevent recurrence, regardless of which team "owned" which component.
+
+**Action:**
+
+*First,* I identified the root cause within 15 minutes of being paged. The inventory worker crash loop was triggering Kafka consumer group rebalances every 30 seconds — the Kafka session timeout was 30 seconds, so each crash caused a full partition reassignment across all consumers in the group. I confirmed this by pulling consumer group lag metrics from Kafka's admin API and watching the rebalance counter increment in real time.
+
+*Then,* I made the immediate tactical decision — which required me to act across team boundaries. I manually removed the inventory consumer from the consumer group using the Kafka consumer group management CLI, allowing the remaining three consumers to stabilise with their assigned partitions. Email notifications resumed within 4 minutes. Fulfillment resumed within 6 minutes. I escalated to the inventory team lead that their worker was isolated and they had full ownership of the fix on their end.
+
+*Next,* I drafted and sent a customer impact summary to the CX team so they could proactively contact customers who had not received confirmation emails (approximately 3,200 customers), rather than waiting for inbound support tickets.
+
+*Finally,* I wrote the post-mortem and proposed the structural fix: each downstream consumer should have its own consumer group (pure pub/sub fan-out), not share a consumer group with unrelated consumers. I also proposed a Kafka session timeout increase from 30 seconds to 90 seconds to reduce rebalance frequency on transient failures. Both changes were implemented within the following sprint across all four consumer groups — a cross-team change requiring coordination with three other teams.
+
+**Result:** Email and fulfillment delays resolved from 20–45 minutes to 0 within 10 minutes of intervention. Approximately 3,200 customers received a proactive apology email rather than discovering the delay themselves — CX reported the ticket volume for this incident was 40% lower than for a comparable outage 6 months prior. The consumer-group isolation change reduced rebalance-related incidents to zero over the following 6 months. The incident also became the basis for a company-wide "consumer group isolation" guideline I published in our internal engineering wiki.
+
+*In an interview, say:* "I want to be direct: this was not my system. I owned the analytics consumer, not the inventory worker or the email system. But when the incident spanned multiple teams and nobody was coordinating the response, I stepped in. Ownership, to me, means acting like this is your problem even when the org chart says otherwise — especially during a live customer impact event." Use this for "Tell me about a time you owned a problem outside your scope," "Tell me about a production incident you led," or "Tell me about a time you took initiative beyond your job description."
 
 ---
 

@@ -106,6 +106,27 @@ class Solution {
 - **Common mistake in LC 76:** using `len(set(t))` as `required` correctly handles repeated chars in t (e.g., `t = "aa"` needs frequency 2 of 'a', not just presence). But using `len(t)` instead of `len(set(t))` overcounts — always use `len(need)` (the frequency map length).
 - **Brute force for all three:** LC 49 O(n·k·log k) sorting all strings; LC 128 O(n²) nested loops; LC 76 O(n²) all substrings — HashMaps reduce all three significantly.
 
+### STAR Interview Framework
+
+> **HashMap — Canonical Key Grouping & Set Membership:** brute-force O(n²·k) → this approach O(n·k) time, O(n) space
+
+**S:** "Given n strings, group all anagrams together. Naive pairwise comparison of all pairs is O(n²·k) where k = string length — fails at n=10⁵."
+**T:** "Need O(n·k) by transforming each string into a canonical key that is identical for all anagrams, then grouping by key in O(1) per lookup."
+**A (60% of answer time):**
+1. *Classify:* "'Group items equivalent under a transformation' → canonical key HashMap. 'Longest streak/consecutive range' → Set + only process streak starts."
+2. *Init:* "HashMap of `canonical_key → List<String>`. For consecutive sequences: a HashSet of all numbers."
+3. *Loop/Step:* "Anagrams: sort each string (O(k log k)) or build a 26-tuple count (O(k)) → use as key; append to list. Consecutive: skip if `num-1` is in set (not a streak start); walk forward counting streak length."
+4. *Termination:* "Each string processed once → O(n·k). Each number processed as streak start at most once → O(n) total for consecutive."
+5. *Gotcha:* "In Minimum Window Substring, initialise `formed = 0` and compare `have[ch] == need[ch]` (exact equality, not ≥) — otherwise repeated chars in t are under-counted. State this before coding."
+**R:** "O(n·k) grouping vs O(n²·k) brute force. At n=10⁵, k=10: ~1ms vs ~100s. Consecutive sequences: O(n) vs O(n²) nested loops."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Sort all strings then compare adjacent | n is small, k is small | O(n·k·log(n·k)) — slower and loses grouping structure |
+| Trie per character count | Need prefix queries too | Over-engineered for grouping; HashMap is simpler |
+| O(n²) pairwise isAnagram check | n ≤ 100 | Times out at n=10⁴ |
+
 ### Edge Cases to Trace Before Coding
 - Group Anagrams: empty string `""` is its own group (sorted `""` = `""`)
 - Longest Consecutive: duplicates in input — `set()` removes them before iteration
@@ -144,8 +165,14 @@ A separate data structure that maps a column value (key) to the row's disk locat
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you reorganised a large dataset or codebase to make a specific type of lookup dramatically faster — analogous to building an index to avoid full-table scans.
 - Leadership principle: Invent and Simplify
+
+**Full STAR Story — "Eliminating a Full-Table Scan with Canonical Key Grouping":**
+**S (20%):** "At a data-platform company, an internal analytics service grouped ~8M log events per night by 'equivalent event signature'. The grouping step ran for 22 minutes using nested string comparisons — blocking the 23:00 SLA window."
+**T:** "I owned the ingestion pipeline. Goal: reduce grouping time to under 2 minutes without changing downstream consumers."
+**A (60% — 'I' not 'we'):** "(1) I profiled the bottleneck: the service compared every pair of signatures using sorted field lists — O(n²) comparisons. (2) I introduced a canonical key — sorted a 12-field tuple for each event, hashing it to a 32-character string. (3) I replaced the pairwise loop with a HashMap group-by on the canonical key, exactly like grouping anagrams. (4) I added a unit test that confirmed canonical key collisions were impossible across valid event types before deploying."
+**R (20%):** "Grouping time dropped from 22 minutes to 47 seconds — a 96% reduction. The pipeline met its SLA every night for the following 6 months. The canonical key pattern was adopted by two adjacent teams for similar grouping problems."
+*Works for: Invent and Simplify, Deliver Results, Dive Deep.*
 
 ---
 

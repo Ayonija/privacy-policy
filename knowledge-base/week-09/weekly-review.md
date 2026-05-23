@@ -215,3 +215,21 @@ Rate yourself 1–5 after this review.
 | Pattern | Problem | Retry date |
 |---------|---------|------------|
 | (learner fills in) | | |
+
+---
+
+## STAR Quick Reference — Week 9
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| All-Paths DFS Backtracking | "Given DAG path enumeration, list(path) copy prevents reference aliasing — #1 interview bug." |
+| BFS + Value-Grouped Index Map | "Given Jump Game IV, bucket-clear prevents O(n²) → O(n) for arrays with duplicates." |
+| Boundary DFS Exclusion | "Given enclosure detection, DFS from ALL border cells → O(m×n) vs O(m²×n²) interior flood." |
+| Standard Dijkstra | "Given single-source shortest path, min-heap + stale-entry skip → O((V+E) log V) vs O(V×E)." |
+| Grid Dijkstra Min-Bottleneck | "Given minimax path, heap key = max(cur, edge) not sum → correct minimax, not shortest path." |
+| Bellman-Ford K-Stops | "Given K-hop constrained cheapest flight, copy prev[] before each round enforces hop limit." |
+| Leaf-Peeling Topological Sort | "Given centroid finding, iterative leaf removal → O(V) vs O(n²) try-all-roots." |
+
+**Career stories:**
+1. "Dijkstra read path — rebuilt URL redirect architecture; P99 latency 820ms → 12ms; cache hit rate 0% → 99.1%."
+2. "Leaf-Peeling / Topological — scaled analytics from single Postgres to Kafka+ClickHouse; zero degradation at next launch."

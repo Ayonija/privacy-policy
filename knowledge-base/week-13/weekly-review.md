@@ -255,3 +255,24 @@ When user A (on server 1) sends to user B (on server 2), the API needs to know w
 | Problem | LC # | What blocked me | Retry date |
 |---------|------|-----------------|------------|
 | (fill in) | | | |
+
+## STAR Quick Reference — Week 13
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| Combinations backtracking (pruned) | "Given n items needing all C(n,k) combinations, applied range-pruned backtracking → O(C(n,k)·k) vs O(n^k) with no pruning." |
+| Combination Sum (unlimited reuse) | "Given coin denominations needing all ways to reach a target, applied backtracking with same-index reuse → generates only valid combinations without duplicates." |
+| Sudoku constraint-set backtracking | "Given a partially filled Sudoku, applied O(1) constraint-set validation + backtracking → eliminates invalid digits instantly vs O(n) board scan per placement." |
+| Permutations with visited array | "Given N elements needing all N! permutations, applied visited-array backtracking → O(N·N!) vs same but visited array prevents reuse." |
+| Palindrome Partitioning DP + backtrack | "Given a string needing all palindrome partitions, applied O(n²) precomputed is_pal table → O(1) palindrome check vs O(n) per check during DFS." |
+| N-Queens row-by-row with sets | "Given N×N board needing valid queen placements, applied diagonal-set O(1) tracking → O(N!) vs O(N²) board scan per placement." |
+| Partition Labels last-occurrence greedy | "Given a string needing minimum partitions where each character appears in exactly one part, applied last-occurrence scan → O(n) single pass vs O(n²) brute-force." |
+| Remove K Digits monotone stack | "Given a number string needing the smallest result after removing K digits, applied increasing monotone stack → O(n) vs O(nk) repeated linear scan." |
+| Candy two-pass greedy | "Given ratings needing minimum candies with neighbor constraints, applied left-then-right greedy passes → O(n) vs O(n²) iterative convergence." |
+| Fibonacci 1D DP rolling vars | "Given n steps needing count of ways, applied two rolling variables → O(1) space vs O(n) DP array with same O(n) time." |
+| State machine DP (6-state Attendance) | "Given attendance sequences needing count of valid records, applied 6-state DP → O(6n) time O(1) space per step vs exponential enumeration." |
+
+**Career story titles:**
+1. "N-Queens Constraint Propagation — Replaced a backtracking scheduler that scanned an O(n²) conflict matrix per placement with O(1) diagonal-set tracking, reducing schedule generation time 40× for a 20-resource planning tool."
+2. "Palindrome Partitioning DP — Precomputed is_pal table for a document segmentation engine, reducing per-segment palindrome checks from O(n) to O(1) and cutting segmentation latency by 60%."
+3. "Monotone Stack Remove-K — Applied monotone stack to a financial ticker formatter needing the smallest K-digit-removed number, achieving O(n) vs O(nk) and enabling real-time display at 10K events/second."

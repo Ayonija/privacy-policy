@@ -119,6 +119,28 @@ def findCheapestPrice(n, flights, src, dst, k):
 
 ---
 
+### STAR Interview Framework
+
+> **Standard Dijkstra (Network Delay):** brute-force O(V²) Bellman-Ford style → this approach O((V+E) log V) time, O(V+E) space
+
+**S:** "Given a weighted directed graph with n nodes and E edges, find the minimum time for a signal from node k to reach ALL nodes. Brute-force Bellman-Ford runs V-1 rounds over all E edges: O(V×E)."
+**T:** "Need O((V+E) log V) by exploiting non-negative weights with a min-heap."
+**A (60%):**
+1. *Classify:* "'Shortest path from a single source, non-negative weights' → Dijkstra with min-heap."
+2. *Init:* "`dist = {k: 0, all others: inf}`; heap = `[(0, k)]`."
+3. *Loop/Step:* "Pop `(d, u)`; if `d > dist[u]` skip (stale); for each neighbour `(v, w)`: if `dist[u] + w < dist[v]` → update and push."
+4. *Termination:* "Heap empty → `max(dist.values())` is the answer; if any node is still `inf` → graph is disconnected → return -1."
+5. *Gotcha:* "Must check `d > dist[u]` to skip stale heap entries — without this, O(E) stale entries bloat runtime."
+**R:** "O((V+E) log V) time, O(V+E) space. For V=1000 nodes, E=5000 edges: ~60K ops vs 5M ops for O(V×E)."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Bellman-Ford | Negative edge weights possible | O(V×E) — overkill when all weights non-negative |
+| Floyd-Warshall | Need all-pairs, not single-source | O(V³) — unacceptable for single-source queries |
+
+---
+
 ## System Design (1 hour)
 ### Topic: URL Shortener — Requirements, Encoding, and API Design
 
@@ -193,8 +215,14 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you designed a system where read performance was far more critical than write performance — how did you architect for the read path?
 - Leadership principle: Customer Obsession
+
+**Full STAR Story — "Read-Optimised URL Redirect Architecture":**
+**S (20%):** "At a link-in-bio platform, our redirect service was handling 120,000 clicks/second at peak with a 100:1 read-to-write ratio. Our SQL primary was saturated at 95% CPU; P99 redirect latency was 820ms — well above our 50ms SLA."
+**T:** "I was responsible for re-architecting the read path to hit the 50ms P99 SLA while keeping write latency under 200ms."
+**A (60% — 'I' not 'we'):** "(1) I profiled the read path and found 97% of redirects were hitting the DB — no caching existed. (2) I introduced Redis as a look-aside cache with `{short_code → long_url}` as a string KV; I set a 24-hour TTL for new codes and no-TTL for the top-1% hottest codes determined by access frequency. (3) I added 4 MySQL read replicas behind a HAProxy load balancer for cache-miss fallback, reducing read load on the primary by 92%. (4) I added a Bloom filter over all valid short codes to return 404 immediately for bot traffic without touching cache or DB."
+**R (20%):** "P99 redirect latency: 820ms → 12ms. Cache hit rate: 0% → 99.1% within 2 hours of warm-up. Primary DB CPU: 95% → 8%. Bloom filter eliminated 18% of requests as provably invalid."
+*Works for: Customer Obsession, Dive Deep, Deliver Results.*
 
 ---
 

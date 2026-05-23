@@ -155,6 +155,68 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **0-1 BFS on Directed Grid:** brute-force Dijkstra O(m×n log(m×n)) → this approach O(m×n) time, O(m×n) space
+
+**S:** "Given an m×n grid where each cell has a direction arrow. Moving in the arrow's direction costs 0; overriding it costs 1. Find the minimum cost to travel from (0,0) to (m-1, n-1). Dijkstra works but adds O(log(m×n)) heap overhead to every cell expansion."
+**T:** "Need O(m×n) — linear — by recognising that override vs follow is exactly a 0/1 edge weight, enabling deque-based 0-1 BFS."
+**A (60% of answer time):**
+1. *Classify:* "'Minimum cost grid path where one move type is free and another costs 1' — 0-1 BFS on grid cells signal."
+2. *Init:* "dirMap = {{0,1},{0,-1},{1,0},{-1,0}} indexed 0–3; cell values 1–4 map to direction index; dist[0][0] = 0; deque = [(0, 0, 0)]."
+3. *Loop/Step:* "For each (cost, r, c): for each direction d: moveCost = (grid[r][c] == d+1) ? 0 : 1; newCost = cost + moveCost; if newCost < dist[nr][nc]: addFirst if moveCost==0, addLast if moveCost==1."
+4. *Termination:* "Each cell updated at most twice; deque drains; return dist[rows-1][cols-1]."
+5. *Gotcha:* "Direction indexing is 1-based in the grid (values 1–4) but 0-based in the dirMap array — so the match is `grid[r][c] == d + 1`, not `grid[r][c] == d`. Off-by-one here makes every move cost 1, breaking the 0-cost case silently."
+**R:** "O(m×n) time, O(m×n) space. 1000×1000 grid: ~10^6 operations vs ~20×10^6 with Dijkstra's heap."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Dijkstra with min-heap | Arbitrary non-negative weights | Correct but O(m×n log(m×n)) — unnecessarily slow for binary weights |
+| BFS (no deque) | All moves cost 1 | Moves cost 0 or 1; plain BFS treats both as equal-cost and finds wrong paths |
+
+---
+
+> **Equation Weighted Graph + DFS Product Path:** brute-force O(Q × n!) → this approach O((V+E) × Q) time, O(V+E) space
+
+**S:** "Given k equations like a/b = 2.0 and q queries like a/c = ?, answer each query by chaining known ratios. Brute force tries all combinations of equations — O(Q × k!) infeasible."
+**T:** "Need O((V+E) × Q) by modelling equations as a weighted directed graph and DFS-ing from source to destination, multiplying edge weights."
+**A (60% of answer time):**
+1. *Classify:* "'Answer ratio queries by chaining known ratios' — weighted directed graph signal; edge weight = ratio; DFS from src multiplies along the path."
+2. *Init:* "For a/b = val: graph[a][b] = val; graph[b][a] = 1/val. For each query (src, dst): DFS from src with product=1.0."
+3. *Loop/Step:* "DFS(src, dst, visited, product): if src==dst return product; for each (nb, w) in graph[src]: if nb not visited: result = DFS(nb, dst, visited, product×w); if result != -1 return result."
+4. *Termination:* "Finite graph; visited set prevents cycles; returns -1 if dst unreachable."
+5. *Gotcha:* "If src or dst is not in the graph at all (never appeared in any equation), return -1 immediately — checking graph.containsKey() before DFS prevents incorrect 1.0 returns when src==dst but the variable is unknown."
+**R:** "O((V+E) × Q) time, O(V+E) space. k=40 equations, q=40 queries: ~3,200 operations vs factorial explosion."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Floyd-Warshall pre-compute all pairs | Many queries, small variable set (n ≤ 50) | For V ≤ 40 and Q ≤ 40, DFS per query is fast enough; Floyd-Warshall adds O(V³) preprocessing |
+| Union-Find with weights | Detect connectivity, not compute ratios | Weighted union-find can compute ratios but is more complex to implement correctly under time pressure |
+
+---
+
+> **Dijkstra + Sub-Node Counting:** brute-force O(V! path × sub-node enumeration) → this approach O((V+E) log V) time, O(V+E) space
+
+**S:** "Given a graph where each edge (u, v) has cnt virtual sub-nodes inserted between u and v, count how many original nodes and sub-nodes are reachable from node 0 with at most maxMoves steps. Brute force traverses the full subdivided graph — O(total_subnodes) which can be 10^14."
+**T:** "Need O((V+E) log V) by running Dijkstra on the original graph only, then counting reachable sub-nodes per edge analytically."
+**A (60% of answer time):**
+1. *Classify:* "'Count nodes reachable within a step budget on a graph with virtual intermediate nodes' — Dijkstra on original graph + per-edge sub-node accounting."
+2. *Init:* "Edge weight = cnt+1 (to traverse u→sub-nodes→v); Dijkstra from node 0 → dist[v] for all original nodes."
+3. *Loop/Step:* "For each original edge (u, v, cnt): from_u = max(0, maxMoves - dist[u]); from_v = max(0, maxMoves - dist[v]); sub-nodes on this edge = min(cnt, from_u + from_v)."
+4. *Termination:* "Dijkstra terminates; edge loop is O(E); sum up reachable original nodes + sub-nodes."
+5. *Gotcha:* "The cap `min(cnt, from_u + from_v)` is essential — if both endpoints are reachable and from_u + from_v > cnt, you'd count sub-nodes that don't exist. Double-counting is the most common bug here."
+**R:** "O((V+E) log V) time, O(V+E) space. Original graph with V=3,000 vs subdivided graph with up to 10^9 virtual nodes — Dijkstra on original is the only tractable approach."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| BFS on full subdivided graph | cnt ≤ 10 (small sub-node counts) | cnt up to 10,000; subdivided graph has up to 10^9 virtual nodes — too large |
+| DFS with step budget | Small graphs | DFS doesn't guarantee minimum-distance paths; Dijkstra needed for correct counting |
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 1368: 1×1 grid → return 0; all arrows already point toward destination → cost = 0
 - LC 399: query where src == dst → return 1.0; query where src is not in any equation → return -1.0; division by itself (a/a) → return 1.0 if a is in graph, else -1.0
@@ -219,8 +281,12 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you needed to choose between two technology options (e.g., database, framework, service) — how did you make the trade-off decision?
-- Leadership principle: Are Right, A Lot
+**Full STAR Story — "Equation Graph DFS: Choosing the Right Data Store by Chaining Trade-Off Ratios":**
+**S (20%):** "At a growth-stage startup, we needed to choose a primary data store for our user activity service: PostgreSQL vs DynamoDB vs Cassandra. Three team members each advocated for a different option; the decision affected 4 engineering teams and 18 months of roadmap. No one had a structured framework — we were going in circles."
+**T:** "As the senior engineer on the system design, I owned the final recommendation. Goal: deliver a documented, defensible decision within one week so engineering could start infrastructure provisioning."
+**A (60% — 'I' not 'we'):** "(1) I modelled the decision as a ratio-chain: defined 5 weighted criteria (write throughput, query flexibility, operational complexity, cost at scale, strong-consistency need) with relative importance ratios derived from our product requirements. (2) I scored each database option against each criterion using quantified benchmarks — DynamoDB handled 50K writes/sec at our scale; PostgreSQL handled 8K/sec without sharding. (3) I built a decision matrix and traced the product of ratios from requirements to constraints to technology fit — similar to how Evaluate Division chains known ratios to answer unknown queries. (4) I circulated the matrix to all stakeholders, held a 1-hour review, and incorporated two rebuttals (one on Cassandra's operational cost, one on DynamoDB's query limitations) with updated evidence."
+**R (20%):** "Decision reached in 6 days: DynamoDB for user activity (write-heavy, eventual consistency acceptable) + PostgreSQL for billing (strong consistency required, complex queries). The clear rationale reduced re-litigation — the decision held for 2 years. Infrastructure provisioning started on time."
+*Works for LP questions on: Are Right, A Lot, Have Backbone Disagree and Commit, Earn Trust.*
 
 ---
 

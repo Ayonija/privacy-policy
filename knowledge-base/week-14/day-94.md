@@ -191,7 +191,32 @@ Describe a situation where you identified a risk or technical debt that others w
 
 **Target LP:** *Are Right, A Lot* — make good judgment calls; don't just follow consensus.
 
-**Tip:** Be specific about the *evidence* you had. Vague "I noticed a potential issue" is weak. Strong: "Our error rate in this service was 0.3% and trending up — I modeled what that meant at 10× load and brought the projection to the team."
+**Full STAR Story — "Identifying Stock State Machine Tech Debt Before IPO Load":**
+**S (20%):** "At TradingCo, our portfolio P&L calculation used a naive O(n²) loop over all transactions per user per request. With 50K daily active users, average latency was 220ms — acceptable. But our IPO announcement expected 10× user growth within 3 months."
+**T:** "I identified this as a critical risk: at 500K users, modeling projected P99 latency at 2.2 seconds — 11× over our 200ms SLA."
+**A (60% — 'I' not 'we'):** "(1) I built a load model showing latency would breach SLA at 180K users — 9 weeks away. (2) I proposed replacing the loop with a state machine DP: track (holding, transactions_remaining) states, update in a single O(n) pass per user. (3) I implemented the DP as a shadow computation running in parallel with the old code for 2 weeks, comparing outputs on every request to verify correctness. (4) I flipped the traffic to the new DP with a feature flag and monitored p99 drop from 220ms to 11ms."
+**R (20%):** "P99 latency at 500K users was 18ms — 11× headroom above SLA. The shadow-mode validation approach was adopted by the team for all future migrations involving financial calculations."
+*Works for: Are Right A Lot, Insist on the Highest Standards, Think Big.*
+
+### STAR Interview Framework
+
+> **Stock state machine DP (k=2 transactions):** naive O(n²k) → hardcoded 4-state DP O(n) time, O(1) space
+
+**S:** "Stock prices array, at most 2 transactions. Naive: try all buy/sell pairs O(n²). Fails at scale."
+**T:** "Need O(n) by hardcoding 4 states (buy1, sell1, buy2, sell2) updated in order each day."
+**A (60%):**
+1. *Classify:* "Fixed-k transaction stock problem → hardcode k×2 states as scalar variables."
+2. *Init:* "buy1=buy2=-inf (haven't bought yet); sell1=sell2=0."
+3. *Loop/Recurrence:* "Each day: buy1=max(buy1,-p); sell1=max(sell1,buy1+p); buy2=max(buy2,sell1-p); sell2=max(sell2,buy2+p). Update in this order — sell2 depends on buy2 which depends on sell1."
+4. *Termination:* "Return sell2."
+5. *Gotcha:* "Update states in order within the same day loop — updating sell2 before buy2 would use today's buy2, which hasn't happened yet. Top-down order is crucial."
+**R:** "O(n) time, O(1) space. Generalizes to k transactions: arrays buy[k], sell[k] — O(nk) time, O(k) space."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Full 2D DP dp[day][trans][holding] | Need to reconstruct transaction days | Only max profit needed — scalar states are simpler |
+| Divide and conquer | LIS variant problems | Stock problems have dependency on prior state, not subarray split |
 
 ---
 

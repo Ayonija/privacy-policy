@@ -67,6 +67,36 @@ class Solution {
 - **LC 234 three-step blueprint:** (1) find middle — fast/slow, (2) reverse second half in-place — three-pointer reversal, (3) compare half by half until one hits null. State all three before coding.
 - **Common mistake:** in LC 234, after finding mid with fast/slow, `slow.next` is the start of the second half — but for even-length lists the "second half" must start at `slow.next` (not `slow`). Trace a 4-node example to confirm.
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Fast/Slow Pointers (Floyd's Algorithm) in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a linked list and asked to determine if it contains a cycle — and if so, find where the cycle begins. A brute-force approach using a HashSet of visited nodes is O(n) time but O(n) space. Floyd's algorithm achieves O(n) time and O(1) space."
+
+**Task:** "My goal was to detect a cycle and find its entry point using only two pointers — no extra storage — by exploiting the mathematical property that a fast pointer moving at 2x speed will meet a slow pointer inside any cycle."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "Cycle detection in a linked structure with O(1) space — fast/slow pointer. The trigger: 'does this traversal loop?' or 'find the midpoint without knowing the length.'"
+2. *Initialize:* "I set `slow = head, fast = head`. The guard is `while fast != null && fast.next != null` — both conditions required to prevent null pointer dereference on `fast.next.next`."
+3. *Core loop logic:* "Advance `slow` one step and `fast` two steps. If `slow == fast` (pointer equality, not value equality), a cycle exists."
+4. *Convergence guarantee:* "Once inside the cycle, `fast` gains exactly 1 position on `slow` per step. In at most `C` steps (cycle length), fast wraps around and meets slow. Outside a cycle, `fast` hits null in at most `n/2` steps."
+5. *Duplicate handling / edge case proactivity:* "For finding the cycle entry (LC 142): after the meeting point, reset `slow = head` and advance both one step at a time. They meet at the cycle entry. This relies on the mathematical property that `distance(head → entry) == distance(meeting_point → entry)`."
+
+**Result:** "Floyd's algorithm achieves O(n) time and O(1) space. The HashSet alternative is O(n) time and O(n) space — a 1000× space difference for a 10⁶-node list. The mathematical proof for cycle entry is worth stating: `F = nC - k` where F is the distance to the cycle entry and k is the meeting offset inside the cycle."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer Fast/Slow Pointers here |
+|-------------|---------------------------|-------------------------------|
+| HashSet of visited nodes O(n) space | When space is not constrained and readability matters | Fast/slow is O(1) space; HashSet is O(n); for large lists O(n) space is a meaningful cost |
+| Converting list to array and checking indices | When the list supports random access | Linked lists don't support random access; array conversion is O(n) space |
+
+**Why NOT HashSet:** O(n) space. For a 10⁶-node list, that's ~8MB just for the HashSet vs ~16 bytes for two pointers. Also, problem often explicitly requires O(1) space.
+**Why NOT array conversion:** Linked lists don't have O(1) random access; converting to array is O(n) space and doesn't solve the problem more simply than HashSet.
+
 ### Edge Cases to Trace Before Coding
 - LC 141: no cycle, single node → `fast` becomes null after 0 iterations; return false ✓
 - LC 141: tail points to head (full cycle) → fast catches slow after a few iterations ✓
@@ -86,8 +116,24 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Tell me about a time you found a hidden issue in a system that only revealed itself under cyclic or repeated conditions — analogous to Floyd's cycle detection finding a loop that a single linear scan misses.
-- Leadership principle: Dive Deep
+
+**Leadership Principle:** Dive Deep
+
+**STAR Story: Finding a Hidden Cyclic Dependency That Only Manifested Under Load**
+
+**Situation (20%):** "At my previous company, we had a microservices architecture where Service A called Service B, which under certain high-traffic conditions called Service C, which then called back to Service A — a circular dependency that our static dependency graph didn't capture because Service C's call to Service A was conditional. This only appeared under sustained load exceeding 5,000 RPS and caused cascading timeouts that took the entire checkout flow down for 22 minutes before we manually intervened."
+
+**Task (part of S/T):** "I was the on-call engineer who mitigated the incident and was then assigned to find the root cause and eliminate the circular call path. My goal was to identify all latent circular dependencies in our service graph — not just the one that caused the incident."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I instrumented our distributed tracing system to capture full call graphs, not just parent-child relationships — this required adding one line of context propagation middleware to 15 services over 2 days.
+Then, I wrote a cycle detection script that ran Floyd's algorithm on the captured call graphs — it treated each service as a node and each observed inter-service call as a directed edge. The algorithm ran over 30 days of sampled trace data.
+Next, the script identified 3 latent circular paths — only one of which had triggered the incident. I documented all three with call frequency and risk level, then presented to the service owners.
+Finally, I coordinated with the 3 affected service owners to add circuit breakers on the back-edges of each cycle, deployed within 1 week."
+
+**Result (10-20%):** "The checkout cascade failure has not recurred in 8 months since the circuit breakers were added. The cycle detection script found 2 additional circular paths that had not yet triggered incidents — preventing at least 2 future outages. The tracing instrumentation also reduced our average incident investigation time from 45 minutes to 12 minutes."
+
+**Interview tip:** Dive Deep rewards going beyond the immediate fix to find systemic root cause. "I wrote a script to detect all latent circular dependencies" is the deep action that earns credit. Prepare for: dive deep, ownership, problem-solving, or preventing future failures.
 
 ## Flashcards
 

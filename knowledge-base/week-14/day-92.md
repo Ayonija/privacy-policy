@@ -171,7 +171,32 @@ Describe a time you had to solve a problem that had no clear "right answer" — 
 
 **Target LP:** *Bias for Action* (Amazon) — making a reversible decision quickly under uncertainty.
 
-**Tip:** Frame the trade-off explicitly. Interviewers want to hear "I chose X over Y because of constraint Z, knowing the downside was W." Avoid "I just went with my gut."
+**Full STAR Story — "Read vs. Write Fan-out Trade-off for Group Chat":**
+**S (20%):** "At ChatCo, we were designing group messaging for groups up to 10,000 members. Write fan-out (copy to each inbox) vs. read fan-out (fetch on read) had no clear winner — each had merit depending on assumptions about group size distribution."
+**T:** "I needed to make and document a defensible architectural decision within one sprint, without a perfect data set on group size distribution."
+**A (60% — 'I' not 'we'):** "(1) I analyzed our closest existing data — average groups had 42 members, 95th percentile was 380 members, 99th percentile was 1,200 members. (2) I modeled write amplification: at 42 members and 10M messages/day, write fan-out cost was 420M Redis writes/day — affordable. At 1,200 members it became 12B writes/day — unsustainable. (3) I proposed a hybrid: write fan-out for groups ≤ 200 members, read fan-out with cursor-based polling for larger groups. (4) I made this a reversible decision by flagging the threshold in a feature flag rather than hardcoding it."
+**R (20%):** "Shipped the hybrid on schedule. The 200-member threshold handled 97% of groups with write fan-out (fast reads). Large groups gracefully used polling. Feature flag allowed threshold adjustment without a deploy 3 months later when data changed."
+*Works for: Bias for Action, Are Right A Lot, Think Big.*
+
+### STAR Interview Framework
+
+> **House Robber skip-or-take DP:** naive recursion O(2^n) → rolling variables O(n) time, O(1) space
+
+**S:** "Given houses with money, can't rob adjacent. Naive O(2^n) recursion recomputes every pair of adjacent skip/take decisions."
+**T:** "Need O(n) time, O(1) space by keeping only two rolling variables for the previous two best profits."
+**A (60%):**
+1. *Classify:* "Can't pick adjacent elements, maximize sum → House Robber skip-or-take DP."
+2. *Init:* "prev2=0, prev1=0 (empty prefix has 0 profit)."
+3. *Loop/Recurrence:* "For each num: prev2, prev1 = prev1, max(prev1, prev2 + num)."
+4. *Termination:* "Return prev1."
+5. *Gotcha:* "Circular variant (LC 213): run the recurrence twice — once excluding the first house, once excluding the last; take max. Forgetting either subarray gives wrong answer."
+**R:** "O(n) time, O(1) space. Tree variant: post-order DFS returning (rob_node, skip_node) pair — O(n) time, O(h) space."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Full O(n) DP array | Need to reconstruct the actual chosen houses | If only the max value is needed, rolling vars save space |
+| Greedy (take every other) | Uniform values | Non-uniform values break simple alternation greedy |
 
 ---
 

@@ -248,8 +248,34 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Walk through a system you built that used asynchronous messaging — describe the key architectural decisions, delivery guarantees chosen, and trade-offs accepted.
 - Leadership principle: Invent and Simplify
+
+**Full STAR Story — "Simplifying a 5-Queue Fanout Into One Kafka Topic":**
+**S (20%):** "At EventCo, our event processing system used 5 separate RabbitMQ queues for 5 different consumers — every schema change required 5 deployments, and debugging cross-consumer ordering issues took 4+ hours per incident."
+**T:** "I proposed and owned the migration to a single Kafka topic with consumer groups, targeting 80% reduction in operational complexity."
+**A (60% — 'I' not 'we'):** "(1) I built a decision matrix comparing Kafka vs. RabbitMQ on fan-out, replay, and throughput requirements — Kafka won on all three. (2) I migrated consumers one at a time using a dual-publish bridge that wrote to both systems during the transition, enabling rollback. (3) I used a single Kafka topic with 40 partitions and 5 independent consumer groups, replacing 5 separate queues with zero new infrastructure. (4) I implemented log retention for 7 days enabling replay — the first replay happened within 2 weeks of launch when a downstream indexer had a schema bug."
+**R (20%):** "Schema change deployments went from 5 sequential steps to 1. The indexer replay saved an estimated 3 days of manual re-indexing. Kafka decision matrix was adopted as the team's standard for all future messaging decisions."
+*Works for: Invent and Simplify, Think Big, Deliver Results.*
+
+### STAR Interview Framework
+
+> **Maximum Events min-heap greedy:** brute-force O(n² log n) → min-heap event selection O(n log n) time, O(n) space
+
+**S:** "Attend maximum events where each has a [start, end] day range and you can attend at most one per day. Naive greedy fails without correctly ordering by end day."
+**T:** "Need O(n log n) by sorting events by start day and using a min-heap keyed by end day to always attend the earliest-expiring available event."
+**A (60%):**
+1. *Classify:* "Maximize one-per-day event attendance → min-heap greedy by end day."
+2. *Init:* "Sort events by start day; min-heap of end days; iterate day from 1 to max_day."
+3. *Loop/Recurrence:* "Add all events starting today to heap. Remove expired (end < day). Pop earliest-ending event and attend it."
+4. *Termination:* "Total pops = answer."
+5. *Gotcha:* "Don't forget to remove expired events (end < day) before attending — leaving them in the heap causes incorrect attendance of already-ended events."
+**R:** "O(n log n) time, O(n) space. Greedy: earliest-ending choice leaves the most future days open — provably optimal by exchange argument."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Interval scheduling (sort by end) | One event total | We need one per DAY — different constraint |
+| DP on days | Small day range | Day range up to 10^5 makes O(n × days) TLE |
 
 ---
 

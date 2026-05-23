@@ -138,6 +138,28 @@ def buildMatrix(k, rowConditions, colConditions):
 
 ---
 
+### STAR Interview Framework
+
+> **Leaf-Peeling Topological Sort (Centroid Finding):** brute-force O(n²) try each root + measure height → this approach O(V) time, O(V) space
+
+**S:** "Given an undirected tree of n nodes, find the root(s) that minimise the tree's height. Brute-force tries all n roots: O(n²). For n=10⁵, that is 10^10 operations."
+**T:** "Need O(V) by iteratively removing leaves until the centroid(s) remain."
+**A (60%):**
+1. *Classify:* "'Find centroid of a tree' → leaf-peeling BFS (Kahn's on undirected tree)."
+2. *Init:* "Build adjacency as sets. Seed queue with all degree-1 nodes (leaves). `remaining = n`."
+3. *Loop/Step:* "Count current leaves; `remaining -= leaf_count`; for each leaf: remove from graph; if neighbour now has degree 1, add to queue."
+4. *Termination:* "Stop when `remaining ≤ 2` — the remaining 1 or 2 nodes are the centroids."
+5. *Gotcha:* "Handle `n == 1` separately — return `[0]` immediately; the single node is the centroid."
+**R:** "O(V) time, O(V) space. At most 2 centroids — always the middle node(s) of the longest path. For n=10⁵: 100K ops vs 10B ops."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Try all roots | Small trees (n < 100) | O(n²) — unacceptable for n=10⁵ |
+| Binary lifting / LCA | Need longest path endpoints first | More complex; O(n log n) |
+
+---
+
 ## System Design (1 hour)
 ### Topic: URL Shortener — Scaling, Read Replicas, and Caching Strategy
 
@@ -212,8 +234,14 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to scale a system from single-node to distributed — what was the inflection point that triggered the change?
 - Leadership principle: Invent and Simplify
+
+**Full STAR Story — "Scaling From Single-Node to Distributed":**
+**S (20%):** "At a SaaS analytics platform, our single PostgreSQL instance was the backbone for all write and read traffic. At 3,200 writes/second during a product launch spike, the instance hit 100% CPU — query latency jumped from 12ms to 8 seconds and the service degraded for 40 minutes."
+**T:** "I was asked to identify the scaling inflection point and implement a distributed write strategy before the next product event in 6 weeks."
+**A (60% — 'I' not 'we'):** "(1) I profiled the 8-second latency period and found that write-heavy analytics events (page views, clicks) were competing with OLTP reads on the same primary — a classic mixed-workload anti-pattern. (2) I separated the write stream by routing all analytics events to Kafka, consumed by a dedicated ClickHouse cluster — the OLTP primary only handled transactional reads and writes. (3) I added 3 PostgreSQL read replicas for reporting queries, removing 60% of read load from the primary. (4) I tuned the Kafka consumer to batch-insert into ClickHouse in 5-second micro-batches, giving sub-10-second analytical query latency."
+**R (20%):** "Primary PostgreSQL CPU during the next launch: 42% peak vs 100% before. P99 transactional latency: 12ms vs 8s. ClickHouse handled 14,000 analytics events/second with 3-second P95 query latency. Zero degradation during the launch."
+*Works for: Invent and Simplify, Think Big, Deliver Results.*
 
 ---
 

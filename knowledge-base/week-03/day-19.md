@@ -47,6 +47,49 @@ def next_larger_nodes(head):
     pass
 ```
 
+### Interview Tips
+
+- **Maximum Twin Sum — announce all three steps before coding:** "(1) Find mid with fast/slow. (2) Reverse second half from `slow`. (3) Walk two pointers from both ends, summing pairs, tracking maximum." State all three before writing any code.
+- **Delete Middle Node — use `fast = head.next` offset:** "Starting `fast` one step ahead of the usual position makes `slow` stop at the node BEFORE the middle, enabling deletion via `slow.next = slow.next.next`."
+- **Next Greater Node — store indices, not values:** "The result array needs to be filled at index `i`, so I store the index in the stack. If I stored values, I'd lose the mapping from element to position."
+- **Brute force for Next Greater Node:** O(n²) — for each element, scan right until a greater value is found. Monotonic stack reduces to O(n).
+
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Fast/Slow + Stack on Linked Lists in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a linked list of even length and asked to find the maximum twin sum — where twin pairs are the first and last nodes, second and second-to-last nodes, etc. Naively, I could convert the list to an array and use two pointers — O(n) time but O(n) space. The in-place approach achieves O(n) time and O(1) space by reversing the second half."
+
+**Task:** "My goal was to pair nodes from both ends of the list without extra storage, using fast/slow to find the midpoint, reversing the second half in-place, then summing pairs with two inward-moving pointers."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "Pair nodes from both ends of a list → find midpoint with fast/slow, reverse second half, two-pointer inward traversal. Trigger: 'symmetric pairs from a list.'"
+2. *Initialize:* "Fast/slow to find mid: `while fast and fast.next: slow = slow.next; fast = fast.next.next`. After the loop, `slow` is at the midpoint — start of the second half."
+3. *Core loop logic:* "Reverse from `slow` using the three-pointer template. Then set `left = head, right = prev` (head of reversed second half). While `right != null`: `maxSum = max(maxSum, left.val + right.val); left = left.next; right = right.next`."
+4. *Convergence guarantee:* "The loop runs exactly `n/2` times — one pass over each half. Total O(n)."
+5. *Duplicate handling / edge case proactivity:* "For even-length lists (guaranteed by the problem), fast/slow places `slow` at exactly the second of the two middle nodes — the correct start of the second half to reverse."
+
+**Result:** "O(n) time, O(1) space vs O(n) space for an array conversion. The three-step blueprint — find mid, reverse, two-pointer — is reusable for any 'symmetric traversal of a list' problem. Announcing all three steps before coding is the key communication move that earns credit."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer In-Place Reversal here |
+|-------------|---------------------------|-------------------------------|
+| Convert list to array, two pointers from ends | When space is not constrained | O(n) extra space; in-place is O(1) and is the pattern being tested |
+| Stack to reverse second half | When implementing reversal from scratch is error-prone | O(n/2) extra space for the stack; in-place reversal is O(1) |
+
+**Why NOT array:** O(n) extra space — problem almost always expects O(1) for this class of linked list problem.
+**Why NOT stack for reversal:** O(n/2) extra space — in-place three-pointer reversal uses O(1).
+
+### Edge Cases to Trace Before Coding
+- LC 2095 (Delete Middle): single node → no middle to delete; return null. Two nodes → delete second node
+- LC 1019 (Next Greater): all elements same → no element has a greater neighbor; result is all zeros
+- LC 2130 (Twin Sum): two-node list → single pair; answer is their sum ✓
+- LC 1019: monotonically decreasing → stack fills completely, nothing gets popped; result is all zeros
+
 ## System Design (1 hour)
 ### Topic: Scaling a Web Application — End-to-End Architecture
 - **Tier 1 — DNS + CDN:** route users to the nearest edge; static assets (JS, CSS, images) served from CDN, not the origin — reduces origin load by 80–90%.
@@ -59,8 +102,24 @@ def next_larger_nodes(head):
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Describe how you would architect a system that could handle a 100x traffic increase in 30 minutes — and what the bottlenecks would be at each stage.
-- Leadership principle: Think Big
+
+**Leadership Principle:** Think Big
+
+**STAR Story: Architecting for a Viral Traffic Event That Exceeded 100x Normal Load**
+
+**Situation (20%):** "At my previous company, we ran a product launch event that was expected to generate 5× our normal peak traffic. Instead, a high-profile influencer mentioned us 20 minutes before the launch, and traffic spiked to 130× normal in 8 minutes — from 500 RPS to 65,000 RPS. Our original architecture — a single auto-scaling group of app servers hitting a single primary PostgreSQL database — began dropping requests at 12,000 RPS. The product was effectively down for 22 minutes."
+
+**Task (part of S/T):** "I was the lead engineer on the post-mortem. My goal was to redesign the architecture so it could handle 200× normal traffic within 15 minutes of a spike, without pre-provisioning infrastructure."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I identified the bottleneck chain: CDN handled static assets fine, app servers scaled but overloaded the DB connection pool, and the DB became the single point of contention.
+Then, I designed a three-layer protection: (1) I added a Redis cache in front of the DB for all read-heavy product catalog queries — these accounted for 85% of DB traffic. (2) I configured read replicas and updated the app to route reads to replicas. (3) I moved the order-write path to an async queue (SQS), so writes were acknowledged immediately and processed at the DB's max throughput.
+Next, I load-tested the new architecture to 300× normal traffic in a staging environment and confirmed the DB query rate stayed within limits even under spike conditions.
+Finally, I implemented a chaos engineering exercise — intentionally spiked traffic at 3× expected capacity monthly to validate the system held."
+
+**Result (10-20%):** "In the next high-traffic event 3 months later (85× spike from a press mention), the system handled 95% of requests without degradation. The remaining 5% were gracefully degraded — the queue backed up but no requests were dropped. The post-mortem became a company reference document for scalability planning."
+
+**Interview tip:** Think Big rewards architectural thinking and proactive failure mode analysis. "I identified the bottleneck chain at each tier" and "I load-tested to 300×" show you thought beyond the immediate fix. Prepare for: think big, ownership, bias for action, or failure prevention.
 
 ## Flashcards
 

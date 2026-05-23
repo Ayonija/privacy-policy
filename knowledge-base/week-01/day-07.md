@@ -59,6 +59,36 @@ class Solution {
 - **Is Subsequence variant (follow-up for L5+):** "If there are millions of pattern strings to check against the same t, precompute for each position in t the next occurrence of each character — O(n·26) precompute, O(m) per query." State this proactively.
 - **Common mistake:** in Is Subsequence, checking `s` and `t` with two-pointer loops instead of the clean for-loop over `t` — both work but the for-loop is shorter and less error-prone.
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining the Dutch National Flag (Three-Pointer) pattern in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given an array containing only 0s, 1s, and 2s, and asked to sort it in-place in a single pass without using the built-in sort. A comparison-based sort achieves O(n log n); even a counting sort is O(n) but requires two passes. The Dutch National Flag algorithm does it in O(n) with a single pass and O(1) space."
+
+**Task:** "My goal was to sort the array in a single pass by maintaining three strict invariants: [0, low) contains only 0s, [low, mid) contains only 1s, [high+1, n) contains only 2s, and [mid, high] is unexplored. I partition in-place with three pointers."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "Three values, in-place partition, single pass → Dutch National Flag (three-pointer variant of two pointers). The trigger is 'partition into exactly k groups in-place.'"
+2. *Initialize:* "I set `low = 0`, `mid = 0`, `high = n-1`. The invariant holds trivially at start: all regions are empty."
+3. *Core loop logic:* "While `mid <= high`: if `nums[mid] == 0`, swap `nums[low]` and `nums[mid]`, then `low++; mid++`. If `nums[mid] == 1`, just `mid++`. If `nums[mid] == 2`, swap `nums[mid]` and `nums[high]`, then `high--` — CRITICALLY, do NOT increment `mid` here."
+4. *Convergence guarantee:* "Each iteration either advances `mid` or decreases `high`, so the unexplored region [mid, high] strictly shrinks. After at most n iterations, `mid > high` and the algorithm terminates."
+5. *Duplicate handling / edge case proactivity:* "The most common bug: incrementing `mid` after swapping with `high`. The value swapped from `high` is unknown — it could be 0, 1, or 2. `mid` must re-examine it. This is the critical invariant that most candidates miss."
+
+**Result:** "This achieves O(n) time and O(1) space in a single pass. Compare with `Arrays.sort()` which is O(n log n), or a counting sort which requires two passes. For n = 10⁵, sorting takes ~1.7M ops vs the flag algorithm's ~10⁵ ops. More importantly, the problem cannot be solved correctly in a single pass without the three-invariant reasoning."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer Dutch National Flag here |
+|-------------|---------------------------|-------------------------------|
+| `Arrays.sort()` / built-in sort | When in-place single-pass is not required | O(n log n) vs O(n); also disallowed by the problem statement |
+| Counting sort (two passes) | When values aren't restricted to {0,1,2} | Two passes vs one; Dutch Flag is strictly better when exactly 3 values are known |
+
+**Why NOT built-in sort:** O(n log n) and explicitly disallowed by "sort in a single pass" constraint. Also misses the DSA pattern the interviewer is testing.
+**Why NOT counting sort:** Counting sort is O(n) but requires two passes (count then rewrite). Dutch National Flag is O(n) in a single pass — strictly fewer operations, O(1) space.
+
 ### Edge Cases to Trace Before Coding
 - LC 75: all 0s → `low = mid = 0`, all swaps go to back of "0s region"; `high` never moves; correct ✓
 - LC 75: `[1, 0, 2]` → mid starts at 0 (value 1), mid++; mid at 1 (value 0), swap low↔mid, low++ mid++; mid at 2 > high, done ✓
@@ -78,8 +108,24 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to sort or organise a messy situation into clear categories quickly with limited resources — analogous to the Dutch National Flag in-place partition.
-- Leadership principle: Ownership
+
+**Leadership Principle:** Ownership
+
+**STAR Story: Triaging and Categorizing a 300-Bug Backlog Under Launch Pressure**
+
+**Situation (20%):** "Two weeks before a major product launch, our team inherited ownership of a legacy service with a backlog of 300 open bugs — a mix of P0 critical blockers, cosmetic issues, and everything in between. No one had triaged the backlog in 6 months and the team didn't know which bugs could kill the launch."
+
+**Task (part of S/T):** "I stepped up as the bug triage lead. My goal was to categorize all 300 bugs into three buckets — 'must fix before launch', 'fix post-launch', and 'close as won't fix' — in 3 days, so the team could focus on blockers immediately."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I defined the three criteria upfront: P0 = data corruption or crash in a critical user path; P1 = degraded experience affecting ≥ 10% of users; P2 = cosmetic or edge case. This was my 'three-pointer invariant' — every bug would land in exactly one bucket.
+Then, I ran through all 300 bugs in one day using a timelimited review: 3 minutes per bug, classify immediately and move on. I did not deep-dive any individual bug during triage — I flagged ambiguous cases for a 30-minute group review session.
+Next, I called the group review with 3 engineers for the 40 ambiguous cases, and we resolved all of them in 90 minutes using the defined criteria.
+Finally, I updated the bug tracker with all categorizations, notified the team of the 28 P0 blockers, and assigned owners to each P0 with a due date of T-7 days."
+
+**Result (10-20%):** "All 28 P0 blockers were fixed before launch. We closed 180 bugs as 'won't fix' with documented rationale, and scheduled 92 as post-launch work. The launch went smoothly — zero P0 bugs reported in the first 48 hours. Leadership recognized the triage as a model for how to handle inherited technical debt, and the process was adopted by two other teams preparing for their own launches."
+
+**Interview tip:** Show that you took ownership without being asked, defined clear criteria before starting, and moved quickly without perfect information. Prepare for: ownership, bias for action, insisting on the highest standards, or delivering results.
 
 ## Flashcards
 

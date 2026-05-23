@@ -197,15 +197,34 @@ class Solution {
 **STAR prompt:**  
 Tell me about a time you had to learn a new technical concept under deadline pressure. How did you build understanding quickly, and what would you do differently?
 
-**Target structure:**
-- **Situation:** Context — what was the concept, why was it urgent?
-- **Task:** What did you need to produce with that knowledge?
-- **Action:** How did you learn (docs, mentors, prototyping)? What shortcuts did you take consciously?
-- **Result:** What did you ship, and how solid was your understanding afterward?
-
 **Leadership principle:** *Learn and Be Curious* (Amazon) | *"You are not done learning" mindset* (Google)
 
-**Tip:** The trap is making this story only about learning. The interviewer wants to see how you *applied incomplete knowledge* under pressure — that's the judgment call.
+**Full STAR Story — "Learning Kafka Transactions in 72 Hours to Fix a P0":**
+**S (20%):** "At DataCo, a P0 was filed when our payment audit log had 23 duplicate entries in 48 hours — caused by exactly-once semantics not being configured. I had never used Kafka transactions before."
+**T:** "I needed to implement Kafka transactional producers and read-committed consumers to eliminate duplicates within 72 hours."
+**A (60% — 'I' not 'we'):** "(1) I spent 4 hours reading the Kafka documentation on transactional IDs, PIDs, and isolation levels, building a mental model by tracing the two-phase commit flow. (2) I prototyped a minimal transactional producer in a sandboxed environment and verified idempotency by intentionally crashing mid-transaction. (3) I deployed the fix with isolation.level=read_committed on consumers, verified with a 100K-event replay test that produced zero duplicates. (4) I wrote a design document explaining the trade-off I accepted: 2× write latency for exactly-once vs. at-least-once with DB dedup."
+**R (20%):** "Zero duplicate entries in the following 6 weeks. Design document became the team's reference for future messaging decisions. My understanding of Kafka internals deepened enough that I led the next two Kafka architecture reviews."
+*Works for: Learn and Be Curious, Insist on the Highest Standards, Deliver Results.*
+
+### STAR Interview Framework
+
+> **1D DP Fibonacci / State Machine:** naive recursion O(2^n) → rolling variables O(n) time, O(1) space
+
+**S:** "Given a sequence problem where each state depends on the prior 1–3 states. Naive recursion recomputes overlapping subproblems, hitting O(2^n)."
+**T:** "Need O(n) time and O(1) space by rolling only the last k computed values."
+**A (60%):**
+1. *Classify:* "Each position depends on fixed prior positions → 1D DP Fibonacci window."
+2. *Init:* "Bootstrap dp[0], dp[1] from base cases; use two variables prev2, prev1."
+3. *Loop/Recurrence:* "Each step: temp = prev1 + prev2 (or state transition); prev2=prev1; prev1=temp."
+4. *Termination:* "Return prev1 after n-1 iterations."
+5. *Gotcha:* "State machine problems (Decode Ways II, Stock trading) have multiple interleaved streams — keep them separate; merging them prematurely produces wrong transitions."
+**R:** "O(n) time, O(1) space. Decode Ways II: two streams e1 (literal) and s1 (wildcard) processed in lock-step — 6-state machine for Attendance Record II reduces to O(1) space too."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Top-down memoization | Irregular access patterns, sparse states | Sequential access → bottom-up is cleaner and avoids call stack overhead |
+| Matrix exponentiation | Very large n (10^18) | Overkill for n ≤ 10^5; rolling vars suffice |
 
 ---
 

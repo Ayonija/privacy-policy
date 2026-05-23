@@ -123,6 +123,39 @@ class MedianFinder:
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Kth Largest / Frequency Sort / Two-Heap Running Median in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given problems requiring efficient rank queries on dynamic data: finding the Kth largest element in an unsorted array, sorting by character frequency, and computing running medians as numbers arrive one at a time. The brute-force of sorting on each query gives O(n log n) per operation, which is too slow for a streaming system receiving thousands of events per second."
+
+**Task:** "My goal was to solve the Kth largest in O(n log K) using a min-heap, achieve the two-heap median in O(log n) add and O(1) query, and recognize when QuickSelect achieves the optimal O(n) average."
+
+**Action:** Walk the interviewer through these steps:
+1. *Classify the pattern:* "Kth largest in a static array → QuickSelect (O(n) average) or min-heap of size K. Streaming Kth largest → min-heap of size K is necessary since data arrives incrementally. Running median → two heaps (max-heap `lo` for the lower half, min-heap `hi` for the upper half)."
+2. *Initialize:* "For two-heap median: initialize both heaps empty. Invariant: `max(lo) ≤ min(hi)` and `len(lo) == len(hi)` or `len(lo) == len(hi) + 1`."
+3. *Core loop logic:* "For addNum: always push to `lo` first (negated for Python's min-heap), then push `−heappop(lo)` to `hi` to enforce the ordering invariant. Then rebalance sizes: if `len(hi) > len(lo)`, move `hi`'s min back to `lo`."
+4. *Convergence guarantee:* "The two-step add (push to lo, then rebalance to hi, then rebalance sizes) maintains both invariants simultaneously. Median is O(1): if sizes equal → average of tops; else → top of `lo`."
+5. *Duplicate handling / edge case proactivity:* "For QuickSelect with many duplicates, naive partitioning degrades to O(n²). I use three-way (Dutch National Flag) partitioning into `<pivot`, `==pivot`, `>pivot` sections, then check if the target index falls in the `==` section — avoiding O(n²) on arrays like [1,1,1,1,1]."
+
+**Result:** "Two-heap median gives O(log n) addNum and O(1) findMedian — for a stream of 10^6 numbers, that's 10^6 × log(10^6) ≈ 20M operations for all insertions vs. 10^6 × 10^6 = 10^12 operations for naive re-sorting each time. QuickSelect for a one-time Kth query saves the constant overhead of heap maintenance when n is known upfront."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer heap/quickselect here |
+|-------------|---------------------------|----------------------------------|
+| Sort entire array | n ≤ 10^4 and one-time query | O(n log n) is fine; no overhead from heap management |
+| Order statistics tree (AVL/Red-Black) | Need Kth element AND rank insertions/deletions | O(log n) all ops; heaps don't support arbitrary deletion |
+| Reservoir sampling | Approximate Kth from infinite stream | Only approximate; two-heap gives exact O(1) median |
+
+**Why NOT order statistics tree for median:** Requires a complex balanced BST with rank augmentation; two heaps achieve the same O(log n) add and O(1) query with simpler code.
+**Why NOT sort for running median:** O(n log n) per insertion vs O(log n) with two heaps — at 10^6 insertions, the difference is catastrophic.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 215: k = 1 → return the maximum; k = len(nums) → return the minimum; all elements equal → return that element; n = 1 → return nums[0]
 - LC 451: all characters same → one block; characters with same frequency → any valid order (heapq may produce different tie-breaks; both are correct)
@@ -214,8 +247,24 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to handle a high-volume event (a spike, a viral moment) — how did you prevent it from overwhelming your system?
-- Leadership principle: Bias for Action
+
+**Leadership Principle:** Bias for Action
+
+**STAR Story: Building a Real-Time Anomaly Detector Using a Two-Heap Running Median**
+
+**Situation (20%):** "At my previous company, our infrastructure monitoring system computed the median response latency over a sliding 1-hour window by storing all requests in memory and re-computing the median every minute. During a traffic spike — a viral social media mention of our product — request volume jumped 40× and the monitoring service itself crashed due to memory exhaustion, leaving us blind exactly when we needed observability most."
+
+**Task (part of S/T):** "I was asked to redesign the anomaly detection component to handle arbitrarily large traffic volumes without storing all data in memory, while keeping the median computation fresh and accurate."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I identified that the root problem was not the spike itself but the O(n) memory footprint of storing every request timestamp. A running median only needs to track the distribution boundary, not all data points.
+Then, I replaced the in-memory array with a two-heap data structure: a max-heap for the lower half of latencies and a min-heap for the upper half. I implemented the strict invariant that the max-heap can hold at most one more element than the min-heap.
+Next, I tested the implementation against replayed production traffic showing the 40× spike, verifying that memory usage stayed at O(1) constant (just two heap tops) regardless of request rate.
+Finally, I added a configurable alert threshold: if the running median exceeded 2× the rolling 24-hour baseline, fire an alert — which the previous system couldn't do efficiently at high volume."
+
+**Result (10-20%):** "Memory usage for the anomaly detector dropped from 8GB at peak load to under 50MB — a 99.4% reduction. The service remained operational during the next traffic spike (a 35× increase 6 weeks later), and the two-heap median flagged a latency regression within 90 seconds that would have taken 15 minutes to surface via our previous dashboard. The on-call team credited the early detection with preventing a full service outage."
+
+**Interview tip:** Interviewers want to hear about *your* contribution. Say "I identified", "I replaced", "I implemented" — not "we did". Prepare this story for questions about: Bias for Action, preventing failure, scaling systems, and handling ambiguity.
 
 ---
 

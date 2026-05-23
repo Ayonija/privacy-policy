@@ -161,6 +161,49 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **BFS on Implicit State Space + Bitmask State Encoding:** brute-force O(m × n × k!) → this approach O(m × n × 2^k) time, O(m × n × 2^k) space
+
+**S:** "Given a maze with k keys and k locks (k ≤ 6), navigate from start '@' to collect all keys. Naive path enumeration O(m × n × k!) exceeds time limits at grid size 30×30 with 6 keys."
+**T:** "Need O(m × n × 2^k) by encoding collected keys as a bitmask in the BFS state."
+**A (60% of answer time):**
+1. *Classify:* "Collecting items with unlock conditions on a grid — classic bitmask BFS signal: finite item set (k ≤ 6), each item changes future valid moves."
+2. *Init:* "State = (row, col, keys_bitmask); visited = Set of these triples; queue starts at ('@', 0); allKeys = (1 << k) - 1."
+3. *Loop/Step:* "For each (r, c, keys): expand 4 neighbours; skip walls '#'; skip locked doors if corresponding key bit not set; OR in new key bits on collection; return steps if keys == allKeys."
+4. *Termination:* "BFS guarantees shortest path; finite state space m × n × 2^k ensures termination."
+5. *Gotcha:* "Visited must track (r, c, keys_bitmask) not just (r, c) — the same cell is validly re-visited with a larger key set. Forgetting bitmask in the visited key causes TLE or incorrect pruning."
+**R:** "O(m × n × 2^k) time, O(m × n × 2^k) space. At k=6, m=n=30: ~57,600 states vs 30! factorial explosion — tractable in < 1ms vs effectively infinite brute force."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Pure BFS (no bitmask) | No locks or dependencies between items | Ignores key/lock ordering; produces wrong paths through locked doors |
+| DFS + backtracking | Small grids, enumerate all paths | Exponential in path length; doesn't guarantee shortest path |
+| Dijkstra with state | Edge weights vary | All moves cost 1; BFS is O(V+E) vs Dijkstra's O((V+E) log V) overhead |
+
+---
+
+> **BFS on Board with Teleporters (Boustrophedon):** brute-force O(n² × 6^(n²)) → this approach O(n²) time, O(n²) space
+
+**S:** "Given an n×n board with snakes and ladders encoded in zigzag numbering. Naive try-all-dice-sequences is O(6^(n²)) — infeasible for n=20."
+**T:** "Need O(n²) by treating board as a graph and BFS on cell numbers — guaranteed shortest path in fewest dice rolls."
+**A (60% of answer time):**
+1. *Classify:* "Minimum moves on a board with teleporters — BFS on state (cell number), not grid coordinates."
+2. *Init:* "visited = Set{1}; queue = [(cell=1, moves=0)]; goal = n×n."
+3. *Loop/Step:* "For each cell: try rolls 1–6; convert next cell number to (row, col) via boustrophedon formula; if board[row][col] != -1, follow the snake/ladder; enqueue if unvisited."
+4. *Termination:* "At most n² cells; each visited once; BFS terminates and returns minimum rolls."
+5. *Gotcha:* "Boustrophedon row direction: even rows (from bottom) go left-to-right, odd rows right-to-left. Grid row 0 is the top, but board row 0 is the bottom — double flip needed. Off-by-one here produces wrong cells and fails silently."
+**R:** "O(n²) time, O(n²) space. n=20 board: 400 states vs millions of dice-roll paths."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| DFS | Finding any path, not shortest | BFS guarantees minimum dice rolls; DFS may find longer paths first |
+| Dijkstra | Varying edge weights | All dice rolls cost 1 move; BFS is simpler and O(n²) |
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 1197: x=0, y=0 → return 0; x=1, y=1 → cannot be reached in 1 move; requires at least 2 moves (classic tricky case)
 - LC 909: no snakes or ladders → pure BFS dice roll; starting cell has a ladder → resolve immediately; cell n² is the goal, don't enqueue it, return moves+1
@@ -228,8 +271,12 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you designed a system that needed to balance availability and consistency — what was the failure mode you were protecting against?
-- Leadership principle: Dive Deep
+**Full STAR Story — "Bitmask State BFS: Eliminating Combinatorial Lock-Dependency Bugs":**
+**S (20%):** "At a fintech platform, our payment-routing service processed transactions through a pipeline of 5 approval stages (KYC, fraud, AML, limit-check, FX). State management was ad-hoc — engineers manually tracked which checks had passed per transaction, causing 3 production incidents in 6 months where transactions were approved with missing stages."
+**T:** "I was tasked with redesigning the state-tracking layer to guarantee every transaction passed every required stage before approval — measurable goal: zero approval-with-missing-stage incidents."
+**A (60% — 'I' not 'we'):** "(1) I modelled each approval stage as a bitmask bit, reducing the 5-stage combination space from 5! orderings to 2^5 = 32 deterministic states. (2) I refactored the state store to persist a single bitmask per transaction, where each stage atomically ORed in its bit on completion. (3) I added a pre-approval guard: `if (bitmask != ALL_STAGES_MASK) reject()` — one line eliminating the class of bugs. (4) I validated correctness by replaying 90 days of historical transactions through the new state machine and confirmed zero false approvals."
+**R (20%):** "Approval-with-missing-stage incidents dropped from 3 in 6 months to zero over the following year. Transaction processing throughput increased 15% because the guard short-circuited unnecessary DB queries. The bitmask pattern was later adopted across 4 other pipeline services."
+*Works for LP questions on: Dive Deep, Insist on the Highest Standards, Earn Trust.*
 
 ---
 
