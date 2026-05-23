@@ -130,6 +130,38 @@ def getSkyline(buildings):
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Greedy Sorted Counter / Two-Pointer Camelcase / Max-Heap Lazy-Deletion Skyline in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was working on three synthesis problems that each require a different algorithmic lens: Hand of Straights (greedy consumption of a sorted multiset), Camelcase Matching (two-pointer subsequence checking against a pattern), and The Skyline Problem (event-sweep with a max-heap under lazy deletion). The naive approaches — trying all group assignments, checking all character combinations, and rebuilding the height profile from scratch at each x-coordinate — each run in O(n²) or worse."
+
+**Task:** "My goal was to reduce each to O(n log n) by identifying the dominant structural insight: greedy smallest-first consumption for grouped sequences, two-pointer invariant for pattern validation, and event-sweep with lazy deletion for geometric height queries."
+
+**Action:** Walk the interviewer through these steps:
+1. *Classify the pattern:* "Hand of Straights → sorted counter, consume from smallest. Camelcase → pointer on pattern, scan query left to right. Skyline → events sorted by x; start events push height, end events lazy-delete; record critical point when max changes."
+2. *Set up state:* "Hand: `Counter(hand)`, iterate `sorted(count)`. Camelcase: pointer `p` on pattern, scan each query char. Skyline: event list `(x, -h)` for start, `(x, +h)` for end; `heap = [0]` with sentinel ground level."
+3. *Core loop:* "Hand: for each card value v, consume `count[v]` groups of consecutive cards starting at v — decrement `count[v], count[v+1], ... count[v+groupSize-1]`. Camelcase: if `q == pattern[p]` → advance both; if `q` is lowercase → advance q only; uppercase mismatch → False. Skyline: start → `heappush(heap, -h)`; end → `removed[h] += 1`; lazy-clean top while marked; if max changed → record `[x, curr_max]`."
+4. *Correctness argument:* "Hand: consuming from the smallest card ensures we always complete groups before moving to larger values — any group left incomplete by a smaller card can't be fixed later. Skyline: lazy deletion is correct because we only need the current max — we can skip deleted elements by cleaning the heap top on each query."
+5. *Complexity analysis:* "Hand: O(n log n) sort + O(n × groupSize) = O(n log n) overall. Camelcase: O(Q × L_query) per query set. Skyline: O(n log n) for event sort and heap operations — 2n events, each pushed and popped once."
+
+**Result:** "Hand of Straights: O(n log n) vs O(n × groupSize × n) brute force — for n = 10^5 cards and groupSize = 5, that's 5 × 10^5 vs 5 × 10^10. Camelcase: O(L) per query vs O(2^L) exhaustive insertion enumeration. Skyline: O(n log n) vs O(n²) recomputing the max height profile at every x-coordinate — for n = 10^4 buildings, that's 10^4 × log(10^4) ≈ 1.4 × 10^5 vs 10^8 operations."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer this approach |
+|-------------|---------------------------|--------------------------|
+| Try all groupings for Hand of Straights | n ≤ 20 | O(n!) — infeasible for n ≥ 30; sorted counter is O(n log n) always |
+| Regex or DP for Camelcase | Rich wildcard matching | Two-pointer is O(L) per query and exactly models the problem; regex adds overhead |
+| Segment tree for Skyline | Updates needed after construction | Static events: event sweep is simpler and O(n log n); segment tree is O(n log n) with higher constant |
+
+**Why NOT brute force for Skyline:** Recomputing max height at every x-coordinate requires O(n) scan for each of the O(n) x-values → O(n²). For n = 10^4 buildings, that's 10^8 operations — will time out on LeetCode.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 846: `groupSize = 1` → always True; hand size not divisible by groupSize → False immediately; cards form groups but not from smallest → sorted approach handles naturally
 - LC 1023: pattern is empty → all queries match (all chars are "insertions"); query shorter than pattern → impossible (can't insert to get extra pattern chars); all uppercase pattern → query must match exactly
@@ -215,8 +247,28 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Walk through a system you built or improved that had to serve personalised content at massive scale — describe the key architectural decisions.
-- Leadership principle: Think Big
+
+**Leadership Principle:** Think Big
+
+**STAR Story: Designing a Platform-Wide Personalisation Architecture That Scaled Across Product Lines**
+
+**Situation:** At my previous company, we had three separate product lines — a developer documentation portal, a marketplace, and an internal tools hub — each with their own isolated content recommendation systems built independently by different teams. None of them shared infrastructure. The documentation portal had a basic TF-IDF similarity engine. The marketplace had a collaborative filtering engine. The internal hub had no recommendations at all. Our CTO challenged us to think bigger: instead of optimising three independent systems, could we build a single personalisation platform that served all three — and any future product — without rebuilding recommendation logic from scratch each time?
+
+**Task:** I led the design of a unified personalisation service: a centralized recommendation API that any product could query with a user ID and context, and receive a ranked list of items. The goal was to go from three siloed systems to one extensible platform within a quarter, and to demonstrate value by improving content engagement across all three products by at least 25%.
+
+**Action:**
+
+*First,* I mapped the common structure across all three recommendation use cases. Despite different domains — articles, marketplace listings, internal tools — the core problem was identical: given a user's interaction history and a candidate item pool, rank candidates by predicted relevance. I abstracted this into a three-layer architecture: (1) a Feature Store (shared user and item embeddings), (2) a Retrieval Layer (approximate nearest neighbour search using FAISS), and (3) a Ranking Layer (a lightweight gradient boosted model scoring retrieved candidates).
+
+*Then,* I drove the decision to use a shared Feature Store backed by Redis and S3. User embeddings (learned from interaction sequences using a simple matrix factorization model) and item embeddings (computed from content features + collaborative signals) were stored centrally. Every product's recommendation engine read from the same store — so a user's interactions on the marketplace also enriched their documentation recommendations, and vice versa.
+
+*Next,* I designed the retrieval-ranking separation deliberately. The FAISS index retrieved the top-200 candidates in under 5ms per query. The ranking model (XGBoost, retrained nightly) scored the 200 candidates using user-item features and output a top-10 list. This two-stage design meant any product team could plug into the retrieval layer and swap their own ranking model — without touching shared infrastructure.
+
+*Finally,* I coordinated the rollout across three teams simultaneously. I ran A/B tests on each product independently — 20% of users saw the new unified recommendations, 80% saw the existing system. I defined shared success metrics (CTR on recommendations, session depth, bounce rate) and agreed on them with all three product teams before launch to avoid post-hoc metric debates.
+
+**Result:** After 8 weeks, all three products showed improvements: documentation CTR on recommendations increased from 11% to 26% (136% improvement), marketplace "related listings" click-through increased from 4% to 7% (75% improvement), and internal hub recommendations had no prior baseline (first ever recommendations — 19% CTR from day one). Cross-product signal sharing — the key "think big" bet — contributed approximately 15% of the documentation improvement through marketplace signals enriching documentation embeddings. Engineering cost: we decommissioned two independent systems, reducing recommendation infrastructure maintenance from 3 separate codebases to 1, saving approximately 8 engineer-weeks per quarter.
+
+*In an interview, say:* "I'd frame it this way: the narrow ask was 'improve recommendations on the documentation site.' The bigger opportunity was to build something that would serve every product we'd ever build. The cross-product signal sharing was the bet — and it paid off. That's what Think Big looks like to me: solving the category of problem, not just the instance." Use this for "Tell me about a time you thought bigger than your immediate assignment," "Tell me about a platform or system you architected," or "Tell me about a time you created leverage across multiple teams."
 
 ---
 

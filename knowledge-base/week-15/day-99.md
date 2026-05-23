@@ -200,7 +200,32 @@ Tell me about a time you had to work with a difficult team member or stakeholder
 
 **Target LP:** *Earn Trust* (Amazon) — build trust through transparency, follow-through, and good intent.
 
-**Tip:** Don't make the other person the villain. The strongest answers focus on what *you* did to improve the dynamic, not on cataloging the other person's faults.
+**Full STAR Story — "Rebuilding Trust After a Deployment Disagreement":**
+**S (20%):** "At CloudCo, I had shipped a routing optimization that a senior engineer publicly criticized in a code review as 'unnecessarily complex' — referring to my dual-state DP logic. The disagreement became personal and our collaboration deteriorated over two weeks."
+**T:** "I needed to repair the working relationship without conceding correctness if I believed I was right, and without escalating to management."
+**A (60% — 'I' not 'we'):** "(1) I requested a 1:1 with the senior engineer and started by acknowledging that I had not explained my design reasoning well in the PR description — that was genuinely my failure. (2) I walked through the dual-state DP approach using a concrete example, asking for their feedback on each step rather than defending my solution. (3) I discovered they objected to the added maintenance burden, not the correctness — so I offered to add a detailed comment block explaining the invariant. (4) I asked them to review the next PR I submitted and incorporated their feedback before marking it ready."
+**R (20%):** "Code review was approved with the added comments. Over the following month, the senior engineer began proactively sharing algorithm problems with me for discussion. Our collaboration quality significantly improved and we co-authored a technical design document two months later."
+*Works for: Earn Trust, Ownership, Are Right A Lot.*
+
+### STAR Interview Framework
+
+> **Strange Printer interval DP:** naive O(n^4) → interval DP O(n³) time, O(n²) space
+
+**S:** "Printer prints one character at a time in a run. Given string s, find minimum turns. Naive: try all print orderings → infeasible."
+**T:** "Need O(n³) interval DP where dp[i][j] = min turns to print s[i..j], using 'last print covers s[j]' as the choice variable."
+**A (60%):**
+1. *Classify:* "Minimum cost to cover a string interval with overlapping strokes → interval DP."
+2. *Init:* "dp[i][i]=1 for all i (single char = 1 turn)."
+3. *Loop/Recurrence:* "For length 2..n: dp[i][j]=dp[i][j-1]+1 (baseline). For k in [i,j-1]: if s[k]==s[j]: dp[i][j]=min(dp[i][j], dp[i][k]+dp[k+1][j-1])."
+4. *Termination:* "Return dp[0][n-1]."
+5. *Gotcha:* "When s[k]==s[j], the cost is dp[i][k] + dp[k+1][j-1] (NOT dp[k][j-1]). The stroke covering s[j] starts AT k, so s[i..k] and the middle s[k+1..j-1] are the two subproblems."
+**R:** "O(n³) time, O(n²) space. Key intuition: same character at positions k and j can be covered by one print stroke — the 'middle' is overprinted separately."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Greedy (print most common char first) | No interaction between runs | Characters interact — same char at two positions shares a stroke |
+| BFS on string states | Very short strings | State space is exponential; interval DP is polynomial |
 
 ---
 

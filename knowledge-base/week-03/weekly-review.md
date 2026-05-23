@@ -98,3 +98,24 @@ All 35 cards for Days 15–21:
 | Date | Platform | Score / Result | Key mistake | Fixed? |
 |------|----------|---------------|-------------|--------|
 | — | — | — | — | — |
+
+---
+
+## STAR Quick Reference — Week 3
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| Two Dummy Heads (Partition List) | "Given a partition-around-value requirement, maintained two sub-lists with dummy heads → O(n) no node copies, null-termination is the critical gotcha." |
+| Rotation via Circular Stitch | "Given rotate-by-k, computed effective rotation, stitched into a ring then re-severed → O(n) single traversal vs O(k·n) naive shift." |
+| Intersection (Equidistance Trick) | "Given two lists of unknown lengths, switched each pointer to the other list's head → both travel same total distance, meeting at intersection in O(m+n)." |
+| Reorder List (Fast/Slow + Reverse + Interleave) | "Given reorder requirement, split at midpoint, reversed second half, interleaved → O(n) time, O(1) space vs O(n) array copy." |
+| k-Group Reversal + Recursive Stitch | "Given reverse-in-k-groups, reversed each group then recursively stitched → O(n) total, handles partial tail group correctly." |
+| Three-Pass Deep Copy (Random Pointer) | "Given deep copy with random pointers, interleaved clone nodes → O(1) lookup without a HashMap." |
+| Stack Bracket Matching | "Given balanced-parentheses check, pushed/popped matching pairs → O(n) vs O(n²) naive nesting scan." |
+| Stack Expression Evaluation (RPN) | "Given Reverse Polish Notation, pushed operands and applied operators on pop → O(n) stack-based evaluation." |
+| Stack Nested Decode | "Given multiply-encoded string, pushed state on '[' and restored on ']' → O(n) vs O(depth·n) recursive expand." |
+
+**Career story titles:**
+1. "Equidistance Trick — found a common ancestor node in two dependency graphs without extra memory by switching traversal targets."
+2. "k-Group Reversal — reversed fixed-size chunks of a processing pipeline in-place, saving O(n) memory vs buffering to an array."
+3. "Stack Nested Decode — parsed arbitrarily nested configuration strings in O(n) single pass, eliminating a regex-based O(depth·n) solution."

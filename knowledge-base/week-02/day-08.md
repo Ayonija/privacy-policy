@@ -78,6 +78,36 @@ class Solution {
 - **Brute force for 4Sum:** O(n⁴) checking all quadruples → sorting + two nested loops + two pointers = O(n³). Always ask the interviewer for expected n to know if O(n³) is acceptable.
 - **Common mistake:** in Move Zeroes, swapping every non-zero with the slow-pointer position when you could just overwrite non-zeros left-to-right and fill zeros at the end — both O(n) but fewer writes.
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Two Pointers — 4Sum & Interval Intersection in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given two sorted interval lists and asked to find all their intersecting intervals. A brute-force approach of comparing every interval from list A against every interval from list B is O(m×n) — for m = n = 10⁴ that's 10⁸ comparisons, borderline but still too slow and unnecessary given the sorted order."
+
+**Task:** "My goal was to solve this in O(m+n) by recognising that two sorted interval lists can be scanned with two pointers — we advance the pointer whose interval ends sooner, since it can no longer intersect with anything ahead in the other list."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "Two sorted input sequences, pairwise comparison — two-pointer on two arrays. The advance rule is: move the pointer with the smaller end value."
+2. *Initialize:* "I set `i = 0, j = 0`. At each step, I compute the potential intersection: `lo = max(A[i][0], B[j][0])` and `hi = min(A[i][1], B[j][1])`."
+3. *Core loop logic:* "If `lo <= hi`, the intervals overlap — record `[lo, hi]`. Then advance the pointer whose interval ends sooner: if `A[i][1] < B[j][1]`, increment `i`; otherwise increment `j`."
+4. *Convergence guarantee:* "Each step advances at least one pointer. At most m+n total advances — O(m+n). We correctly skip intervals that cannot produce any future intersections."
+5. *Duplicate handling / edge case proactivity:* "Intervals touching at a single point — `[1,2]` and `[2,3]` — produce `lo=2, hi=2`. Since `lo <= hi`, this is a valid intersection `[2,2]`. Mention this upfront."
+
+**Result:** "This reduces the time complexity from O(m×n) to O(m+n). For m = n = 10⁴, that's 10⁸ vs 2×10⁴ operations. The advance rule — move the interval that ends sooner — is the key insight, because a finished interval cannot intersect anything further right."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer Two Pointers here |
+|-------------|---------------------------|-------------------------------|
+| Brute force O(m×n) | When both lists are very short (m,n ≤ 50) | Two pointers is O(m+n); brute force becomes impractical at 10⁴ each |
+| Sort both lists then merge | When input lists are NOT sorted | If already sorted (as given), sorting would add O(n log n) unnecessarily; two pointers exploits existing sort |
+
+**Why NOT brute force:** O(m×n) = 10⁸ for m=n=10⁴ — borderline or guaranteed timeout.
+**Why NOT re-sorting:** The input is already sorted; re-sorting adds O(n log n) cost for no benefit.
+
 ### Edge Cases to Trace Before Coding
 - LC 18 (4Sum): fewer than 4 elements → return `[]`; all same element (e.g., `[0,0,0,0]`, target=0) → one result `[[0,0,0,0]]`
 - LC 18: target is very large or negative → sorting handles negative numbers correctly
@@ -97,8 +127,24 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Tell me about a time you had to coordinate between two independent streams of work (two teams, two systems) and find points of overlap or conflict — mirroring interval list intersection.
-- Leadership principle: Earn Trust
+
+**Leadership Principle:** Earn Trust
+
+**STAR Story: Finding Overlap Between Two Teams' Independent Release Timelines**
+
+**Situation (20%):** "Two independent engineering teams at my company — the payments team and the fraud detection team — were both planning major infrastructure migrations scheduled 6 weeks apart. Neither team had consulted the other, and I discovered through a routine architecture review that the migrations had a critical shared dependency: they both required downtime on the same database cluster at overlapping windows."
+
+**Task (part of S/T):** "I was the platform architect on call. My goal was to surface the conflict, mediate between both teams, and find a resolution that let both migrations proceed without either team losing more than 1 additional week of schedule."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I mapped out both teams' maintenance window requests and identified the exact overlap — 3 hours on a Saturday morning where both migrations required exclusive write access to the cluster.
+Then, I arranged a joint meeting with both tech leads and presented my findings with a concrete timeline diagram. I framed it as 'here's what I found and here are three options' rather than assigning blame.
+Next, I proposed the three options: (1) sequence the migrations with a 1-week gap, (2) restructure the payments migration to avoid the shared table (would require 2 additional days of engineering), or (3) run both migrations in a single coordinated 6-hour window with a joint runbook. I let both teams evaluate the trade-offs.
+Finally, I volunteered to write the joint runbook for Option 3 if both teams chose it — removing the main coordination cost that was blocking agreement."
+
+**Result (10-20%):** "Both teams chose Option 3. I wrote the joint runbook in 1 day. The migrations ran concurrently in a single 5-hour window with no incidents. Both teams stayed on schedule, and the joint coordination built enough trust that the two teams now share a monthly cross-team architecture sync they requested themselves."
+
+**Interview tip:** Earn Trust questions reward proactive conflict identification and facilitated resolution. "I identified the overlap, presented options neutrally, and volunteered to do the coordination work" is the formula. Prepare for: earn trust, conflict resolution, collaboration, or influencing without authority.
 
 ## Flashcards
 

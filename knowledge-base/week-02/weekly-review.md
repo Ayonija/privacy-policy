@@ -3,6 +3,78 @@
 ## Phase
 Phase 1: DSA Mastery | Month 1
 
+## STAR Framework — Week 2 Consolidated Patterns
+
+> Use this section to practice rapid pattern narration for all Week 2 patterns.
+
+---
+
+### 4Sum / Interval Intersection (Day 8): STAR Summary
+
+**Situation:** "Two sorted interval lists; brute force O(m×n) — two pointers give O(m+n)."
+
+**Task:** "Advance the pointer whose interval ends sooner — it cannot intersect anything further right."
+
+**Action (key steps):** `lo = max(A[i][0], B[j][0])`, `hi = min(A[i][1], B[j][1])`; if `lo <= hi` record intersection; advance the pointer with smaller end value. For 4Sum: sort, fix two outer loops, run two-pointer for the inner pair; guard `i > 0` vs `j > i+1` for duplicate skipping.
+
+**Result:** "O(m+n) intersection; O(n³) 4Sum. State the overlap formula `max(a,c) ≤ min(b,d)` before coding."
+
+---
+
+### Sliding Window — Complement & Gain (Day 9): STAR Summary
+
+**Situation:** "Taking k cards from both ends is hard to express as a single window — complement reframe makes it a fixed window."
+
+**Task:** "`total - min_middle_window = max_card_score`. Minimize a fixed window of size n-k."
+
+**Action (key steps):** Compute `total = sum(all)`. Slide a fixed window of size `n-k`, track `minMiddle`. Answer = `total - minMiddle`. For Grumpy Bookstore: compute baseline (non-grumpy minutes), then slide a fixed gain window to find max extra from suppression.
+
+**Result:** "O(n) complement window. The reframe — 'minimize what you don't take' — is the senior-level insight."
+
+---
+
+### Monotonic Deque Sliding Window (Day 10): STAR Summary
+
+**Situation:** "Longest subarray where `max - min ≤ limit` — needs O(1) window max and min simultaneously."
+
+**Task:** "Two monotonic deques: `maxD` (decreasing, front = window max) and `minD` (increasing, front = window min)."
+
+**Action (key steps):** Expand: pop from back of each deque to maintain monotone property; push `right`. Shrink: while `maxD.front - minD.front > limit`, `left++`, pop fronts if expired. Record `right - left + 1`. Always store indices, not values.
+
+**Result:** "O(n) amortised — each element pushed and popped at most once from each deque. Deque vs TreeMap: O(n) total vs O(n log n)."
+
+---
+
+### Linked List Reversal (Day 11): STAR Summary
+
+**Situation:** "Reverse a sublist in-place — three-pointer dance with precise stitching at both ends."
+
+**Action (key steps):** `save next → reverse pointer → advance prev → advance curr`. Use dummy head. Save the original `left` position as `tail` before reversal; stitch `tail.next = remainder` after.
+
+**Result:** "O(n) time, O(1) space. `fast = head.next` (not `head`) for Sort List mid-detection to avoid off-by-one on 2-node lists."
+
+---
+
+### Fast/Slow Pointers — Floyd's Algorithm (Day 12): STAR Summary
+
+**Situation:** "Detect cycle and find entry — O(1) space required."
+
+**Action (key steps):** Guard `while fast != null && fast.next != null`. Slow moves 1 step, fast 2 steps. On meeting: reset slow to head, advance both 1 step until they meet — that's the cycle entry. Mathematical property: `F = nC - k`.
+
+**Result:** "O(n) time, O(1) space vs O(n) space for HashSet. The pointer-equality check (`slow == fast`, not value equality) is the critical correctness detail."
+
+---
+
+### Merge Sort on Linked List & Gap Pointer (Days 13–14): STAR Summary
+
+**Situation:** "Sort a linked list O(n log n) with O(log n) space; remove nth from end in one pass."
+
+**Action (key steps):** Merge sort: `fast = head.next` for midpoint; `slow.next = null` to sever; recurse and merge. Merge: dummy head, compare heads, attach smaller. Gap pointer: advance fast n+1 steps from dummy, then advance both until fast is null — slow is before the target.
+
+**Result:** "Merge sort O(n log n), O(log n) stack. Gap pointer: single-pass O(n), O(1) space. `n+1` steps (not n) places slow at the pre-target node."
+
+---
+
 ## Patterns Covered This Week
 **Days 8–10 (from Slot 1):**
 - Two Pointers — 4Sum, k-Sum generalisation
@@ -95,3 +167,23 @@ All 35 cards for Days 8–14:
 | Date | Platform | Score / Result | Key mistake | Fixed? |
 |------|----------|---------------|-------------|--------|
 | — | — | — | — | — |
+
+---
+
+## STAR Quick Reference — Week 2
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| 4Sum / Interval Intersection | "Given two sorted interval lists, advanced the pointer with the smaller end → O(m+n) vs O(m×n) brute force." |
+| Sliding Window (complement) | "Given k end-picks, reframed as 'minimize middle window' → O(n) by inverting the problem." |
+| Sliding Window (gain) | "Given a grumpy-minutes budget, computed baseline then slid a fixed gain window → O(n) without nested loops." |
+| Monotonic Deque (window max/min) | "Given max-minus-min ≤ limit constraint, maintained two monotonic deques → O(n) amortised vs O(n log n) TreeMap." |
+| Linked List Reversal (in-place) | "Given a sublist to reverse in-place, executed the four-pointer dance → O(n) time, O(1) space vs stack O(n)." |
+| Floyd's Cycle Detection | "Given a cycle-detection requirement with O(1) space, used mathematical invariant F=nC-k → O(n) time, O(1) space vs O(n) HashSet." |
+| Merge Sort on Linked List | "Given an unsorted list needing O(n log n), used bottom-up merge sort → O(log n) stack vs O(n) array copy." |
+| Gap Pointer (nth from end) | "Given remove-nth-from-end with one pass, advanced fast n+1 steps → slow lands at pre-target node, O(n) single pass." |
+
+**Career story titles:**
+1. "Monotonic Deque — replaced a TreeMap-based sliding window (O(n log n)) with a deque (O(n)) in a real-time metrics dashboard."
+2. "Floyd's Algorithm — detected an infinite loop in a data-processing pipeline in O(1) space vs a HashSet that was OOM-ing at scale."
+3. "Merge Sort on Linked List — sorted a 5M-node linked structure using O(log n) stack space, avoiding the O(n) array copy that caused OOM in prod."

@@ -134,6 +134,39 @@ def findWords(board, words):
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Trie Template / Prefix Replacement / Grid DFS with Trie Pruning in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given three Trie problems: implementing the fundamental prefix tree with insert/search/startsWith, replacing words with their shortest dictionary root, and finding all words from a list that exist in a character grid. The brute-force approaches — hashing for prefix queries, scanning all dictionary entries per word, and separate DFS per word — all fail to share prefix computations across queries."
+
+**Task:** "My goal was to implement a Trie that provides O(L) operations (where L = word length) for all three operations, and to recognise that the Trie's shared-prefix structure is the key insight for both Replace Words (stop at first is_end) and Word Search II (prune dead branches)."
+
+**Action:** Walk the interviewer through these steps:
+1. *Classify the pattern:* "Any problem involving prefix queries, dictionary lookups with shared prefixes, or combining string search with grid traversal → Trie. The signal words are 'prefix', 'shortest root', 'find all words in grid'."
+2. *Initialize:* "TrieNode: `children = {}` (dict, not array of 26, for space efficiency when alphabet is sparse) and `is_end = False`. Trie: root is a bare TrieNode."
+3. *Core loop logic:* "Insert: traverse from root, creating nodes as needed, set `is_end = True` at the last char. Search: traverse; return False immediately if any char is missing; check `is_end` at the end. Replace Words: traverse each word; return the accumulated prefix the moment `is_end` is True. Word Search II: DFS on grid while simultaneously walking the Trie — prune when the current char is not in `node.children`."
+4. *Convergence guarantee:* "Replace Words stops at the first `is_end`, guaranteeing the shortest root match. Word Search II DFS terminates via backtracking; the Trie pruning (deleting childless non-end nodes after finding a word) ensures each DFS call does progressively less work."
+5. *Duplicate handling / edge case proactivity:* "Word Search II: after finding a word, set `node.is_end = False` to prevent adding the same word twice. When a TrieNode has no children and `is_end = False`, delete it from its parent's `children` dict — this prunes the Trie and accelerates subsequent DFS calls from other grid cells."
+
+**Result:** "Trie provides O(L) insert/search/startsWith vs. O(n × L) for a HashSet prefix scan. Replace Words: O(total_chars_in_sentence) vs O(dict_size × sentence_length) for linear scan. Word Search II: Trie pruning can reduce DFS time by 10–100× compared to running a separate DFS per word — for a 10×10 grid with 1000 target words of average length 5, that's the difference between 10^6 and 10^4 effective DFS calls."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer Trie here |
+|-------------|---------------------------|----------------------|
+| HashSet for `startsWith` | Simple exact-match lookups only | O(n × L) scan for prefix queries; Trie is O(L) |
+| Sorting dictionary for Replace Words | Dictionary is small (≤ 100 roots) | O(D log D) build + O(D × L) per word; Trie is O(L) per word |
+| Run DFS per word for Word Search II | Word list has ≤ 5 words | O(m×n×4^L × W) for W words; Trie reduces to O(m×n×4^L) total with shared prefix traversal |
+
+**Why NOT HashSet for prefix queries:** A HashSet cannot answer "does any word start with X?" without scanning all n entries — that's O(n × L) per prefix query vs O(L) with Trie.
+**Why NOT separate DFS per word:** For W = 1000 words with many shared prefixes (e.g., "apple", "app", "application"), separate DFS redundantly traverses the same grid paths 1000 times; the Trie explores shared prefixes once.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 208: search empty string → depends on implementation (usually False); insert then search same word → True; startsWith full word → True
 - LC 648: no root matches a word → keep original; multiple roots match → return shortest (Trie guarantees this by returning at first is_end); root == word itself → replace with itself
@@ -225,8 +258,24 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you built or improved a notification or alerting system — how did you handle the trade-off between too many notifications and missing important ones?
-- Leadership principle: Customer Obsession
+
+**Leadership Principle:** Customer Obsession
+
+**STAR Story: Rebuilding an Alert Routing System with a Trie-Based Prefix Classifier**
+
+**Situation (20%):** "Our on-call alerting system routed incidents to the right engineering team using a list of 8,000 service-name prefixes. When an alert arrived with a service identifier like `payments.checkout.fraud-detect`, the router scanned all 8,000 prefixes linearly to find the longest match. At peak load — 2,000 alerts per minute after a major incident — the router was taking 3–4 seconds per alert to find the right team, causing a 15–20 minute delay in escalation during our worst incidents."
+
+**Task (part of S/T):** "I was assigned to fix the routing performance. My goal was to reduce alert routing latency from 3–4 seconds to under 50ms without changing how on-call teams configured their prefix rules."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I profiled the routing loop and confirmed the bottleneck: for each incoming alert, we were doing 8,000 string comparisons with `startswith()` calls — O(n × L) per routing decision.
+Then, I proposed replacing the linear prefix list with a Trie, where each node in the path from root to leaf represented one segment of the service identifier (split by '.'). Instead of scanning 8,000 entries, routing became a Trie traversal that stops at the first matching `is_end` node.
+Next, I implemented the Trie with a `team_id` field instead of `is_end` — each terminal node stored which on-call team owns that prefix. The 'longest prefix match' was achieved by tracking the last `team_id` seen during traversal.
+Finally, I wrote a load test replaying 6 months of production alerts and verified that Trie routing was consistent with the linear scan output — zero routing regressions — then deployed with a feature flag."
+
+**Result (10-20%):** "Alert routing latency dropped from 3–4 seconds to 8–12ms per alert — a 300× improvement. During the next major incident (a database failover affecting 14 services simultaneously), 2,000 alerts were routed and escalated in under 20 seconds total, compared to the previous 45-minute backlog. Zero misrouted alerts in the 3 months post-deployment. The Trie build time was under 50ms on startup — adding 8,000 prefix rules took the same time as inserting 8,000 words."
+
+**Interview tip:** Interviewers want to hear about *your* contribution. Say "I profiled", "I proposed", "I implemented", "I wrote" — not "we did". Prepare this story for questions about: Customer Obsession, reducing latency, technical leadership, and data-driven validation.
 
 ---
 

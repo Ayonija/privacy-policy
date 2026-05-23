@@ -78,6 +78,27 @@ class Solution {
 - **Brute force for LC 907:** O(n²) checking all subarrays and calling `min()` each time — O(n³) total. Contribution counting with monotonic stack is O(n).
 - **Common mistake in LC 402:** forgetting `stack[-1] > digit` in the while condition (not `>=`) — equal digits should NOT be popped since popping equals doesn't make the number smaller.
 
+### STAR Interview Framework
+
+> **Monotonic Stack — Counting & Greedy Removal:** brute-force O(n²)–O(n³) → this approach O(n) time, O(n) space
+
+**S:** "Given an array of n integers and the task of summing the minimums of all subarrays. Naive O(n²) enumeration with O(n) min() per subarray is O(n³) — fails at n=10⁵."
+**T:** "Need O(n) by computing each element's contribution — how many subarrays it is the minimum of — rather than iterating over all subarrays."
+**A (60% of answer time):**
+1. *Classify:* "Sum-of-minimums phrasing signals contribution counting; digit-removal phrasing signals greedy monotonic stack."
+2. *Init:* "Two integer arrays `left[n]` and `right[n]` for contribution spans; a monotonic stack of indices."
+3. *Loop/Step:* "Left pass (strict `>=`): pop indices while the stack top's value ≥ current; `left[i] = i − stack_top`. Right pass (non-strict `>`): same logic for right spans. Then `contribution[i] = arr[i] * left[i] * right[i]`."
+4. *Termination:* "Both passes complete in O(n) each — total O(n). Sum contributions modulo 10⁹+7."
+5. *Gotcha:* "Use strict `>=` on the left pass and non-strict `>` on the right pass — swapping them double-counts subarrays where the minimum appears more than once. State this proactively."
+**R:** "O(n) time, O(n) space vs O(n³) brute force. At n=10⁵: ~0.3ms vs ~2.7 hours. Remove K Digits is also O(n) — each digit is pushed and popped at most once."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| O(n²) enumerate all subarrays | n ≤ 500, one-off scripts | Exceeds time limit at n=10⁴ |
+| Sparse table / segment tree for range min | Online queries on static array | O(n log n) build + doesn't count contributions |
+| Priority queue per window | Sliding window min queries | O(n log n), complex — monotonic stack is simpler and faster |
+
 ### Edge Cases to Trace Before Coding
 - LC 682: `"C"` as the first operation → stack is empty; problem guarantees this won't happen, but mention it shows constraint awareness
 - LC 907: single-element array → `left[0] = 1`, `right[0] = 1`, contribution = `arr[0] * 1 * 1`; correct ✓
@@ -97,8 +118,14 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you made a greedy decision — took the locally best action at each step — that led to a globally optimal result, analogous to Remove K Digits removing the largest digits greedily from the left.
 - Leadership principle: Bias for Action
+
+**Full STAR Story — "Greedy Prioritisation Under a Hard Constraint":**
+**S (20%):** "At a fintech startup, our release pipeline had accumulated 47 open PRs. A compliance deadline gave us 3 days to merge the highest-impact changes — merging all 47 was impossible."
+**T:** "I owned the merge plan. I had to maximise shipped value under a 3-day constraint with zero regression risk."
+**A (60% — 'I' not 'we'):** "(1) I ranked PRs by a composite score: business value × confidence, discarding any PR where the value could not increase by keeping it. (2) I applied a greedy scan — whenever a lower-ranked PR 'blocked' a higher-ranked one, I popped the lower one from the queue if it could be re-merged later. (3) I cut the queue from 47 to 14 actionable PRs in two hours. (4) I communicated the cut list to the team with written rationale for each exclusion so there were no surprises."
+**R (20%):** "We shipped 14 PRs in 3 days, hitting the compliance deadline. Zero regressions. The 33 deferred PRs had a documented re-merge plan, reducing follow-on work by 40%. The process became our standard release-triage template."
+*Works for: Bias for Action, Deliver Results, Have Backbone.*
 
 ## Flashcards
 

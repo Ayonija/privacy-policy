@@ -146,3 +146,46 @@ Fill in after review session:
 - [ ] Can explain consistent hashing virtual nodes and their purpose to a non-technical interviewer
 - [ ] Subset enumeration idiom memorized: `sub = (sub-1) & mask`
 - [ ] Popcount-as-position trick memorized for Beautiful Arrangement variant problems
+
+---
+
+## STAR Interview Summary — Week 16 Patterns
+
+This section maps each week-16 algorithm pattern to the behavioral LP it best illustrates, and the concrete result number to anchor the story.
+
+| Pattern | Behavioral LP | Core Story Hook | Anchor Number |
+|---------|--------------|-----------------|---------------|
+| Advanced LCS / Remove Boxes | Ownership | Fixed scoring bug in job scheduler | 23% throughput improvement, 100% SLA violation elimination |
+| LIS with Counting | Are Right, A Lot | Designed counting-aware LIS pipeline for financial signal ranking | 2000 tickers in 9.5 min, 60% unique sequences found |
+| LIS + Segment Tree | Hire and Develop the Best | Mentored junior engineer on segment tree mastery | 45s → 3s batch time, first production segment tree in codebase |
+| Hybrid DP + Binary Search | Insist on Highest Standards | Replaced brute-force config resolver with hybrid DP | 8 min → 4 sec (120×), $800/month cost reduction |
+| Comprehensive DP Review | Customer Obsession + Deliver Results | DP-powered content sequencing engine | 9% session depth improvement, <8ms p50 latency |
+| Tree DP (all 3 variants) | Dive Deep | Diagnosed O(n²) tree traversal hidden bottleneck | 22 min → 47 sec (28× speedup) |
+| Bitmask DP (all 3 variants) | Bias for Action | Replaced scheduler under deadline with incomplete data | 0 failures at 10× load, shadow mode validated in 2 hours |
+
+### Pattern → LP Quick Reference
+
+When an interviewer asks these questions, pull from these week-16 stories:
+
+- **"Tell me about a time you improved system performance significantly"** → Tree DP / Dive Deep story (22 min → 47 sec)
+- **"Tell me about a time you made a decision with incomplete information"** → Bitmask DP / Bias for Action story (no root cause, shipped anyway with shadow mode)
+- **"Tell me about owning a hard bug end-to-end"** → Remove Boxes / Ownership story (scoring bug, 23% throughput)
+- **"Tell me about mentoring a junior engineer"** → Segment Tree LIS / Hire and Develop story (first segment tree in production)
+- **"Tell me about a time you raised the bar on a solution"** → Hybrid DP / Insist on Highest Standards story (120× speedup)
+
+---
+
+## STAR Quick Reference — Week 16
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| Advanced LCS / Remove Boxes | "Given a scheduler with O(n⁴) scoring, applied 3D interval DP → O(n⁴) correct vs O(n²) incorrect brute force." |
+| LIS with Counting | "Given 2000 financial tickers, applied LIS+count DP → O(n log n) vs O(n²), found 60% unique signal sequences." |
+| LIS + Segment Tree | "Given slow batch job (45s), applied segment tree LIS → O(n log n) vs O(n²), first segment tree in prod codebase." |
+| Hybrid DP + Binary Search | "Given 8-min config resolver, applied hybrid DP+bisect → O(n log n) vs O(n³), 120× speedup, $800/mo savings." |
+| Tree DP (all 3 variants) | "Given hidden O(n²) tree traversal, applied rerooting DP → O(n) vs O(n²), 22 min → 47 sec (28× speedup)." |
+| Bitmask DP (all 3 variants) | "Given scheduler deadline with no root cause, applied bitmask partition DP → 0 failures at 10× load in 2 hours." |
+
+**Career stories:**
+1. "Remove Boxes 3D DP — fixed scoring bug that was silently dropping 23% of scheduled jobs."
+2. "Rerooting DP — diagnosed 22-minute tree traversal bottleneck nobody else had traced to the root cause."

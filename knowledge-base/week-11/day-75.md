@@ -101,6 +101,39 @@ def findMaximizedCapital(k, w, profits, capital):
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Greedy Max-Heap String Construction / Min-Heap Resource Queue / Two-Heap Greedy Capital Selection in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given three problems requiring greedy choices on dynamically evolving option sets: building the longest valid string without triple-character runs (LC 1405), allocating seats with the smallest available number (LC 1845), and selecting profitable projects to maximise capital given a budget constraint that grows as projects are completed (LC 502). Brute force — checking all arrangements, scanning all seats, or trying all project orderings — is exponential or O(n²)."
+
+**Task:** "My goal was to recognise that each problem reduces to a heap operation on the 'best available choice at this moment': max-heap for the most frequent character, min-heap for the smallest available seat, and a two-heap system for the most profitable affordable project."
+
+**Action:** Walk the interviewer through these steps:
+1. *Classify the pattern:* "No-triple-run string → max-heap greedy (always pick the two most frequent chars). Seat manager → min-heap of available seats (reserve = pop; unreserve = push). IPO → two heaps: a min-heap sorted by capital requirement (unlocks projects as budget grows) plus a max-heap of profits for currently affordable projects."
+2. *Initialize:* "Longest Happy String: push `(-count, char)` for a, b, c. Seat Manager: heapify `[1..n]`. IPO: sort projects by capital; start with an empty profit max-heap."
+3. *Core loop logic:* "Longest Happy String: pop top; if last two chars in result match the top char, pop second-most-frequent instead, place it, push top back. IPO: each of k rounds, move ALL projects with `capital ≤ w` from the capital min-heap to the profit max-heap, then pop the max profit and add to `w`."
+4. *Convergence guarantee:* "Longest Happy String: the heap empties naturally; termination is when no char can be placed without creating a triple. IPO: k rounds enforced by the outer loop; inner loop draining affordable projects is bounded by the total project count n."
+5. *Duplicate handling / edge case proactivity:* "IPO edge: if `profit_heap` is empty when we try to pop (no affordable projects even after draining), we `break` early — spending all k rounds is not required. Seat Manager: `unreserve(s)` after all seats are taken — the heap handles this correctly since push is always valid."
+
+**Result:** "Seat Manager: O(log n) per operation vs O(n) linear scan. IPO: O((n + k) log n) vs O(k × n) brute force — for n = 10^5 projects and k = 10^4, that's 10^9 vs 1.5 × 10^6 operations. Longest Happy String: O(constant) since only 3 possible characters, so O(a + b + c) total."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer heap here |
+|-------------|---------------------------|----------------------|
+| Linear scan for available seat | n ≤ 1000 and operations are infrequent | O(n) per reserve; heap gives O(log n) — critical for n = 10^5 with 10^5 operations |
+| Greedy sort for IPO | k ≥ n (take all affordable projects) | When k is large, run the capital-heap drain once; for k << n, two-heap per-round is more efficient |
+| Recursive for Longest Happy String | String length ≤ 100 | O(3^n) exponential; heap greedy is O(n) and correct |
+
+**Why NOT linear scan for Seat Manager:** At n = 10^5 seats and 10^5 operations, O(n) per operation = O(10^10) total. Heap gives O(n log n) total.
+**Why NOT sort-all for IPO:** Sorting by profit alone ignores the capital constraint — you must afford a project before picking it; the two-heap correctly unlocks projects incrementally.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 1405: a=7, b=1, c=0 → result = "aabaa" (can't use more than 2 consecutive a's); a=1, b=1, c=1 → "abc" (all used); one char has count = 0 → ignore
 - LC 1845: reserve all n seats → heap is empty; unreserve after all reserved → heap has one element; reserve then unreserve alternately → heap size stays bounded at n
@@ -184,8 +217,24 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you made a greedy local decision that led to a globally optimal result — how did you verify the greedy choice was correct?
-- Leadership principle: Are Right, A Lot
+
+**Leadership Principle:** Are Right, A Lot
+
+**STAR Story: Greedy Feature Prioritisation That Maximised ROI Across a Constrained Roadmap**
+
+**Situation (20%):** "Our startup had raised a Series A and was under pressure to ship 12 features in 6 months. Each feature had an estimated engineering cost (weeks) and a projected revenue uplift (in dollar ARR). Our product manager wanted to build features in order of discovery — a roughly chronological approach that ignored the cost-to-value ratio entirely."
+
+**Task (part of S/T):** "I was asked to provide an alternative prioritisation. My constraint was that the team's total capacity was 24 engineer-weeks. My goal was to maximise the total projected ARR shipped within that budget — a bounded-knapsack problem analogous to IPO."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I challenged the assumption that we needed to build all 12 features — I wanted to know which subset maximised revenue given our capacity constraint, not just which features were cheapest or highest-value in isolation.
+Then, I sorted features by their 'capital requirement' (minimum team capacity milestone needed before we could build them, due to dependencies) and built a greedy simulation: at each capacity checkpoint, I selected the highest-ARR-projected feature we could afford.
+Next, I stress-tested the greedy approach with an exchange argument: for any feature pair where I'd chosen feature A over B, I showed that swapping would reduce projected ARR because B's ARR per engineer-week was always lower.
+Finally, I presented the analysis to leadership with two charts: the greedy schedule vs. the PM's original order, showing a 34% higher projected ARR with the same budget."
+
+**Result (10-20%):** "Leadership adopted the greedy schedule. By month 6, we had shipped 9 of the prioritised 10 features (one was delayed due to an external API dependency, not the schedule). The projected ARR from the delivered features was 31% higher than the original plan would have achieved with the same team. The PM later told me this was the first time they had seen a rigorous trade-off analysis instead of gut-feel roadmap ordering."
+
+**Interview tip:** Interviewers want to hear about *your* contribution. Say "I challenged", "I sorted", "I stress-tested", "I presented" — not "we did". Prepare this story for questions about: Are Right A Lot, data-driven decisions, constructive dissent, and delivering results.
 
 ---
 

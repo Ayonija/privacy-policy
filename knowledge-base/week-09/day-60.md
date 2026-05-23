@@ -100,6 +100,28 @@ def swimInWater(grid):
 
 ---
 
+### STAR Interview Framework
+
+> **Dijkstra on Weighted Grid (Swim in Rising Water):** brute-force O(m×n × all paths) → this approach O(n² log n) time, O(n²) space
+
+**S:** "Given an n×n grid where `grid[r][c]` = time that cell becomes passable. Find minimum time T so a path exists from (0,0) to (n-1,n-1). Brute-force tries all paths."
+**T:** "Need the minimum bottleneck path — the path that minimises the maximum cell value along it."
+**A (60%):**
+1. *Classify:* "'Minimum of the maximum value on any path' (minimax) → Dijkstra with heap storing max-value-so-far."
+2. *Init:* "Heap = `[(grid[0][0], 0, 0)]`; `visited = set()`."
+3. *Loop/Step:* "Pop `(t, r, c)`; if visited skip; mark visited. For each neighbour: push `(max(t, grid[nr][nc]), nr, nc)`."
+4. *Termination:* "First time `(n-1, n-1)` is popped: `t` is the answer — Dijkstra guarantees minimum bottleneck."
+5. *Gotcha:* "The heap key is `max(t, grid[nr][nc])` (not sum). Using sum gives wrong answers — this is minimax, not shortest path."
+**R:** "O(n² log n) time, O(n²) space. Identical template to Path With Minimum Effort — both are minimax Dijkstra on a grid."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Binary search + BFS | When explicit threshold check is natural | Dijkstra is O(n² log n) — same; but single pass |
+| Standard BFS | Unweighted graph (all edges equal) | Cell values differ — BFS doesn't respect them |
+
+---
+
 ### Interview Pattern Drill — Slot 6 Complete Reference
 
 | Pattern | Trigger phrase | Algorithm | Complexity |
@@ -184,8 +206,14 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Walk through a system you built or improved that touched multiple infrastructure layers (CDN, DNS, HTTP, caching, or real-time) — describe the design decisions and trade-offs you made at each layer.
 - Leadership principle: Dive Deep
+
+**Full STAR Story — "Full-Stack Latency Reduction Across Infrastructure Layers":**
+**S (20%):** "At an e-commerce company, our product detail pages had 3.8s P95 load time on mobile, causing a 29% cart abandonment rate on first view. Engineering had tried CDN tuning but didn't instrument below the CDN layer."
+**T:** "I was asked to own the end-to-end latency investigation and deliver measurable improvement within one month."
+**A (60% — 'I' not 'we'):** "(1) I set up distributed tracing across DNS, TLS, CDN, origin, and DB layers — each with timing spans. I found that 40% of latency was DNS (no DNS pre-fetch, TTL = 1 day), 25% was TLS (RSA-4096), and only 20% was DB. (2) I lowered DNS TTL to 60s and added `<link rel='dns-prefetch'>` for our CDN domain, cutting DNS lookup time from 120ms to 8ms. (3) I migrated TLS to ECDHE-P256 and enabled HTTP/2 with HPACK header compression — TLS handshake dropped from 380ms to 45ms. (4) I added `Cache-Control: public, s-maxage=300` with ETags to product pages, achieving a 78% CDN hit rate on first visit for returning users."
+**R (20%):** "P95 mobile load time: 3.8s → 1.1s. Cart abandonment: 29% → 16%. Mobile conversion rate increased 9%. CDN cost fell 31% due to improved hit rate."
+*Works for: Dive Deep, Customer Obsession, Are Right, A Lot.*
 
 ---
 

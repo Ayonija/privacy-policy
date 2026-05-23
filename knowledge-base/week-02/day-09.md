@@ -73,6 +73,36 @@ class Solution {
 - **Common mistake:** in LC 1423, including `windowSize = 0` without a guard — `sum(cardPoints[:0])` is 0, which gives the right answer, but `range(0, n)` would re-process all cards and corrupt `minMiddle`. Add the guard or trace carefully.
 - **Alternative for LC 1052:** instead of tracking `customers[i] * grumpy[i]`, directly subtract satisfied-during-boost from the full-satisfied count — same result, different framing.
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Sliding Window — Complement & Flip Thinking in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given an array of card values and an integer k, and asked to take exactly k cards from either end (left or right) to maximize total score. A brute-force O(k²) approach tries all splits between left-end count (0 to k) and right-end count (k down to 0). For k = 10⁵, that's 10¹⁰ operations — far too slow."
+
+**Task:** "My goal was to solve this in O(n) by recognising that taking k cards from both ends is equivalent to leaving n-k cards in the middle — a fixed-size window. Minimizing the middle window's sum gives the maximum card score."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "Selecting from both ends is hard to express as a single window. The complement reframe: 'leave n-k in the middle' converts it to a fixed sliding window — the most recognizable window type."
+2. *Initialize:* "I compute `total = sum(all cards)`. I set `windowSize = n - k`. I compute the initial window sum over the first `windowSize` elements."
+3. *Core loop logic:* "I slide the window right-to-left across the array by adding `cardPoints[i]` and subtracting `cardPoints[i - windowSize]`. I track `minMiddle` — the minimum middle-window sum seen."
+4. *Convergence guarantee:* "A fixed window slides exactly `k` times (n - windowSize = k steps), touching each element at most twice — O(n)."
+5. *Duplicate handling / edge case proactivity:* "Guard `windowSize = 0` (when `k = n`, take all cards). Without this guard, an empty window's minimum is trivially 0 and `total - 0 = total`, which is correct — but trace it to confirm the loop handles `range(0, n)` without corrupting `minMiddle`."
+
+**Result:** "This reduces time complexity from O(k²) to O(n). For n = k = 10⁵, brute force is 10¹⁰ operations (~10 seconds); the complement window is ~2×10⁵ operations (~0.2ms). The complement reframe — 'minimize what you don't take to maximize what you take' — is the insight that unlocks the pattern."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer Complement Window here |
+|-------------|---------------------------|-------------------------------|
+| Brute force — try all k+1 splits O(k²) | When k ≤ 100 | O(n) complement window vs O(k²); for k = 10⁵ brute force times out |
+| Dynamic programming O(n) space | When complement reframe isn't obvious | DP works but requires O(n) auxiliary space and more code; complement window is O(1) extra space |
+
+**Why NOT brute force:** O(k²) for k = 10⁵ is 10¹⁰ ops — guaranteed timeout.
+**Why NOT DP:** DP memoizes intermediate selections, which is correct but O(n) space vs O(1) for complement window. The complement reframe is the cleaner insight.
+
 ### Edge Cases to Trace Before Coding
 - LC 1052: `minutes >= len(customers)` → boost covers everything; answer = total customers (no baseline subtraction needed)
 - LC 1423: `k = n` → take all cards; return `sum(cardPoints)` (windowSize = 0)
@@ -91,8 +121,24 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Give an example where you reframed a problem — instead of directly maximising what you wanted, you minimised what you didn't want — analogous to the complement window in LC 1423.
-- Leadership principle: Think Big
+
+**Leadership Principle:** Think Big
+
+**STAR Story: Reframing a Cost-Reduction Problem as a Value-Preservation Problem**
+
+**Situation (20%):** "At my previous company, leadership asked our team to cut the cloud infrastructure budget by 30% — roughly $400K/year. My initial instinct was to audit every service and find things to cut. But after the first week, I realized I was in danger of cutting things that looked small in isolation but were critical dependencies — similar to removing cards from the middle of a deck without knowing which ones matter."
+
+**Task (part of S/T):** "I was responsible for the infrastructure optimization effort. My goal was to achieve the 30% cost reduction while preserving 100% of the services that drove measurable business value — and doing so within 6 weeks."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I reframed the problem: instead of 'what can we cut?', I asked 'what do we absolutely need to keep?' — the complement approach. I built a service dependency map and tagged every service as either 'revenue-critical', 'operational-critical', or 'non-essential'.
+Then, I identified that 38% of our compute spend was on services tagged 'non-essential' — dev environments that ran 24/7, batch jobs that ran on over-provisioned instances, and unused data exports. These were the 'middle window to minimize.'
+Next, I implemented automated shutdown of non-production environments on nights and weekends, rightsized 12 batch jobs to Spot instances, and deprecated 3 unused data exports with stakeholder sign-off.
+Finally, I ran 4 weeks of monitoring to confirm no production incidents were attributable to the changes before declaring success."
+
+**Result (10-20%):** "We achieved a 34% cost reduction — $456K/year — exceeding the target by 4 percentage points. Zero production incidents during or after the changes. The complement approach — protecting everything we needed and eliminating everything we didn't — was faster and safer than auditing everything for cuts. I documented the approach and it became our standard process for quarterly infrastructure reviews."
+
+**Interview tip:** Think Big questions reward reframing. Show you stepped back from the obvious approach and found a better problem to solve. Prepare for: think big, invent and simplify, problem-solving, or strategic thinking.
 
 ## Flashcards
 

@@ -90,6 +90,27 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **Prefix Sum + HashMap (Count of Prefix Sums):** brute-force O(n²) → this approach O(n) time, O(n) space
+
+**S:** "Given an integer array of n elements, count subarrays with sum exactly k. Brute force checks all O(n²) subarrays — for n=10⁵ that's 10¹⁰ operations, ~10s at 10⁹ ops/sec."
+**T:** "Need O(n) by converting the subarray sum question into a prefix-sum lookup: 'how many previous prefix sums equal prefix[r] - k?'"
+**A (60% of answer time):**
+1. *Classify:* "'Number of subarrays with sum = k' → prefix sum count map. 'Subarray sum divisible by k' → prefix mod map. '2D submatrix sum = target' → fix row pair, reduce to 1D prefix sum."
+2. *Init:* "`prefix_map = {0: 1}` (the empty prefix). Running `prefix = 0`, `count = 0`."
+3. *Loop/Step:* "`prefix += nums[i]`; `count += prefix_map.get(prefix - k, 0)`; `prefix_map[prefix] += 1`. For mod variant: `prefix = (prefix + nums[i]) % k`; store first-seen index (not count) to verify length ≥ 2."
+4. *Termination:* "Single left-to-right pass — O(n). HashMap lookups O(1) average."
+5. *Gotcha:* "Initialising `prefix_map = {0: 1}` is the most commonly missed step. Without it, subarrays starting at index 0 (where `prefix == k`) are not counted. State this before writing any code."
+**R:** "O(n) time, O(n) space vs O(n²) brute force. At n=10⁵: ~1ms vs ~10s. The 2D extension reduces to O(n²·m) — fix O(n²) row pairs, run O(m) prefix scan on each."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Sliding window | All elements non-negative (shrink is valid) | Negative numbers invalidate the shrink decision — prefix map handles them correctly |
+| Two-pointer on prefix array | Sorted prefix sums (no negatives) | Sorting destroys index ordering needed to count valid subarrays |
+| Segment tree with range sum | Online updates + range queries | O(n log n) — overkill for a static one-pass count |
+
 ### Edge Cases to Trace Before Coding
 - LC 560: k=0 — valid; `prefix_map[0] = 1` handles subarray from index 0 summing to 0
 - LC 523: two zeros in a row `[0, 0]` with k=anything → valid (length ≥ 2, same remainder 0)
@@ -134,8 +155,14 @@ Remove key from leaf; if leaf underflows (< ⌈m/2⌉ entries), either borrow fr
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you found a way to answer a recurring question in O(1) by precomputing and storing partial results — analogous to maintaining a running prefix sum so you never recompute from scratch.
 - Leadership principle: Invent and Simplify
+
+**Full STAR Story — "Precomputing Partial Results to Eliminate Redundant Computation":**
+**S (20%):** "At a metrics platform, a fraud-detection service answered ~500 real-time queries per second asking: 'How many transactions in this rolling window sum to exactly T?' Each query triggered a full O(n) scan of a 100K-row transaction buffer — the service was saturating the CPU at peak."
+**T:** "I was responsible for the query layer. Goal: reduce per-query CPU cost by 10× without altering the upstream data model."
+**A (60% — 'I' not 'we'):** "(1) I identified that every query was recomputing the same prefix sums from scratch — O(n) per query, 500 times per second = 50M operations/sec. (2) I introduced a running prefix-sum array maintained incrementally: on each new transaction, I appended `prefix[i] = prefix[i-1] + amount` — O(1) per update. (3) I replaced the full-scan query with a HashMap lookup: `count += prefix_map[prefix - target]`, also O(1) per query. (4) I validated correctness on 10 edge cases including negative amounts and zero-sum windows before enabling in production via a feature flag."
+**R (20%):** "Per-query CPU dropped from O(n)=100K ops to O(1). Throughput headroom increased from 20% to 85% at peak load. The pattern was extended to a 2D submatrix variant for regional fraud aggregation three months later."
+*Works for: Invent and Simplify, Dive Deep, Deliver Results.*
 
 ---
 

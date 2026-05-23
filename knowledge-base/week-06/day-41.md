@@ -83,6 +83,38 @@ def maxPathSum(root):
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Gain Propagation DFS (Maximum Path Sum) in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a binary tree with integer node values (including negatives) and asked to find the maximum sum of any path — where a path is any sequence of connected nodes, not necessarily from root to leaf, and each node can appear at most once. The brute-force approach of enumerating every path between every pair of nodes is O(n²) for the enumeration alone, and it's not clear how to implement it cleanly."
+
+**Task:** "My goal was to solve this in O(n) time with a single DFS pass by using a gain-propagation pattern — each node computes the best it can contribute to its parent while simultaneously evaluating whether it could be the apex of the best global path."
+
+**Action:** Walk the interviewer through these steps:
+1. *Two roles per node:* "Each node plays two roles: (a) it might be the 'apex' — the highest point of the optimal path, with the path bending left–node–right. (b) It contributes a 'one-sided gain' up to its parent — the path can only continue in one direction upward."
+2. *Compute gains:* "I compute `left_gain = max(0, dfs(node.left))` and `right_gain = max(0, dfs(node.right))`. The `max(0, ...)` prunes negative subtrees — if a branch loses value, don't extend the path into it."
+3. *Update global answer:* "At each node, the candidate apex path = `node.val + left_gain + right_gain`. I update a nonlocal `max_sum` with this candidate."
+4. *Return to parent:* "I return `node.val + max(left_gain, right_gain)` — only the best single direction can continue upward; a path bending both ways cannot extend further."
+5. *Base case and all-negative:* "I initialise `max_sum = [root.val]`, not 0 — because all nodes could be negative and the answer is still the single least-negative node. Returning 0 for None nodes (base case) combined with the `max(0, ...)` clamp handles this correctly."
+
+**Result:** "O(n) time, O(h) space for the recursion stack — O(log n) for balanced trees. For a tree of 30,000 nodes this runs in milliseconds. The gain-propagation pattern generalises to diameter, maximum path with k edges, and sum-product variants."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer gain-propagation DFS |
+|-------------|---------------------------|----------------------------------|
+| Enumerate all root-to-leaf paths | Tree paths must start at root | Misses paths that start and end in the middle of the tree |
+| Two-pointer on sorted paths | — | Paths in a tree have no sorted structure; inapplicable |
+| Gain propagation DFS | Any tree, any path | O(n) single pass; generalises to many path-sum variants |
+
+**Why NOT enumerate all paths:** A path from any node to any node can start and end anywhere — you can't enumerate them without O(n²) work. Gain propagation handles this by letting each node evaluate its apex role in O(1) during the DFS.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 199: single node → `[root.val]`; fully left-skewed tree → every depth has exactly one node (the leftmost) but it IS the rightmost too
 - LC 1448: root is always good (initialise `max_so_far = root.val`); descending tree where every child < parent → only root is good
@@ -154,8 +186,18 @@ Data is only loaded on first access — no wasted writes for cold keys.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you identified a bottleneck in a system and introduced a caching layer or equivalent optimisation to relieve it — walk through the symptom, solution, and what metric you measured to confirm the fix worked.
-- Leadership principle: Invent and Simplify
+
+**Leadership principle: Invent and Simplify**
+
+**STAR Story — Introducing a caching layer to relieve a bottleneck**
+
+**Situation:** Our product page API was hitting a shared PostgreSQL database on every request to fetch a product's full attribute set — name, description, price, images, category, and 12 custom attributes. Each attribute required a separate JOIN across three tables. The product catalogue had 2 million SKUs, but our top 50,000 products accounted for 92% of traffic. At 8,000 product-page requests per second, the database was handling 96,000 SQL queries per second (12 JOINs × 8,000 requests) and running at 95% CPU, causing cascading timeouts.
+
+**Task:** I was given two weeks to reduce database CPU to below 60% without a schema change. My goal was to identify the right caching strategy and implement it end-to-end, including cache invalidation on price or inventory updates.
+
+**Action:** I profiled the access pattern: 92% of requests hit the same 50,000 products and those products' attributes changed at most a few times per day (price updates) or never (name, description). I designed a cache-aside Redis layer: on a product-page request, first check `Redis.GET product:{id}:attrs`. On a hit, return the cached JSON blob (typically 2–4 KB). On a miss, run the full SQL query, serialize the result to JSON, call `Redis.SET product:{id}:attrs {json} EX 300` (5-minute TTL), and return. For price/inventory updates, I added a write-through invalidation hook: on any UPDATE to the products table, the service called `Redis.DEL product:{id}:attrs` synchronously before committing, ensuring no stale price reads. I sized the Redis instance at 8 GB — 50,000 products × 4 KB average = 200 MB, so there was ample headroom. I load-tested at 10,000 req/sec using k6 and verified the hit rate stabilised above 94% after a 30-second warm-up period.
+
+**Result:** Database CPU dropped from 95% to 34% within the first hour of production rollout. API P99 latency fell from 380 ms to 22 ms for cache hits. The database handled 10,000 req/sec with headroom to spare. Cache invalidation on price updates worked correctly — QA verified zero stale-price incidents across 200 test update cycles. The solution ran unchanged for 14 months before we migrated to a read replica.
 
 ---
 

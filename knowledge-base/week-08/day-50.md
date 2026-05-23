@@ -141,6 +141,38 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Rerooting DFS (Sum of Distances in Tree) in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given an unweighted tree of n nodes and asked to return an array where `result[i]` = sum of distances from node i to every other node. The brute-force approach of running a separate BFS from each of the n nodes is O(n²) — for n = 30,000 nodes that's 900 million operations, which times out."
+
+**Task:** "My goal was to solve this in O(n) using a two-pass rerooting DFS that computes all n answers from a single rooting of the tree."
+
+**Action:** Walk the interviewer through these steps:
+1. *Pass 1 — root at node 0:* "I DFS from node 0. For each node v, I compute `count[v]` = total nodes in v's subtree (including itself), and `answer[0]` += `answer[child] + count[child]` (each node in the child's subtree is one step farther from node 0 than from the child itself)."
+2. *Why `answer[0]` is special:* "After Pass 1, `answer[0]` is the sum of distances from node 0 to all other nodes — exactly the BFS result for node 0. I now want to 'reroot' this to compute every other node's answer without another BFS."
+3. *Pass 2 — reroot from parent to child:* "Moving the root from node p to child node v: `count[v]` nodes each get 1 step closer (they were one step farther from p through v's subtree). `n - count[v]` nodes each get 1 step farther. The formula: `answer[v] = answer[p] - count[v] + (n - count[v])`."
+4. *DFS pass 2:* "I DFS again from node 0, applying the reroot formula for each child. Each child's answer is computed in O(1) from its parent's answer."
+5. *Correctness intuition:* "The formula captures exactly what happens when you pick up the root and place it on a child: the subtree 'below' the new root is n - count[v] nodes (which now have to go one more hop), and the subtree 'above' is count[v] nodes (which saved one hop)."
+
+**Result:** "O(n) time, O(n) space. Two DFS passes. For n = 30,000 that's 60,000 operations instead of 900 million — the difference between milliseconds and seconds."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer rerooting DFS |
+|-------------|---------------------------|--------------------------|
+| BFS from every node | n ≤ 1,000 | O(n²) — times out for n ≥ 10,000 |
+| Floyd-Warshall | Small graphs (n ≤ 500) | O(n³) space and time — much worse |
+| Rerooting DFS (two-pass) | Standard | O(n) time, O(n) space; the canonical solution |
+
+**Why NOT BFS from every node:** For n = 30,000, O(n²) = 900 M ops at 10⁸ ops/sec = 9 seconds. The rerooting approach does the same work in O(n) = 60,000 ops in under 1 ms.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 572: `subRoot` is a single leaf node — `isSameTree` handles this; `root` is null but `subRoot` is not → return False immediately
 - LC 863: `k = 0` → return `[target.val]`; target is the root → BFS explores all directions correctly (parent[root] = None, guarded by `if neighbour`)
@@ -240,8 +272,18 @@ After each problem: state time complexity, space complexity, and one edge case a
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Walk through a caching problem you've encountered end-to-end — from noticing the symptom (high latency, DB load) through diagnosing the cause, selecting the caching strategy, and measuring the result — mirroring the full decision framework.
-- Leadership principle: Dive Deep
+
+**Leadership principle: Dive Deep**
+
+**STAR Story — End-to-end caching problem: diagnosis, strategy selection, measurement**
+
+**Situation:** Six weeks after a major content recommendation feature launched, our backend's average response time drifted from 180 ms to 740 ms. No alarm fired during the drift — it was slow enough to stay within our loose 95th-percentile SLO. A customer success team member noticed users were complaining about the site "feeling sluggish" and escalated to engineering.
+
+**Task:** I was the senior engineer on call and took ownership of the investigation. My goal was to identify the exact cause of the latency regression, implement a fix, and verify improvement — all within one business day to prevent further user impact.
+
+**Action:** I started with the observability dashboard: 95th-percentile DB query time had gone from 12 ms to 410 ms on the recommendations query. I ran `EXPLAIN ANALYZE` on the slow query — it was a 6-table JOIN to compute personalised recommendations, running a sequential scan on a 40 M-row events table. The events table had grown 4× since launch (from 10 M rows when the index was last analysed to 40 M rows now). Running `ANALYZE recommendations_events` refreshed the statistics — the query planner immediately switched to an index scan, reducing query time from 410 ms to 22 ms. But 40 M rows was still growing, and personalised recommendations for the same user rarely changed within a session. I designed a cache-aside layer: recommendations for each user cached in Redis as a JSON string with a 5-minute TTL. A write-through hook invalidated the cache on explicit user preference changes. I load-tested at 3,000 req/sec and verified a 94% hit rate within 2 minutes of warm-up.
+
+**Result:** After deploying the ANALYZE fix + Redis caching, average response time dropped from 740 ms to 95 ms — a 7.8× improvement. DB query load fell by 88% during peak hours. I added `ANALYZE` to the nightly maintenance job so statistics would auto-refresh. I also set a DB response-time alerting threshold at 50 ms (previously had none for the recommendations service), so any future drift would be caught within minutes instead of weeks.
 
 ---
 

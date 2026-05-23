@@ -72,6 +72,27 @@ class Solution {
 - **Month 1 synthesis tip:** you should now be able to look at a problem description and in 30 seconds decide: two-pointer, sliding window, or stack. Practice this pattern-recognition reflex — it's the core skill being tested in a real OA.
 - **Common mistake in LC 316:** using `last[stack[-1]] >= i` instead of `> i` — at `i`, we're processing the character at that index, so `last[stack[-1]] > i` means there's still a future occurrence; `>=` would incorrectly block popping when the last occurrence is the current position.
 
+### STAR Interview Framework
+
+> **Monotonic Stack — Greedy with Last-Occurrence Constraint & Behind-Pattern Detection:** brute-force O(n! / duplicates) → this approach O(n) time, O(n) space
+
+**S:** "Given a string, find the lexicographically smallest subsequence using each unique character exactly once. Brute force over all character subsets is factorial — fails even at n=20."
+**T:** "Need O(n) by greedily maintaining an increasing character stack, constrained by last-occurrence positions."
+**A (60% of answer time):**
+1. *Classify:* "'Lexicographically smallest result with all unique characters' → greedy monotonic stack + last-occurrence guard. 'Three-element subsequence i<j<k with nums[i]<nums[k]<nums[j]' → right-to-left stack + running minimum."
+2. *Init:* "For LC 316: precompute `last[ch]` = last index of each char. Stack + `in_stack` set. For LC 456: stack of candidates for nums[k], `third = -∞`."
+3. *Loop/Step:* "LC 316: skip if already in stack; pop top if `top > ch AND last[top] > i`; push. LC 456: if `nums[i] < third` return true; pop into `third` while stack top < current; push."
+4. *Termination:* "Each element is pushed and popped at most once → O(n) total."
+5. *Gotcha:* "In LC 316, use `last[top] > i` (strict greater-than) — `>=` would block popping when the current index IS the last occurrence, leaving a suboptimal character on the stack. State this before coding."
+**R:** "O(n) time, O(n) space. The last-occurrence guard is the detail that separates correct from plausible-looking solutions — mentioning it proactively signals senior-level depth."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Recursive backtracking | n ≤ 10, need all solutions | Exponential — times out at n=10⁴ |
+| Sort + deduplicate | Anagram grouping, not ordering | Destroys original order needed for subsequence constraint |
+| Prefix min array for LC 456 | Offline, need all valid triplets | O(n²) — nested scan for valid third element |
+
 ### Edge Cases to Trace Before Coding
 - LC 316: single unique character (e.g., `"aaaa"`) → only one 'a' in result; `in_stack` prevents duplicates ✓
 - LC 316: already sorted string (e.g., `"abc"`) → no pops ever; result is the unique characters in their original order ✓
@@ -91,8 +112,14 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Reflect on the last 30 days — what was the one pattern you found hardest, and what specific action will you take in Month 2 to close that gap?
 - Leadership principle: Learn and Be Curious
+
+**Full STAR Story — "Diagnosing a Month-Long Learning Gap and Closing It":**
+**S (20%):** "After 30 days of algorithm study at a self-directed pace, I noticed I was consistently solving easy problems quickly but freezing on medium problems involving monotonic stacks — I was re-reading the pattern every time rather than internalising it."
+**T:** "I needed to close the monotonic stack gap before Month 2 began, without adding extra study hours — I had a firm 2-hour daily limit."
+**A (60% — 'I' not 'we'):** "(1) I ran a diagnostic: timed myself on five representative problems, identified that my failure mode was choosing a wrong data structure in the first 5 minutes. (2) I created a trigger-word flashcard — e.g., 'next greater element → decreasing stack; sum of minimums → contribution counting' — and drilled it for 10 minutes each morning. (3) I replaced one practice problem per day with a deliberate re-solve of the hardest problem from the day before, without notes. (4) By day 35 I was solving monotonic stack mediums within 20 minutes on first attempt."
+**R (20%):** "Pattern recognition speed improved from ~15 minutes to under 3 minutes on monotonic stack triggers. This compounding habit added zero extra hours and became my standard gap-closing technique across all patterns in Month 2."
+*Works for: Learn and Be Curious, Dive Deep, Invent and Simplify.*
 
 ## Flashcards
 

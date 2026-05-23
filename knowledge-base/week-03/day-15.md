@@ -62,6 +62,49 @@ class Solution {
 }
 ```
 
+### Interview Tips
+
+- **Partition List — state both dummy heads upfront:** "I use two dummy heads — `lessDummy` and `greaterDummy` — and build two separate chains simultaneously. At the end, I join them: `less.next = greaterDummy.next`. The critical step is `greater.next = null` to cut off the old tail, which may still point back into the original list."
+- **Rotation — compute effective rotation first:** "`k % length` handles the case where k is a multiple of length (no rotation needed) and when k > length (equivalent to k % length rotations). Failing to take the modulo leads to unnecessary traversal."
+- **Brute force for rotation:** rotating one step at a time would be O(n×k) — for k = 10⁹ and n = 500, that's 5×10¹¹ operations. The stitch-and-reconnect approach is O(n) regardless of k.
+- **Common mistake for Partition List:** forgetting `greater.next = null` — the last node in the greater list still has its original `.next` pointer, which may point back into the less list or create a cycle.
+
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Linked List Partition & Rotation in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a linked list and a value x, and asked to partition it so all nodes with value < x come before nodes with value ≥ x, preserving relative order within each partition. A naive approach — collect all nodes, sort into two lists, re-link — is O(n) but creates a new list. The two-dummy-head pattern achieves O(n) time and O(1) extra space in-place."
+
+**Task:** "My goal was to partition in a single scan by simultaneously building two chains (less-than and greater-or-equal) using dummy heads, then joining them at the end — no sorting, no extra storage beyond two dummy nodes."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "Rearrange nodes by a condition without extra storage → two-dummy-head partition. Trigger: 'separate elements into groups while preserving relative order.'"
+2. *Initialize:* "I create `lessDummy` and `greaterDummy` as sentinel nodes. I maintain `less = lessDummy` and `greater = greaterDummy` as the tails of their respective chains."
+3. *Core loop logic:* "For each `curr` node: if `curr.val < x`, attach to the less chain (`less.next = curr; less = less.next`); otherwise attach to the greater chain. At the end, `greater.next = null` (critical — cuts off the old tail), then `less.next = greaterDummy.next`."
+4. *Convergence guarantee:* "Each node is visited exactly once and attached to exactly one chain — O(n) single pass, O(1) space (two dummy nodes only)."
+5. *Duplicate handling / edge case proactivity:* "`greater.next = null` is the most commonly forgotten step. Without it, the last node in the greater chain still points to wherever it pointed in the original list — creating a cycle or linking back into the less chain."
+
+**Result:** "O(n) time, O(1) extra space in a single pass. The two-dummy-head pattern eliminates all head-insertion edge cases and is the canonical approach for any 'partition a list into k groups' problem."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer Two Dummy Heads here |
+|-------------|---------------------------|-------------------------------|
+| Collect into two arrays, rebuild | When list structure can be discarded | O(n) extra space; two dummy heads achieves the same in O(1) extra space |
+| Sort the list | When partition order doesn't need to be stable | O(n log n) time; partition is O(n); also partition preserves relative order which sort doesn't |
+
+**Why NOT array collection:** O(n) extra space — two dummy heads is strictly better.
+**Why NOT sorting:** Sorting is O(n log n) and doesn't preserve relative order within each partition, which is a requirement.
+
+### Edge Cases to Trace Before Coding
+- LC 83: all elements same → `curr.next` always equals `curr`; `slow` skips every duplicate; one node remains ✓
+- LC 86: all nodes < x → entire list attaches to less chain; greaterDummy.next = null; result is original list ✓
+- LC 61: k = 0 or k = length → effective rotation = 0; return head unchanged
+- LC 61: single node → rotation is a no-op; return head immediately
+
 ## System Design (1 hour)
 ### Topic: Load Balancer Health Checks & Failover
 - **Active health checks:** LB sends periodic pings (HTTP GET `/health`) to each backend; marks server unhealthy after N consecutive failures.
@@ -74,8 +117,24 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you divided a group into two categories based on a criterion and processed each category separately — analogous to the partition list problem splitting nodes into two chains.
-- Leadership principle: Ownership
+
+**Leadership Principle:** Ownership
+
+**STAR Story: Partitioning a Support Queue into Two Priority Chains for Faster Resolution**
+
+**Situation (20%):** "At my previous company, our customer support queue was a single FIFO queue of all incoming tickets — high-severity incidents (service outages) and low-severity requests (billing questions) competed for the same agents. During high-traffic periods, critical outage tickets could sit unresolved for 45+ minutes behind a queue of billing inquiries, causing SLA violations and customer escalations."
+
+**Task (part of S/T):** "I was the support engineering lead. My goal was to redesign the queue routing so critical tickets always reached senior on-call engineers within 5 minutes, without increasing headcount or reducing throughput for low-severity tickets."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I designed a two-queue partition: tickets were classified as P0 (critical) or P1/P2 (standard) by an automated triage rule I wrote — analogous to the partition list's `curr.val < x` condition. Each ticket attached to exactly one queue, preserving arrival order within each priority tier.
+Then, I implemented priority-aware routing: on-call senior engineers pulled from the P0 queue first and only dipped into the P1/P2 queue when P0 was empty. Standard agents only worked the P1/P2 queue.
+Next, I ran a 2-week shadow test where I logged what the new routing would have done against the old routing, confirmed P0 ticket response times would have dropped without degrading P1/P2 throughput.
+Finally, I deployed the new routing with a rollback switch and monitored for 3 days before removing the old single-queue fallback."
+
+**Result (10-20%):** "P0 ticket mean time to first response dropped from 43 minutes to 4 minutes — an 91% improvement. P1/P2 mean response time was unchanged at 18 minutes. SLA violation rate for critical tickets dropped from 34% to 2%. The partition logic was adopted by two other support tiers within the quarter."
+
+**Interview tip:** Ownership means you spotted the problem, proposed the solution, built it, and monitored it — without waiting to be asked. The partition analogy is direct and makes the technical decision concrete. Prepare for: ownership, customer obsession, bias for action, or delivering results.
 
 ## Flashcards
 

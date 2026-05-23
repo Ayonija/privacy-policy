@@ -153,6 +153,28 @@ def criticalConnections(n, connections):
 
 ---
 
+### STAR Interview Framework
+
+> **Union-Find (Path Compression + Union by Rank):** brute-force O(n²) repeated BFS → this approach O(n × α(n)) ≈ O(n) time, O(n) space
+
+**S:** "Given n nodes and E edges, need to detect cycles and count components online as edges arrive. Brute-force BFS per edge is O(n) × O(n) = O(n²) — too slow for n = 10⁵."
+**T:** "Need near-O(1) per union/find operation using the Union-Find structure with path compression and union-by-rank."
+**A (60%):**
+1. *Classify:* "Undirected connectivity / cycle detection — Union-Find applies; directed cycle detection needs DFS."
+2. *Init:* "`parent[i] = i`, `rank[i] = 0` for all nodes. Each node is its own component."
+3. *Loop/Step:* "For each edge (u, v): `find(u)` and `find(v)` with path compression (halving); if roots equal → cycle; else union by rank."
+4. *Termination:* "Count distinct roots: `sum(1 for i if find(i) == i)` = number of components."
+5. *Gotcha:* "Path compression uses halving (`parent[x] = parent[parent[x]]`) not full flattening — same amortized bound, simpler code."
+**R:** "O(α(n)) amortised per operation — effectively O(1). For n = 10⁵ edges: 100K ops in milliseconds vs 10B ops for O(n²)."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| BFS per query | Small graph, one-time connectivity check | O(V+E) per query — too slow online |
+| DFS 3-colour | Directed cycle detection | Union-Find doesn't handle directed edges |
+
+---
+
 ## System Design (1 hour)
 ### Topic: HTTP Caching Headers — Cache-Control, ETag, and CDN Cache Invalidation
 
@@ -209,8 +231,14 @@ If-None-Match: "abc123"
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you identified a single point of failure in a system (analogous to a bridge edge) and removed it — what was the impact?
 - Leadership principle: Insist on the Highest Standards
+
+**Full STAR Story — "Eliminating the Infrastructure Bridge":**
+**S (20%):** "At a B2B SaaS company, our entire payment pipeline ran through one undocumented internal API gateway — a single server with no failover. When it went down for 47 minutes during a peak billing run, $2.3M in transactions were blocked."
+**T:** "I was tasked with identifying and removing all single points of failure from the critical payment path within one quarter."
+**A (60% — 'I' not 'we'):** "(1) I modelled the full payment pipeline as a dependency graph and ran a manual Tarjan's bridge analysis — identifying 3 bridge edges: the API gateway, a shared Redis instance, and a singletons-pattern auth service. (2) I ranked them by blast radius: the gateway caused 100% failure, Redis caused partial degradation, auth caused 30% failure. (3) I deployed an active-active gateway pair behind a health-check load balancer, eliminating the gateway bridge. (4) I added Redis Sentinel with 3 nodes and refactored the auth service to be stateless behind 2 replicas."
+**R (20%):** "Payment pipeline availability went from 99.1% to 99.97% over the following 6 months. The next 3 billing runs completed without incident. Estimated revenue protection: $180K/month in prevented outage costs."
+*Works for: Insist on the Highest Standards, Dive Deep, Deliver Results.*
 
 ---
 

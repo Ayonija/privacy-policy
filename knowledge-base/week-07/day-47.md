@@ -112,6 +112,38 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining BST Delete (three-case) in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was asked to delete a node from a BST while maintaining the BST property. The complication is the three-child-state cases — a node might have zero, one, or two children, and each requires a different structural response. The hardest case — two children — requires replacing the deleted node's value with its inorder successor and then deleting that successor."
+
+**Task:** "My goal was to implement the delete operation in O(h) time — O(log n) for balanced BSTs, O(n) for skewed — with a clean recursive structure that handles all three cases without special-casing the recursion direction."
+
+**Action:** Walk the interviewer through these steps:
+1. *Search down the tree:* "Recurse left if `key < root.val`, right if `key > root.val`. Set `root.left` or `root.right` to the result of the recursive call — this handles structure repair automatically as the recursion unwinds."
+2. *Case 1 — no children:* "If both children are null, return null. The parent's `root.left = deleteNode(...)` call receives null and detaches this node."
+3. *Case 2 — one child:* "If only left is null, return right. If only right is null, return left. The single child replaces the deleted node."
+4. *Case 3 — two children:* "Find the inorder successor: the smallest node in the right subtree (traverse right once, then follow left until null). Copy the successor's value into the current node. Then recursively delete the successor from the right subtree. The right subtree is guaranteed to be a valid BST after this."
+5. *Why inorder successor, not predecessor:* "Either works. Inorder successor (smallest in right subtree) is the most common interview answer and guarantees the replacement value maintains the BST property: it's larger than the entire left subtree and smaller than everything in the right subtree."
+
+**Result:** "O(h) time — O(log n) for balanced BSTs. The recursive structure automatically handles node relinking as the stack unwinds — no manual pointer updates needed outside the recursion."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer recursive inorder successor |
+|-------------|---------------------------|----------------------------------------|
+| Lazy deletion (mark nodes as deleted, don't restructure) | When deletions are rare and reads dominate | Avoids restructuring but inflates tree size and degrades BST operations over time |
+| Replace with inorder predecessor | Equivalent correctness | Both work; successor is more commonly expected in interviews |
+| Iterative delete | Avoid recursion stack for very deep trees | Significantly more complex code; recursion is cleaner |
+
+**Why NOT lazy deletion:** Lazy deletion works for occasional deletes, but in a BST that experiences frequent deletions it causes the tree to grow in memory without bound and degrades search performance as deleted markers accumulate.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 450: deleting the root with two children; deleting a node that doesn't exist (key not in tree) → recursion bottoms out without change
 - LC 530: two-node tree → only one pair; all nodes have the same value difference → min_diff returns correctly from the single comparison
@@ -177,8 +209,18 @@ Each physical node is represented by multiple points on the ring (e.g., 150 virt
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to distribute work across multiple systems and design a routing mechanism to decide which system handles each piece — analogous to consistent hashing for distributed cache key assignment.
-- Leadership principle: Think Big
+
+**Leadership principle: Think Big**
+
+**STAR Story — Designing a routing mechanism to distribute work across multiple systems**
+
+**Situation:** Our data processing platform was growing from handling 2 million events per day to a projected 50 million events per day within six months. All events were being written to a single PostgreSQL instance and processed by a single queue worker. The single node was already running at 85% CPU during peak hours, and early modelling showed it would be completely saturated at 3× current load — well before the projected scale. We needed a sharding strategy before we hit the wall.
+
+**Task:** I was the infrastructure lead and was responsible for designing a sharding scheme that would distribute events across multiple nodes, with a routing mechanism that could be extended as we added capacity — without a complete rewrite of our event processing code.
+
+**Action:** I evaluated two routing strategies. Naive modulo sharding (`node = event.customer_id % N`) was simple but had a fatal flaw: when we added a node (N changing from 4 to 5), every customer's events would route to a different node — corrupting any per-customer state that assumed events for a customer always hit the same node. I proposed consistent hashing instead: I mapped customer IDs onto a ring with 1,000 virtual nodes per physical node (4,000 virtual nodes total for our initial 4 nodes). Each event for a customer routed to the first virtual node clockwise from `hash(customer_id)`. Adding a fifth physical node required migrating only ~20% of virtual node assignments — not all customers. I implemented this in a shared routing library used by both the ingestion API and the queue workers, so both layers made identical routing decisions without coordination. I tested node addition in a staging environment by adding a fifth node while load was running at 10,000 events/sec and verified that only 19.2% of customer routing changed (expected ~20%) and that no events were lost or duplicated during the transition.
+
+**Result:** We deployed 4-node consistent hashing within 6 weeks. Processing capacity scaled linearly — 4× the original throughput with 4× the nodes. When we added a fifth node three months later, the migration took 15 minutes with zero downtime and affected exactly the expected ~20% of customers. The routing library became a shared internal dependency used by four other services over the following year.
 
 ---
 

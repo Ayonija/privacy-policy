@@ -54,3 +54,22 @@
 ```
 
 **If stuck after 8 minutes:** write the brute force, note the optimization, move on — partial credit beats zero.
+
+---
+
+## STAR Method for DE Shaw Round 1
+
+DE Shaw Round 1 is a fast-paced coding screen — typically 2 problems in 30 minutes. Use STAR to structure your verbal reasoning before and after coding.
+
+**Before you write any code (S+T, spend 20% of your time):**
+> "I see [trigger condition] which tells me to use [pattern]. The brute-force approach would be O([X]), but I can reduce to O([Y]) by [key insight]. Let me code that up."
+
+For example: "I see 'count subarrays with sum = k' on an unsorted array — that's the prefix sum + HashMap pattern. Brute force is O(n²) by checking all pairs; I can reduce to O(n) by storing prefix sums in a HashMap and looking up `prefixSum - k` at each step."
+
+**While coding (A, spend 60-70% of your time):**
+Narrate each step: "I'm initializing `seen = {0: 1}` because [invariant it maintains — handles subarrays starting at index 0]." "At each step I check `seen[sum - k]` because [what it guarantees — any earlier prefix that pairs with current prefix to sum to k]." "I handle [edge case] here because [why it would break otherwise — e.g., empty array, negative numbers, duplicates]."
+
+**After coding (R, spend 10-20% of your time):**
+> "Final complexity: O([Y]) time, O([Z]) space. Edge cases I handled: [list 2-3 explicitly]. This beats the O([X]) brute force by [factor] — at DE Shaw's typical constraint of n=10^5, that's the difference between ~10^10 operations and ~10^5 operations."
+
+**DE Shaw-specific STAR tip:** They explicitly grade on communication. A candidate who says "this is O(n) because each element is pushed and popped from the stack at most once" scores higher than one who just writes the code — even if the code is identical. Always close with the complexity sentence before saying "I'm done."

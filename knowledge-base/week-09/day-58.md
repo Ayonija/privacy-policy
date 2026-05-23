@@ -128,6 +128,28 @@ def minJumps(arr):
 
 ---
 
+### STAR Interview Framework
+
+> **BFS + Value-Grouped Index Map (Jump Game IV):** brute-force O(n²) re-processing same-value groups → this approach O(n) time, O(n) space
+
+**S:** "Given array of n values where same-value indices can be jumped to directly. Naive BFS re-enqueues same-value indices every time any member is visited — O(n²) for arrays with many duplicates."
+**T:** "Need O(n) by processing each same-value group at most once across all BFS levels."
+**A (60%):**
+1. *Classify:* "'Minimum jumps with same-value teleportation' → BFS with value→index map; one-time bucket clearing."
+2. *Init:* "Build `val_to_idx` map grouping all indices by value. Enqueue index 0."
+3. *Loop/Step:* "BFS level by level. For each index i dequeued: process ALL `val_to_idx[arr[i]]` same-value jumps; then `val_to_idx[arr[i]].clear()` to prevent re-processing. Then enqueue `i-1` and `i+1` if unvisited."
+4. *Termination:* "Return step count when index `n-1` is first reached."
+5. *Gotcha:* "Clear the bucket AFTER processing all its members — not before, or you lose the jump targets."
+**R:** "O(n) time, O(n) space. For n=50,000 with all equal values: 50K ops vs 2.5B ops without clearing."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Standard BFS | No same-value teleportation | Correct but O(n²) for large duplicate groups |
+| Dijkstra | Weighted jump costs | All jumps cost 1 — BFS is sufficient and faster |
+
+---
+
 ## System Design (1 hour)
 ### Topic: DNS Security — DNSSEC, DoH, and DoT
 
@@ -179,8 +201,14 @@ DNS queries sent over a TLS-encrypted TCP connection to the resolver on port 853
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you dealt with a security vulnerability in a system and had to decide how to prioritise fixes (immediate patching vs. architectural change) — analogous to choosing between DNSSEC, DoH, and DoT.
 - Leadership principle: Earn Trust
+
+**Full STAR Story — "Prioritising Security Vulnerability Fixes":**
+**S (20%):** "At a healthcare data platform, a security audit revealed three DNS-layer vulnerabilities simultaneously: no DNSSEC on our authoritative zone (cache poisoning risk), plaintext DNS queries from our mobile clients (eavesdropping risk), and a misconfigured TTL that would leave old records alive for 24 hours during an incident."
+**T:** "I had to triage and sequence fixes across three layers — analogous to choosing between DNSSEC, DoH, and DoT — with one week before a SOC 2 audit."
+**A (60% — 'I' not 'we'):** "(1) I mapped each vulnerability to its threat model: DNSSEC prevents record forgery (integrity), DoT/DoH prevents eavesdropping (privacy), TTL misconfiguration affects incident response speed. (2) I ranked by blast radius: DNSSEC first because forged DNS records could redirect all users to a malicious server — a HIPAA breach scenario. (3) I deployed DNSSEC on the authoritative zone in 2 days and verified the signature chain with `dig +dnssec`. (4) I then configured DoT on our mobile client DNS resolver and lowered our operational records' TTL from 86400s to 300s for safer incident response."
+**R (20%):** "All three fixes shipped before the audit. SOC 2 auditors cited our DNS security posture as an example of defence-in-depth. Zero DNS-related security incidents in the 18 months following."
+*Works for: Earn Trust, Insist on the Highest Standards, Dive Deep.*
 
 ---
 

@@ -62,6 +62,36 @@ class Solution {
 - **Brute force alternative:** collect all values in a list, reverse the sublist, rewrite values into nodes — O(n) time, O(n) space. The in-place approach is O(n) time, O(1) space. State both and say you'll implement the O(1) space version.
 - **Common mistake:** in LC 92, forgetting to save the node at position `left` as the "tail" of the reversed sublist before reversal — you need it to stitch `tail.next = node_after_right` at the end.
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Linked List Reversal in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a linked list and asked to reverse a sublist from position `left` to `right` in-place. The brute-force alternative — collect all values into an array, reverse the subarray, write back — is O(n) time but O(n) space. The in-place approach must achieve O(n) time and O(1) space."
+
+**Task:** "My goal was to reverse exactly `right - left + 1` nodes in-place by rethreading pointers, without allocating any extra data structure and without modifying node values."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "In-place reversal with pointer rethreading — the three-pointer dance. The pattern trigger: 'reverse a list or sublist without extra space.'"
+2. *Initialize:* "I use a dummy head: `dummy.next = head`. I walk `prev` to the node at position `left - 1` in `left - 1` steps. I save `tail = prev.next` (the future tail of the reversed sublist)."
+3. *Core loop logic:* "I reverse `right - left + 1` nodes using the three-pointer template: save `nextNode = curr.next`, repoint `curr.next = prev`, advance both. After the loop, `prev` is the new head of the reversed sublist and `tail` is the new tail."
+4. *Convergence guarantee:* "The reversal loop runs exactly `right - left + 1` times — bounded and deterministic. No backtracking, O(n) total."
+5. *Duplicate handling / edge case proactivity:* "The two critical stitches after reversal: `prev_left_minus_one.next = reversed_head` and `tail.next = node_after_right`. Missing the second stitch cuts off the remainder of the list — trace this on a 5-node example to catch it."
+
+**Result:** "This achieves O(n) time and O(1) space. The key invariant to state: the original head of the sublist becomes the tail of the reversed sublist — save it before reversal as `tail`, then stitch `tail.next = remainder`."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer In-Place Reversal here |
+|-------------|---------------------------|-------------------------------|
+| Collect values → reverse array → rewrite nodes | When space is not constrained and correctness matters more than elegance | O(n) space vs O(1); problem typically requires in-place; also more error-prone if list has complex node structure |
+| Recursive reversal | For full list reversal when stack depth is acceptable | Recursive uses O(n) call stack (implicit space); iterative is O(1) space and preferred at L5+ |
+
+**Why NOT array-based:** O(n) extra space; most interview problems explicitly require O(1) space for linked list reversal.
+**Why NOT recursive:** O(n) stack space; can overflow for large lists; iterative three-pointer is the canonical O(1) solution expected in interviews.
+
 ### Edge Cases to Trace Before Coding
 - LC 206: empty list (`head = null`) → return `null`; `prev` starts at `null`, returns `null` ✓
 - LC 206: single node → loop runs once, `prev = head`, `curr = null`, return `head` ✓
@@ -81,8 +111,24 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a situation where you had to change the direction of a project mid-way through — analogous to reversing a linked list by rethreading pointers rather than creating a new one.
-- Leadership principle: Bias for Action
+
+**Leadership Principle:** Bias for Action
+
+**STAR Story: Pivoting a Project Mid-Development Without Losing Existing Work**
+
+**Situation (20%):** "Six weeks into a 12-week project to build a real-time user segmentation feature, stakeholder feedback revealed that the core assumption — that users would be segmented at login — was wrong. Marketing needed segments to update continuously throughout a session, not just at login. This meant our entire event ingestion architecture needed to be fundamentally changed, but we couldn't afford to discard the 6 weeks of UI and API work already done."
+
+**Task (part of S/T):** "I was the tech lead. My goal was to pivot the ingestion architecture to support continuous segmentation while preserving all the UI and API work — in 2 weeks, so we could finish the project on the original timeline."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I did a rapid dependency analysis over 2 days to identify what we could keep vs. what needed to be rebuilt. The UI layer, the segment API, and the segment storage schema were all stable. The only layer that needed to change was the event stream processor — analogous to rethreading the links in the existing chain rather than building a new list.
+Then, I proposed keeping all existing nodes (UI, API, storage) and replacing only the event processor link — I added a streaming Kafka consumer that updated segment membership in real time, replacing the batch login-time processor.
+Next, I split the implementation: I took the Kafka consumer myself, assigned two engineers to integration testing, and assigned one to load testing the new high-frequency write pattern.
+Finally, I presented the pivot plan to the PM and got approval within 24 hours, avoiding a 3-week delay that would have come from calling an all-hands design review."
+
+**Result (10-20%):** "The pivot was complete in 11 days — within the 2-week target. The project shipped 1 week behind the original date instead of the 3-week delay the full rebuild would have caused. The real-time segmentation feature processed 850K segment updates per hour in production without performance issues. Acting quickly with a targeted plan preserved 6 weeks of existing work."
+
+**Interview tip:** Bias for Action questions reward decisive pivots with a plan. Show you assessed what to keep, moved quickly on the change, and communicated proactively. Prepare for: bias for action, ownership, delivering results, or adapting to change.
 
 ## Flashcards
 

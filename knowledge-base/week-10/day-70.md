@@ -141,6 +141,68 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **Two-DFS Closest Node in Functional Graph:** brute-force O(V²) → this approach O(V) time, O(V) space
+
+**S:** "Given a functional graph (each node has at most one outgoing edge), find a node reachable from both node1 and node2 that minimises max(dist1, dist2). Brute force: for each candidate node, BFS from both sources — O(V²) total."
+**T:** "Need O(V) by exploiting the functional graph structure: each traversal is a simple walk (no branching), so two passes of O(V) each suffice."
+**A (60% of answer time):**
+1. *Classify:* "'Closest meeting node from two sources in a functional graph' — two separate linear walks; minimise max of the two distances."
+2. *Init:* "dist1[] = getDist(node1, edges); dist2[] = getDist(node2, edges); both initialised to -1 (unreachable)."
+3. *Loop/Step:* "getDist(start): follow edges[node] until edges[node]==-1 or node already visited (cycle); assign dist[node] = hop count. For each node v: if dist1[v]!=-1 and dist2[v]!=-1: candidate = max(dist1[v], dist2[v])."
+4. *Termination:* "Each traversal visits at most V nodes; terminates on -1 or revisited node; linear scan for best candidate."
+5. *Gotcha:* "Break ties by index — return the smallest-index node with the minimum max-distance. Iterating v from 0 to n-1 and using strict `< minMax` (not `<=`) naturally picks the first (smallest-index) minimum — don't reverse the loop or use `<=`."
+**R:** "O(V) time, O(V) space. V=100,000 nodes: 200,000 operations vs 10^10 for naive pairwise BFS."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| BFS/Dijkstra from each source | General graphs with branching | Functional graph has at most one outgoing edge per node — simple linear walk is sufficient; BFS overhead is unnecessary |
+| Floyd-Warshall all-pairs | n ≤ 200, need all pairs | n up to 100,000; O(n³) infeasible |
+
+---
+
+> **In-Degree Analysis for Minimum Starting Set:** brute-force O(2^V subset enumeration) → this approach O(V+E) time, O(V+E) space
+
+**S:** "Given a DAG of n nodes (n up to 10^5), find the smallest set of vertices from which all other nodes are reachable. Brute force enumerates all 2^V subsets and checks reachability from each."
+**T:** "Need O(V+E) by observing that only nodes with in-degree 0 must be in the starting set — any node with incoming edges is reachable from another."
+**A (60% of answer time):**
+1. *Classify:* "'Minimum starting set to reach all nodes in a DAG' — in-degree analysis signal: in-degree 0 nodes are exactly the required starting vertices."
+2. *Init:* "hasIncoming = Set of all edge destinations; result = []."
+3. *Loop/Step:* "For each node i from 0 to n-1: if i not in hasIncoming → add to result."
+4. *Termination:* "Single pass over V nodes after a single pass over E edges; O(V+E) total."
+5. *Gotcha:* "This only works on DAGs — the problem guarantees no cycles. If the graph had cycles, every node in a cycle has in-degree > 0 from within the cycle, yet you'd still need a starting node. Always state the DAG assumption explicitly in the interview."
+**R:** "O(V+E) time, O(V) space. V=10^5: trivially fast. The insight (in-degree 0 = must start here) reduces what looks like a complex reachability problem to a single counting scan."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| BFS/DFS reachability from all subsets | Verify a proposed starting set | O(2^V × (V+E)) — completely infeasible for large V |
+| Strongly connected components (SCC) | General directed graph (may have cycles) | Problem guarantees DAG; SCC is overkill and adds O(V+E) complexity without benefit |
+
+---
+
+> **Multi-Source Dijkstra — Y-Shape Minimum Weighted Subgraph:** brute-force O(V! subgraph enumeration) → this approach O((V+E) log V) time, O(V+E) space
+
+**S:** "Given a weighted directed graph, find the minimum total weight subgraph containing a path from src1 to dest AND a path from src2 to dest, where paths may share edges (shared edges counted once). Brute force tries all subsets of edges."
+**T:** "Need O((V+E) log V) by observing the optimal subgraph is Y-shaped: two paths converge at some meeting node v, then share the path from v to dest. Run three Dijkstras and minimize over all v."
+**A (60% of answer time):**
+1. *Classify:* "'Minimum cost subgraph with two paths that may share a suffix' — three-Dijkstra Y-shape signal: d1[v] + d2[v] + d3[v] where d3 comes from a reverse-graph Dijkstra from dest."
+2. *Init:* "Build original graph and reverse graph; d1 = Dijkstra(src1, graph); d2 = Dijkstra(src2, graph); d3 = Dijkstra(dest, revGraph)."
+3. *Loop/Step:* "For each node v: if d1[v], d2[v], d3[v] all < MAX_VALUE: candidate = d1[v] + d2[v] + d3[v]; track minimum."
+4. *Termination:* "Three Dijkstra runs + one linear scan; answer = minimum candidate or -1 if none finite."
+5. *Gotcha:* "The reverse graph is essential for d3 — Dijkstra from dest on the REVERSE graph gives the shortest path from each node to dest on the original graph. Running Dijkstra on the original graph from dest would give distances from dest outward, which is wrong for directed graphs where dest→v edges don't imply v→dest paths."
+**R:** "O((V+E) log V) time, O(V+E) space. Three independent Dijkstra runs: for V=100,000, E=200,000 — ~1.5M operations each, total ~5M. Brute force is intractable."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Single Dijkstra with combined state | Special graph structures | Tracking two separate path prefixes in a single Dijkstra requires state explosion — three separate runs are simpler and equally efficient |
+| Floyd-Warshall | n ≤ 200, all-pairs needed | n up to 100,000; O(n³) = 10^15 — infeasible |
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 2359: node1 == node2 → return node1 (dist max is 0); one node is in a cycle the other can't reach → only the non-cycle node pair contributes; no common reachable node → return -1
 - LC 1557: all nodes have in-degree > 0 → impossible (problem guarantees a valid DAG where all are reachable from some source) — actually return empty list; node 0 always in result if no edges point to it
@@ -245,8 +307,12 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Walk through a distributed system you built or improved — describe how you handled the CAP theorem trade-offs (consistency, availability, partition tolerance).
-- Leadership principle: Think Big
+**Full STAR Story — "Multi-Source Dijkstra: Designing a Shared Infrastructure Layer That Halved Cost for Two Teams":**
+**S (20%):** "At a cloud infrastructure company, two product teams (data ingestion and real-time analytics) each built independent data pipeline segments, both routing events to a central warehouse. Combined infrastructure cost was $420K/year, with $180K redundancy — both teams ran parallel Kafka clusters, separate schema registries, and duplicate monitoring stacks."
+**T:** "I was brought in to redesign the shared layer. Goal: reduce combined infrastructure cost by at least 30% ($126K) without degrading either team's SLA (99.9% uptime, < 500ms end-to-end latency)."
+**A (60% — 'I' not 'we'):** "(1) I modelled both pipelines as weighted directed graphs — nodes = services, edge weights = data transfer costs + operational overhead. I then found the 'Y-shape': both pipelines converged naturally at the schema registry and monitoring layer, equivalent to finding the optimal meeting node in a multi-source shortest path problem. (2) I proposed consolidating the shared segment (schema registry + monitoring + one Kafka cluster) while keeping upstream components team-independent. (3) I built the cost model quantifying savings per consolidation option and presented three tiers with risk/cost tradeoffs to leadership. (4) I led the migration: schema registry consolidated in week 1, monitoring in week 2, Kafka cluster merge in week 3 — each with a rollback plan and measured during off-peak hours."
+**R (20%):** "Annual infrastructure cost reduced by $162K (38.6% — above the 30% target). Zero SLA violations during migration. The shared layer model became a template adopted by 3 additional teams over the next 6 months."
+*Works for LP questions on: Think Big, Frugality, Ownership.*
 
 ---
 

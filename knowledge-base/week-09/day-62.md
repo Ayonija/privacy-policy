@@ -132,6 +132,28 @@ def trapRainWater(heightMap):
 
 ---
 
+### STAR Interview Framework
+
+> **Grid Dijkstra Min-Bottleneck (Path With Minimum Effort):** brute-force O(all paths) → this approach O(m×n log(m×n)) time, O(m×n) space
+
+**S:** "Given an m×n elevation grid, find the path from top-left to bottom-right that minimises the maximum absolute height difference between consecutive cells. Brute-force enumerates all paths."
+**T:** "Need the minimax path: minimise the maximum edge weight, not the sum. Standard BFS fails — edge weights vary."
+**A (60%):**
+1. *Classify:* "'Minimise maximum edge weight on a path' → Dijkstra with `max(cur_effort, abs_diff)` as the heap key."
+2. *Init:* "`effort[0][0] = 0`; heap = `[(0, 0, 0)]`."
+3. *Loop/Step:* "Pop `(e, r, c)`; if `e > effort[r][c]` skip. For each neighbour: `new_e = max(e, abs(heights[r][c] - heights[nr][nc]))`; if `new_e < effort[nr][nc]` → update and push."
+4. *Termination:* "First pop of `(rows-1, cols-1)` gives the answer — Dijkstra with minimax key is correct for non-negative edge costs."
+5. *Gotcha:* "Heap key is `max(cur, abs_diff)` not `cur + abs_diff`. Using sum is the #1 bug — it gives shortest-total-effort, not minimax-effort."
+**R:** "O(m×n log(m×n)) time, O(m×n) space. Identical template to Swim in Rising Water — swap `max(t, grid[nr][nc])` with `max(e, abs_diff)`."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Binary search + BFS | When threshold check is more natural | Same O(m×n log(m×n)) but 2 passes |
+| Standard BFS | Unweighted grid (all edges equal cost) | Edge costs differ — BFS picks wrong path |
+
+---
+
 ## System Design (1 hour)
 ### Topic: URL Shortener — Database Schema, Redirect Flow, and Write Path
 
@@ -207,8 +229,14 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to design a data storage schema under uncertain scaling requirements — how did you balance simplicity now vs future growth?
 - Leadership principle: Think Big
+
+**Full STAR Story — "Schema Design Under Uncertain Scale":**
+**S (20%):** "At an early-stage marketplace startup, I was designing the schema for our order system expecting 500 orders/day at launch but with a potential to scale to 500,000 orders/day within 18 months if fundraising succeeded. Over-engineering for scale we might never reach would slow the launch; under-engineering would require a painful migration."
+**T:** "I needed to make schema decisions that were simple enough to ship in 3 weeks but extensible enough to not require a full migration at 100× scale."
+**A (60% — 'I' not 'we'):** "(1) I identified the three highest-risk schema decisions: primary key strategy, order-item relationship model, and status state machine. (2) For primary keys, I used UUIDs instead of auto-increment to avoid hot-spot writes and enable future sharding without key collisions. (3) I designed the order-item relationship as a normalised separate table (not a JSON blob in the order row) — simpler today but queryable at scale. (4) I added a `status_history` table from day one rather than a single `status` enum, anticipating that audit trails would be required before 100K orders."
+**R (20%):** "Launched on schedule. At 80× scale (40K orders/day), zero schema migrations were required. The UUID primary keys enabled a clean shard-by-order-prefix strategy when we moved to Vitess 14 months later. The status history table was cited in our Series A due diligence as a sign of engineering maturity."
+*Works for: Think Big, Invent and Simplify, Are Right, A Lot.*
 
 ---
 

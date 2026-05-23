@@ -20,6 +20,8 @@
 | 9 | Find All Anagrams in a String | 438 | Sliding Window | Medium | 2023 |
 | 10 | Subarray Sum Equals K | 560 | Prefix Sum + HashMap | Medium | 2023 |
 
+**STAR framing tip for Tier 1 problems:** In your Situation, name the array size and state the naive O(n²) or worse approach explicitly — DE Shaw interviewers want to see you know the brute force before you optimize. In your Action, narrate the single key decision that enables the optimal approach (e.g., "I store the complement in a HashMap so the lookup is O(1)" for Two Sum, or "I track both max and min products because a negative flips the optimal substructure" for Max Product). Your Result must include the complexity improvement as a ratio: "O(n) vs O(n²) — at n=10^5 that's 10^5 operations vs 10^10." The most common mistake is jumping straight to the optimal solution without first stating the brute force — interviewers cannot evaluate your reasoning if they don't hear the baseline you're optimizing from.
+
 ---
 
 ## Tier 2 — Reported 1-2 Times (Medium Probability)
@@ -42,6 +44,8 @@
 | 24 | Course Schedule | 207 | Topological Sort | Medium | 2022 |
 | 25 | Product of Array Except Self | 238 | Prefix/Suffix Arrays | Medium | 2022 |
 
+**STAR framing tip for Tier 2 problems:** These questions skew toward pattern combinations and non-obvious optimizations — your Situation must name the constraint that rules out simpler approaches (e.g., "in-place" for Rotate Image, "no division" for Product of Array Except Self, "integer overflow" for BST validation). In your Action, call out the key insight that unlocks the efficient solution: for matrix problems, state the geometric equivalence (transpose + reverse = 90° rotation); for monotonic stack problems, explain the invariant the stack maintains (each element pushed/popped at most once). Your Result should address a concrete follow-up DE Shaw commonly asks: for Largest Rectangle in Histogram, be ready to explain why `width = i - stack.top() - 1` instead of `i - idx`. The most common mistake on Tier 2 problems is under-explaining the non-obvious step — interviewers use these questions specifically to test depth of understanding, so spend 70% of your Action time on the one tricky decision.
+
 ---
 
 ## Tier 3 — Occasionally Reported
@@ -58,6 +62,8 @@
 | 33 | Find Minimum in Rotated Sorted Array | 153 | Binary Search | Medium |
 | 34 | Clone Graph | 133 | BFS/DFS | Medium |
 | 35 | Pacific Atlantic Water Flow | 417 | Multi-source BFS | Medium |
+
+**STAR framing tip for Tier 3 problems:** These are lower-probability but often harder to explain quickly — your Situation should include the DP subproblem definition stated as one sentence before writing any recurrence (e.g., "dp[i] = minimum coins to make amount i" for Coin Change; "dp[i] = number of ways to decode s[0..i-1]" for Decode Ways). In your Action, state the recurrence, the fill direction (left-to-right for Coin Change unbounded, right-to-left for 0/1 knapsack), and one edge case that breaks naive attempts (e.g., the leading-zero check in Decode Ways, or the first/last element special case in House Robber). Your Result metric for DP problems should compare state space: "O(n) states × O(1) transition = O(n) total, vs O(2^n) for brute-force recursion without memoization." The most common mistake is confusing unbounded knapsack (inner loop forward) with 0/1 knapsack (inner loop backward) — explicitly state which variant applies and why.
 
 ---
 

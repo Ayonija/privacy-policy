@@ -72,6 +72,36 @@ class Solution {
 - **Carry in Add Two Numbers — most common bug:** after the main while loop, if `carry == 1` append one final node. Trace `999 + 1` to verify.
 - **Common mistake:** in Sort List, initialising `fast = head` instead of `fast = head.next` — with `fast = head` on a 2-node list, `fast.next` is non-null so the loop runs an extra step and `slow` ends up past the midpoint.
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Merge Two Sorted Lists & Merge Sort on a Linked List in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was asked to sort a linked list in O(n log n) time and O(1) extra space (excluding recursion stack). Quicksort on a linked list requires O(n²) worst-case without random access for pivot selection. Merge sort is the optimal choice — O(n log n) guaranteed and naturally suited to linked lists because splitting and merging don't require random access."
+
+**Task:** "My goal was to implement merge sort on a linked list: find the midpoint with fast/slow pointers, recursively sort both halves, then merge in a single pass using the dummy-head merge pattern."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "Sort a linked list without random access → merge sort. Two key sub-problems: (1) find midpoint — fast/slow pointer; (2) merge two sorted lists — dummy head + compare-and-attach."
+2. *Initialize:* "Base case: if `head == null || head.next == null`, return head. For the midpoint, I initialize `fast = head.next` (not `head`) so that fast is one step ahead — ensuring `slow` lands at the LEFT middle node for even-length lists."
+3. *Core loop logic:* "Advance `slow` one step, `fast` two steps until `fast == null || fast.next == null`. Then `second = slow.next; slow.next = null` — this severs the list into two halves. Recurse on each half, then merge."
+4. *Convergence guarantee:* "At each level, we split the list in half — log n levels. Each merge at a level does O(n) work. Total: O(n log n). Stack depth is O(log n)."
+5. *Duplicate handling / edge case proactivity:* "Initialising `fast = head.next` (not `fast = head`) is the critical detail. On a 2-node list with `fast = head`, the while condition `fast != null && fast.next != null` is true, so the loop runs and `slow` advances past the midpoint — corrupting the split."
+
+**Result:** "Merge sort on a linked list is O(n log n) time and O(log n) space (call stack). For n = 10⁵, this is ~1.7M operations vs O(n²) bubble sort which would be 10¹⁰. The merge step is O(n) and uses the dummy-head trick to eliminate all head-insertion edge cases."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer Merge Sort here |
+|-------------|---------------------------|-------------------------------|
+| Insertion sort O(n²) | When list is nearly sorted (O(n k) for k inversions) | O(n²) worst case vs O(n log n) guaranteed; only better for nearly-sorted input |
+| Convert to array, sort, rebuild O(n) space | When space is not constrained | O(n) extra space vs O(log n) for merge sort; problem often requires in-place |
+
+**Why NOT insertion sort:** O(n²) worst case — for a reverse-sorted 10⁵-element list, that's 10¹⁰ operations vs 1.7M for merge sort.
+**Why NOT array conversion:** O(n) extra space for the array; merge sort uses only O(log n) stack space. Also, re-linking nodes from an array requires O(n) additional work.
+
 ### Edge Cases to Trace Before Coding
 - LC 21: one or both inputs are empty → `(l1 != null) ? l1 : l2` handles correctly; `while l1 != null && l2 != null` skips immediately ✓
 - LC 2: both lists represent 0 → result is `[0]`; carry stays 0 throughout ✓
@@ -92,8 +122,24 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to combine outputs from multiple independent workstreams into a single coherent result — analogous to merging sorted lists from separate sorted sources.
-- Leadership principle: Deliver Results
+
+**Leadership Principle:** Deliver Results
+
+**STAR Story: Merging Outputs from Three Independent Data Teams into a Single Coherent Report**
+
+**Situation (20%):** "At my previous company, we needed to deliver a monthly executive dashboard that combined outputs from three independent data teams: the product analytics team, the finance team, and the customer success team. Each team delivered their segment in a different format, on different schedules, with different column naming conventions. Every month, someone spent 2–3 days manually reconciling the three outputs into one coherent report — a process that was error-prone and delayed the dashboard by up to a week."
+
+**Task (part of S/T):** "I was asked to own the dashboard automation project. My goal was to automate the merge process so the monthly dashboard published within 4 hours of the last team's data delivery, with zero manual reconciliation."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I met with each team to document their output schema, delivery time, and update frequency — analogous to understanding each sorted list's structure before merging.
+Then, I designed a merge pipeline that treated each team's output as a sorted input stream: each dataset was normalized to a canonical schema, then joined on a shared entity ID. I chose a merge-join rather than a hash join because all three datasets were already sorted by entity ID after normalization — O(n) merge vs O(n log n) sort-then-hash.
+Next, I implemented the pipeline in dbt with automated schema validation, so if any team changed their column names the pipeline would fail loudly rather than silently produce wrong data.
+Finally, I scheduled the pipeline to trigger automatically when all three sources were available, with a Slack notification to stakeholders when the dashboard published."
+
+**Result (10-20%):** "The monthly dashboard now publishes within 2 hours of the last data delivery, down from 2–3 days. Manual reconciliation errors — which had caused 2 dashboard recalls in the prior year — dropped to zero. The 3 data teams reduced their coordination overhead by 80% because the canonical schema contract handled alignment automatically."
+
+**Interview tip:** Deliver Results answers should connect your technical solution to a business metric. "Dashboard publish time: 3 days → 2 hours" and "reconciliation errors: 2/year → 0" are the numbers that make the story credible. Prepare for: delivering results, ownership, simplification, or cross-team collaboration.
 
 ## Flashcards
 

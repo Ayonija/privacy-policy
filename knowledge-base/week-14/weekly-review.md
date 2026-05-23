@@ -238,3 +238,25 @@ Redis SET NX with TTL: `SET notif:{user_id}:{message_id} 1 NX EX 86400`. If key 
 | Problem | LC # | What blocked me | Retry date |
 |---------|------|-----------------|------------|
 | (fill in) | | | |
+
+## STAR Quick Reference — Week 14
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| Skip-or-Take DP (House Robber) | "Given houses with values and adjacency constraint, applied two-variable rolling DP → O(n) time O(1) space vs O(n) space full array." |
+| House Robber circular | "Given circular array with adjacency constraint, applied two linear subarray runs → O(n) vs O(n²) trying all starting positions." |
+| House Robber tree (post-order DFS) | "Given a tree needing maximum independent set value, applied post-order (rob, skip) pair → O(n) single DFS vs O(2^n) subset enumeration." |
+| Jump Game VI (monotonic deque DP) | "Given scores with jump range k, applied sliding window max via monotonic deque → O(n) vs O(nk) brute-force window scan." |
+| Stock Trading state machines | "Given prices with transaction limits/cooldown/fee, applied multi-state DP → O(n·states) vs O(n²) trying all buy/sell pairs." |
+| Word Break segmentation DP | "Given a string and word dictionary needing segmentability check, applied DP with set lookup → O(n²) vs O(2^n) recursive splitting." |
+| Palindrome Partitioning II (min cuts) | "Given a string needing minimum palindrome cuts, applied is_pal precomputation + 1D DP → O(n²) vs O(n³) re-checking palindromes." |
+| Min Insertions (LPS = LCS) | "Given a string needing minimum insertions to make palindrome, applied LCS(s, reverse(s)) → O(n²) DP vs O(2^n) brute-force." |
+| Coin Change (unbounded knapsack) | "Given coin denominations needing minimum coins to reach amount, applied unbounded knapsack → O(n·amount) vs O(2^n) recursive." |
+| Stick Cut interval DP | "Given cut positions needing minimum cost to cut a stick, applied interval DP with sentinels → O(n³) vs O(n!) trying all cut orderings." |
+| LIS patience sort O(n log n) | "Given a sequence needing longest increasing subsequence length, applied binary search on tails → O(n log n) vs O(n²) DP." |
+| Russian Doll Envelopes (2D LIS) | "Given 2D envelopes needing maximum nesting count, applied sort-by-width-ASC-height-DESC then LIS on heights → O(n log n) vs O(n²)." |
+
+**Career story titles:**
+1. "Stock Trading State Machine — Replaced a brute-force O(n²) buy/sell pair scanner with a 4-state DP for a trading analytics dashboard, reducing per-portfolio computation from 2 seconds to 8ms on 5K price points."
+2. "Word Break Segmentation DP — Applied O(n²) DP to a real-time query autocomplete tagger that had been using O(2^n) recursive splitting, enabling 50K queries/second on a product search backend."
+3. "LIS Patience Sort — Replaced O(n²) DP with O(n log n) patience sort in a version-ordering system, handling 100K package versions in 180ms vs 45 seconds — unblocking a nightly release pipeline."

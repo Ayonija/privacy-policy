@@ -82,6 +82,38 @@ def first_missing_positive(nums):
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Prefix Sum / In-Place Hashing patterns in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a binary array of 0s and 1s and needed to find the longest contiguous subarray with equal counts of each. The brute-force approach of checking every subarray pair would be O(n²) — roughly 10¹² comparisons for n = 10⁶, which would time out after about 17 minutes."
+
+**Task:** "My goal was to solve this in O(n) time and O(n) space by recognising that equal counts of 0s and 1s is equivalent to a prefix sum reaching zero — a classic complement-lookup pattern."
+
+**Action:** Walk the interviewer through these steps:
+1. *Classify the pattern:* "I noticed that replacing each 0 with −1 transforms 'equal counts' into 'prefix sum equals zero', which is exactly the HashMap first-seen pattern."
+2. *Initialize:* "I seeded `first_seen = {0: -1}` to handle the case where the entire prefix sums to zero, and set `prefix = 0`."
+3. *Core loop logic:* "For each element, I update the prefix sum (+1 for 1, −1 for 0). If this prefix value has been seen before, the subarray between the first occurrence and now sums to zero — record its length. If not, store the current index as the first time we've seen this prefix."
+4. *Convergence guarantee:* "Each element is processed exactly once and produces one HashMap lookup and at most one insert — guaranteeing O(n) time and O(n) space."
+5. *Duplicate handling / edge case proactivity:* "I store the *first* occurrence of each prefix sum, not the last, because a longer subarray requires the earliest possible starting point."
+
+**Result:** "This reduces time from O(n²) to O(n). For n = 10⁶ elements that's the difference between finishing in 1 ms versus timing out after 17 minutes."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer Prefix Sum + HashMap here |
+|-------------|---------------------------|--------------------------------------|
+| Brute force (nested loops) | When n ≤ 1,000 and code simplicity is paramount | O(n²) vs O(n); for n ≥ 10⁴ brute force times out |
+| Sorting by prefix value | Never — destroys index ordering | We need the *first-seen* index, so we cannot sort |
+
+**Why NOT brute force:** O(n²) on n = 10⁶ is ~10¹² ops at 10⁹ ops/sec ≈ 17 minutes; this pattern is O(n).
+**Why NOT sorting:** Sorting changes the relative order of prefix values and destroys the index information we need to compute subarray length.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 525: all zeros, all ones — no equal subarray (return 0)
 - LC 974: negative numbers in `nums` — `(prefix + n) % k` can be negative in Python too; normalise with `+ k`
@@ -122,8 +154,18 @@ A hash function maps a key to a bucket; each bucket contains (key, row_pointer) 
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you leveraged an existing resource (memory, data already in place) to solve a problem more efficiently rather than allocating new resources — analogous to First Missing Positive using the input array itself as a hash table.
-- Leadership principle: Frugality
+
+**Leadership principle: Frugality**
+
+**STAR Story — Reusing existing resources instead of allocating new ones**
+
+**Situation:** At my previous role we had a nightly batch job that categorised 50 million user events by type. The original implementation first copied the entire event list into a separate boolean-flag array to mark which event IDs had been "processed", then iterated over the copy to collect uncategorised IDs. For 50 M events, that extra allocation was 400 MB of RAM — enough to push the job into swap on our 4 GB batch servers, which ballooned runtime from 8 minutes to over 40 minutes.
+
+**Task:** I was asked to reduce memory usage of the batch pipeline to fit within a 2 GB working-set budget without slowing it down. My goal was to eliminate the auxiliary allocation entirely while preserving correctness.
+
+**Action:** I recognised that the input array itself was effectively idle after the first read pass — we weren't going back to modify the raw events. I adapted the in-place sign-marking trick: rather than allocating a separate "seen" structure, I used the sign bit of an integer field already present in each event record as a temporary visited flag. Specifically: (1) I validated and normalised IDs in a first pass, replacing out-of-range values with a sentinel. (2) I marked each seen ID by negating the corresponding element at position `id - 1`. (3) I scanned once more to collect any positions still positive — those were the uncategorised events. After the job finished, I restored signs in a final O(n) pass so downstream consumers received clean data. I added a unit test that verified zero net allocations (measured via a custom allocator hook) and ran the suite on 10 random seeds.
+
+**Result:** Memory footprint dropped from 400 MB auxiliary + 400 MB source to zero auxiliary, total working set fell from 850 MB to 420 MB, and runtime went from 40 minutes (swap-bound) to 6 minutes — a 6.7× speedup. The batch server's peak RAM stayed under 512 MB, well within budget, and we avoided the planned hardware upgrade that would have cost $18,000 per year.
 
 ---
 

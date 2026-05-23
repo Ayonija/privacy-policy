@@ -46,6 +46,36 @@ class Solution {
 - **Duplicate skipping in 3Sum:** always sort first; skip `nums[i] == nums[i-1]` at the fixed index AND skip equal moves inside the inner while loop. Missing either one is the most common 3Sum bug.
 - **Common mistake:** using `left <= right` instead of `left < right` for pair problems — when pointers meet, pairing an element with itself is invalid for most pair-sum problems.
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Two Pointers in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a sorted array and asked to find all pairs (or triplets) summing to a target. The brute-force approach of checking every combination with nested loops gives O(n²) for pairs and O(n³) for triplets, which for n = 10⁶ means roughly 10¹² operations — at 10⁹ ops/sec, that's around 17 minutes for pairs and infeasible for triplets."
+
+**Task:** "My goal was to reduce this to O(n) for pair-sum and O(n²) for 3Sum by recognising that sorted order lets us make a guaranteed progress decision on each step instead of blind enumeration."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "I noticed the array is sorted and the problem asks for pairs satisfying a sum constraint — that's the canonical two-pointer trigger. I immediately reach for `left = 0, right = n-1`."
+2. *Initialize:* "I place `left` at index 0 (smallest element) and `right` at index n-1 (largest element). The current sum is `nums[left] + nums[right]`."
+3. *Core loop logic:* "If the sum equals the target, I record the pair and advance both pointers inward. If the sum is too small, I move `left` right to increase the sum. If the sum is too large, I move `right` left to decrease it. Only one pointer moves per iteration."
+4. *Convergence guarantee:* "Each iteration moves at least one pointer, and pointers never cross backward, so we perform at most n total pointer moves — the algorithm terminates in O(n)."
+5. *Duplicate handling / edge case proactivity:* "For 3Sum, after sorting, I skip `nums[i] == nums[i-1]` at the fixed index AND skip equal moves inside the inner while loop after recording a triplet. Missing either skip produces duplicate triplets — the most common 3Sum bug."
+
+**Result:** "This reduces the pair-sum from O(n²) to O(n) and 3Sum from O(n³) to O(n²). For n = 10⁶, the pair-sum difference is finishing in ~1 ms versus timing out after 17 minutes. For 3Sum with n = 3000 (typical constraint), O(n²) finishes in ~9M ops while O(n³) would be 27B ops."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer Two Pointers here |
+|-------------|---------------------------|-------------------------------|
+| Brute force / nested loops | When n ≤ 100 and code clarity matters more than speed | Two pointers is O(n) vs O(n²); for n ≥ 10⁴ brute force times out |
+| Hash set / HashMap | When the input is unsorted, or you need index preservation | Two pointers needs sorted input but gives O(1) space vs O(n) for a hash set |
+
+**Why NOT brute force:** O(n²) on n = 10⁶ is ~10¹² operations — about 17 minutes at 10⁹ ops/sec; constraints typically force n ≤ 10⁵ or mandate O(n log n) or better.
+**Why NOT hash set:** A hash set costs O(n) extra space and doesn't naturally handle duplicates for k-sum problems; two pointers achieves O(1) space with sorted input and handles duplicates with a simple skip.
+
 ### Edge Cases to Trace Before Coding
 - Empty array or single element → return immediately (no valid pair)
 - All same elements (e.g., `[2, 2, 2]` for 3Sum) → must de-dup correctly without skipping valid triplets
@@ -64,8 +94,24 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you broke a large, seemingly impossible problem into a series of small, ordered steps — analogous to how two pointers turn an O(n²) search into O(n).
-- Leadership principle: Bias for Action
+
+**Leadership Principle:** Bias for Action
+
+**STAR Story: Turning an O(n²) Data Migration into an O(n) Pipeline**
+
+**Situation (20%):** "In my previous role as a software engineer, our team had a data backfill job that processed a 2-million-row customer dataset by comparing each row against every other row to find matching records — an O(n²) nested-loop design. At our current data volume, the job took 9+ hours and was blocking our nightly release window."
+
+**Task (part of S/T):** "I was responsible for the data pipeline's reliability. My goal was to reduce the backfill runtime to under 30 minutes without changing the output or adding new infrastructure."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I profiled the job and confirmed the nested loop accounted for 96% of runtime — it was doing 4 trillion comparisons.
+Then, I noticed the matching key was a normalized identifier that could be sorted — exactly the two-pointer trigger condition. I proposed sorting both datasets once (O(n log n)) and using a two-pointer merge scan instead of the nested loop.
+Next, I implemented the new approach in a branch, validated output correctness against a 100K-row sample where both old and new produced identical results.
+Finally, I deployed the change, monitored the first production run end-to-end, and documented the pattern in our team wiki so two other similar jobs could be updated the same week."
+
+**Result (10-20%):** "The backfill job went from 9+ hours to 18 minutes — a 97% reduction. The nightly release window was unblocked, and the two follow-up jobs I documented were updated within the week, saving an additional 6 hours of compute time per night. I now apply complexity analysis before committing to any nested loop in our core pipelines."
+
+**Interview tip:** Interviewers want to hear about *your* contribution. Say "I profiled", "I implemented", "I validated" — not "we fixed it". Prepare this story for questions about: optimization, initiative, problem-solving under constraint, or technical depth.
 
 ## Flashcards
 

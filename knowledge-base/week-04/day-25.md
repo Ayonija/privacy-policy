@@ -66,6 +66,34 @@ class Solution {
 }
 ```
 
+### Interview Tips
+
+- **Why amortised O(1) for two-stack queue:** "Emphasise that each element crosses from in-stack to out-stack exactly once — the total cost over n operations is O(n), so amortised per-operation cost is O(1). Interviewers at FAANG will ask for the proof."
+- **Lazy transfer is mandatory:** "Transfer only when out-stack is empty — not on every pop. Eager transfer would degrade push to O(n)."
+- **Dota2 index trick:** "Re-queueing the winner at `index + n` (not 0) preserves relative turn order across rounds. Without the +n offset, a senator who acts in round 2 would appear to act before senators who haven't taken their round-1 turn yet."
+- **Reveal Cards backward simulation:** "Simulate the process in reverse — place the largest card last, then use the deque to figure out which position it goes in. Working forward requires guessing positions; working backward removes all ambiguity."
+- **Brute force for Dota2:** O(n²) per round × O(n) rounds = O(n³) → greedy queue is O(n log n).
+
+### STAR Interview Framework
+
+> **Queue Simulation & Deque Ordering:** brute-force O(n²) → this approach O(n) amortised time, O(n) space
+
+**S:** "Given a sequence of n senators from two parties, each able to ban the next opposing senator in turn. Naive simulation re-scans the remaining list each round — O(n) per ban × O(n) bans = O(n²) — too slow for n=10^4."
+**T:** "Need O(n) by maintaining two index queues and always selecting the minimum-index senator in O(1). Goal: determine which party wins the senate."
+**A (60% of answer time):**
+1. *Classify:* "The trigger is 'round-robin simulation where the next actor in each party must be identified quickly' — greedy queue indexed by turn order."
+2. *Init:* "Two queues: one for each party, pre-populated with each senator's index in the string."
+3. *Loop/Step:* "Dequeue the front of each queue; the smaller index acts first and bans the other; re-enqueue the winner at `current_index + n` to preserve round ordering."
+4. *Termination:* "When one queue empties, the other party wins — return that party's name."
+5. *Gotcha:* "Re-enqueue at `index + n`, not 0 — this ensures senators who acted early in round k don't appear to act before senators still finishing round k."
+**R:** "O(n) time, O(n) space. At n=10^4, this runs in ~0.5ms vs ~1 second for the naive list-scan simulation — the kind of difference that matters in a real-time game engine or scheduling system."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Brute-force list re-scan | n ≤ 100, quick prototype | O(n²) or worse — too slow for n=10^4 |
+| Priority queue (min-heap) by index | Need the globally smallest index across both parties at once | Both parties act simultaneously each round; separate queues are simpler and sufficient |
+
 ## System Design (1 hour)
 ### Topic: Consistency Models — Strong, Eventual, and the Spectrum Between
 - **Strong consistency (linearisability):** operations appear instantaneous; all clients see the same order. Used by: etcd, Zookeeper, Google Spanner.
@@ -79,8 +107,15 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you managed a backlog queue of requests under high load — determining which items to process first based on recency and priority, analogous to the Dota2 senate index-based priority queuing.
 - Leadership principle: Customer Obsession
+
+**Full STAR Story — "Redesigning the Support Ticket Routing Queue to Prioritise High-Value Customers":**
+
+**S (20%):** "At a SaaS company, the customer support system processed all incoming tickets in strict FIFO order from a single queue. During a major incident affecting 3,000 tenants, enterprise customers (representing 70% of ARR) waited 4+ hours behind free-tier users submitting low-priority tickets — three enterprise customers escalated to their account executives and two threatened contract cancellation."
+**T:** "I was the engineer responsible for the support infrastructure. Goal: rebalance routing so enterprise tickets reached a specialist within 30 minutes during incidents, without degrading free-tier response SLA."
+**A (60% — use 'I' not 'we'):** "(1) I analysed ticket volume and found that enterprise tickets were 8% of volume but 70% of revenue impact — a clear case where strict FIFO was wrong. (2) I replaced the single queue with two index-aware queues: a priority queue for enterprise+ tiers and a standard queue for free/starter tiers, with a round-robin dispatcher that served 3 priority tickets for every 1 standard ticket under load. (3) I instrumented both queues with P50/P95 wait-time dashboards so support leadership had real-time visibility. (4) I back-tested the new routing against the incident log — simulated enterprise wait time dropped from 4 hours to 22 minutes."
+**R (20%):** "In the three months after deployment, enterprise P95 response time during incidents fell from 4+ hours to 18 minutes. Free-tier SLA remained within the 24-hour target. The two at-risk enterprise accounts renewed. Support leadership cited the routing redesign in the company all-hands as a customer obsession win."
+*Works for LP questions on: Customer Obsession; Ownership; Deliver Results.*
 
 ## Flashcards
 

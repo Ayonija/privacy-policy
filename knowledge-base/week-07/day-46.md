@@ -108,6 +108,38 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Tree Construction from Traversal Arrays in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given preorder and inorder traversal arrays of a binary tree with unique values and asked to reconstruct the original tree. The brute-force approach of scanning the full inorder array to find the root at each recursion level is O(n²) — for a tree with 100,000 nodes that's 10 billion operations, which times out."
+
+**Task:** "My goal was to reconstruct the tree in O(n) by precomputing a value-to-index map of the inorder array so every root-lookup is O(1)."
+
+**Action:** Walk the interviewer through these steps:
+1. *Key invariant — preorder:* "The first element of any preorder slice is always the root of that subtree. For preorder `[3, 9, 20, 15, 7]`, root = 3."
+2. *Key invariant — inorder:* "Everything to the left of the root in the inorder array is the left subtree; everything to the right is the right subtree. For inorder `[9, 3, 15, 20, 7]`, root 3 is at index 1; left subtree = `[9]`; right subtree = `[15, 20, 7]`."
+3. *Build the index map:* "Before any recursion, I build `inorder_idx = {value: index}` for the full inorder array — O(n) one-time cost. Each root lookup is O(1) during recursion."
+4. *Compute left subtree size:* "`left_size = inorder_idx[root_val] - in_start`. This tells me how many nodes are in the left subtree, which determines the preorder split point."
+5. *Recurse:* "Left child: preorder `[pre_start+1, pre_start+left_size]`, inorder `[in_start, mid-1]`. Right child: preorder `[pre_start+left_size+1, pre_end]`, inorder `[mid+1, in_end]`. Each call processes a disjoint slice — O(n) total."
+
+**Result:** "O(n) time with the HashMap, O(n) space. Without the HashMap it's O(n²). For 100,000 nodes: O(n) ≈ 100,000 operations vs O(n²) ≈ 10 billion — the difference between sub-millisecond and several seconds."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer HashMap + divide-and-conquer |
+|-------------|---------------------------|----------------------------------------|
+| Scan inorder linearly at each level | n ≤ 1,000 | O(n²) — acceptable for small trees, times out for n = 100,000 |
+| Iterative reconstruction with stack | Stack-safe for very deep trees | Complex; divide-and-conquer is cleaner and equivalent in time |
+| HashMap + divide-and-conquer | Standard | O(n) time, O(n) space; the canonical solution |
+
+**Why NOT linear scan:** O(n²) on n = 10⁵ is 10¹⁰ ops at 10⁹ ops/sec ≈ 10 seconds. The HashMap lookup is the single most impactful optimization — a 100,000× speedup for the largest inputs.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 105: single-element tree → `preorder = inorder = [x]` → one-node tree; all values in one subtree (no left children) → left_size = 0, so left recursion terminates immediately
 - LC 106: single element; verify postorder slicing — right subtree uses postorder from `post_start + left_size` to `post_end - 1` (excluding the root at post_end)
@@ -183,8 +215,18 @@ Deleting (rather than setting) avoids a race where a stale cache.set could overw
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to make a trade-off between data freshness and system performance — analogous to choosing between event-driven invalidation (always fresh) and TTL-based expiry (simpler but stale).
-- Leadership principle: Insist on the Highest Standards
+
+**Leadership principle: Insist on the Highest Standards**
+
+**STAR Story — Trade-off between data freshness and system performance**
+
+**Situation:** Our platform displayed real-time product availability counts on the product detail page — "Only 3 left in stock!" These counts were cached in Redis with a 10-minute TTL. The business had seen multiple customer complaints of clicking "Add to Cart" on a product showing stock, only to receive an out-of-stock error at checkout — a frustrating experience that correlated with a 22% cart abandonment rate for those affected sessions.
+
+**Task:** I owned the inventory display layer and was asked to reduce the discrepancy between displayed stock and actual stock to under 30 seconds, without increasing database load by more than 20%.
+
+**Action:** I audited when stock counts changed in the 10-minute windows. The majority of discrepancies occurred during flash sales and restock events — brief periods of rapid inventory change that happened predictably. I designed a two-layer invalidation strategy: TTL-based for normal periods (10-minute TTL, acceptable staleness) plus event-driven invalidation on significant stock changes. I added a Kafka consumer that listened to inventory update events and only fired `cache.delete(product:{id})` when the stock count changed by more than 10% or dropped below 10 units — the two thresholds that correlated with customer-visible discrepancies. This kept the event fan-out small: 98% of inventory changes were small fluctuations that didn't warrant immediate cache invalidation. I load-tested the Kafka consumer at 5× peak event rate to verify it wouldn't bottleneck under a flash sale spike.
+
+**Result:** Stock-count discrepancy at checkout dropped from an average of 8 minutes (half the TTL) to under 25 seconds for the triggering cases. Cart abandonment due to out-of-stock errors fell from 22% to 6% for affected sessions. Database read load increased by only 11% (within the 20% budget) because the invalidation threshold filtered 98% of events. The TTL continued to handle normal traffic with zero overhead.
 
 ---
 

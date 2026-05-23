@@ -76,8 +76,18 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to reconcile two divergent versions of work (e.g., two branches, two document drafts) — analogous to merging conflicting replica states in an eventual consistency system.
-- Leadership principle: Invent and Simplify
+
+**LP:** Invent and Simplify
+
+**Full STAR Story — "Eliminating the Manual Merge Ceremony":**
+
+**S (20%):** "At my previous team, our CI pipeline had 3 independent services each maintaining their own config file. After every sprint, an engineer spent ~4 hours manually reconciling 60+ config keys across diverging branches — analogous to merging conflicting replica states."
+**T:** "I was responsible for the build tooling. Goal: reduce reconciliation time from 4 hours to under 15 minutes."
+**A (60% — use 'I', never 'we'):**
+"(1) I audited all config keys and identified 80% were environment-independent and never diverged. (2) I extracted those into a single shared config layer with a schema validation step. (3) I wrote a deterministic merge script for the remaining 20% of environment-specific keys — union by default, explicit conflict list for human review. (4) I added a CI gate that ran the script on every PR and failed loudly if a new conflict key appeared without a resolution annotation."
+**R (20%):** "Reconciliation dropped from 4 hours to 8 minutes. Zero merge-related hotfixes in the following quarter. The conflict-annotation pattern was adopted by two other teams. I learned that most 'merge problems' are actually a missing source-of-truth layer."
+
+*Works for LP questions on: Invent and Simplify, Deliver Results, Are Right A Lot.*
 
 ## Flashcards
 

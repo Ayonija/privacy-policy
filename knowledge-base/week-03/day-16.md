@@ -47,6 +47,49 @@ class Solution {
 }
 ```
 
+### Interview Tips
+
+- **Intersection — state the equidistance trick upfront:** "Both pointers traverse len(A) + len(B) total steps — they land on the intersection node simultaneously because they've covered equal distance. If there's no intersection, both hit null at the same time and the while loop exits."
+- **Reorder List — announce all three steps before coding:** "(1) Find mid with fast/slow. (2) Reverse second half in-place. (3) Interleave: save both `next` pointers before relinking." Forgetting step 3's save-before-relink causes a pointer loss.
+- **Brute force for intersection:** store all nodes of A in a set, scan B looking for membership — O(m+n) time, O(m) space. The two-pointer trick achieves O(m+n) time and O(1) space.
+- **Common mistake for Reorder List:** calling the interleave step before reversing the second half — the second half must be reversed first so `left` and `right` converge toward each other, not away.
+
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Two Pointers on Two Lists + In-Place Reorder in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given two linked lists that may share a common tail, and asked to find the node where they intersect — or return null. A HashSet approach stores all nodes of one list and scans the other — O(m+n) time but O(m) space. The two-pointer equidistance trick achieves O(m+n) time and O(1) space."
+
+**Task:** "My goal was to find the intersection node in O(1) extra space by recognising that if both pointers traverse both lists — A then B, and B then A — they cover the same total distance and meet at the intersection node."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "Find where two structures converge without extra storage → two-pointer equidistance trick. Trigger: 'intersection of two linked lists' or 'where two paths join.'"
+2. *Initialize:* "Set `a = headA, b = headB`. The loop condition is `while a != b` — when both are null and there's no intersection, both reach null simultaneously and the loop exits."
+3. *Core loop logic:* "`a = a != null ? a.next : headB; b = b != null ? b.next : headA`. When `a` reaches null, redirect to `headB`. When `b` reaches null, redirect to `headA`. Both pointers now traverse exactly `len(A) + len(B)` total steps."
+4. *Convergence guarantee:* "If an intersection exists at distance d from each list's head, both pointers reach it after `len(A) + len(B) - d` steps. If no intersection, both reach null simultaneously after exactly `len(A) + len(B)` steps."
+5. *Duplicate handling / edge case proactivity:* "The equality check is pointer equality (`a == b`), not value equality. Two nodes with the same value but at different memory addresses are NOT the same intersection node."
+
+**Result:** "O(m+n) time, O(1) space vs O(m) for a HashSet. The equidistance property eliminates the need for length computation. For lists of length m = n = 10⁵, this saves 800KB of HashSet memory for a 10⁵-node set."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer Two Pointers here |
+|-------------|---------------------------|-------------------------------|
+| HashSet of nodes from list A | When O(m) space is acceptable | O(1) space vs O(m); equidistance trick is the canonical O(1)-space solution |
+| Compute lengths, align, scan together | When you want an easier-to-explain approach | Also O(m+n) time and O(1) space — but two-pointer equidistance is more elegant and tests pattern knowledge |
+
+**Why NOT HashSet:** O(m) extra space. For m = 10⁵ nodes, that's ~800KB for the set vs two pointer variables.
+**Why NOT length-align:** Both approaches are O(m+n), O(1) — equidistance is slightly more elegant and the pattern interviewers specifically test.
+
+### Edge Cases to Trace Before Coding
+- LC 160: no intersection → both pointers reach null simultaneously; `while a != b` exits when both are null ✓
+- LC 160: both lists are the same list → both pointers immediately equal; answer is headA ✓
+- LC 328 (Odd Even): single node → nothing to rearrange; return head ✓
+- LC 143: two-node list → first half is node 1, second half (reversed) is node 2; interleave produces [1,2] ✓
+
 ## System Design (1 hour)
 ### Topic: Horizontal Scaling — Database Bottleneck & Read Replicas
 - Web servers scale horizontally easily (stateless); the database is the usual bottleneck because it holds state.
@@ -59,8 +102,24 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to interleave work from two parallel streams — such as merging two teams' outputs into a unified deliverable — analogous to the merge step in Reorder List.
-- Leadership principle: Are Right, A Lot
+
+**Leadership Principle:** Are Right, A Lot
+
+**STAR Story: Interleaving Two Teams' Feature Work Into a Unified API**
+
+**Situation (20%):** "Two teams at my company were building complementary features that both needed to be surfaced through a single unified API endpoint: Team A was building real-time pricing data and Team B was building inventory availability. Both were 6 weeks into development when product decided the features should be interleaved in the API response rather than returned as two separate sections — each pricing item paired with its corresponding inventory item in alternating order."
+
+**Task (part of S/T):** "As the platform engineer responsible for the API layer, my goal was to merge both teams' outputs into the interleaved response format without requiring either team to change their backend logic — preserving their independent development timelines."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I analyzed both response schemas and confirmed they shared a common product ID key — I could join them on that key, analogous to the Reorder List's ability to pair nodes by position once the second half is reversed.
+Then, I designed an adapter layer in the API gateway that fetched both response streams in parallel (reducing latency vs sequential), then interleaved the results: for each position i, the response contained `pricing[i]` followed by `inventory[i]`.
+Next, I built unit tests covering equal-length responses, pricing-longer responses, and inventory-longer responses — covering all three length relationships.
+Finally, I ran an integration test with both teams' staging environments and confirmed the interleaved output matched the product spec exactly."
+
+**Result (10-20%):** "The interleaved API went live on schedule — no delay to either team's timeline. API response time was 45ms vs the ~110ms that sequential fetching would have produced. The adapter pattern I built was reused for 4 subsequent feature combinations over the next quarter, each time avoiding a redesign of either contributing service."
+
+**Interview tip:** Are Right, A Lot rewards technical judgment calls with good outcomes. The key is "I analyzed the schema, confirmed the join key existed, designed the adapter, and validated correctness" — showing methodical reasoning, not just intuition. Prepare for: are right a lot, invent and simplify, earn trust, or technical decision-making.
 
 ## Flashcards
 

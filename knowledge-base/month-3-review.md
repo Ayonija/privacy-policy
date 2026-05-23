@@ -290,3 +290,25 @@ Scale? → partition count bounds parallelism; HPA on consumer lag
 - Month 2 (Days 31–60): Binary Search, Sliding Window, DP Foundations — ✅ Complete
 - Month 3 (Days 61–90): Graphs, Heaps, Tries, Greedy, Backtracking — ✅ Complete
 - Month 4 (Days 91–120): DP Advanced — Next
+
+---
+
+## STAR Mastery: Month 3 Review
+
+### Pattern → LP Question Mapping
+| LP Question | Best pattern story from this month | Key framing |
+|-------------|-----------------------------------|-------------|
+| "Tell me about optimizing something" | Dijkstra replacing brute-force BFS — O((V+E) log V) vs O(V²) | Lead with before/after numbers: "BFS on weighted graph was O(V²); switching to priority-queue Dijkstra cut it to O((V+E) log V) — 100× faster at V=10,000" |
+| "Tell me about ownership/initiative" | IPO two-heap greedy — proactively identifying the capital-constrained selection pattern | "I identified that unlocking tasks by capital threshold was the greedy IPO structure; I proposed using dual heaps to solve it in O(k log n) instead of re-sorting each round" |
+| "Tell me about ambiguity" | Merge intervals — multiple valid approaches (sort by start vs end) and choosing the right sort key | Highlight decision framework: "There were two reasonable sort keys; I reasoned through which invariant each maintained and chose start-time sort because it simplifies the merge condition to one check" |
+| "Tell me about working under pressure" | Backtracking (subsets/permutations) under a 15-minute contest timer | Add time constraint: "With 12 minutes left, I had to choose between three backtracking templates; I picked the subsets template and adapted it under pressure, which got me to AC" |
+| "Tell me about a failure" | Floyd-Warshall applied to a sparse graph — initially chose O(V³) when O((V+E) log V) Dijkstra was correct | Focus on learning: "I reached for Floyd-Warshall by reflex; it TLE'd at V=1000. I learned to always check graph density before choosing all-pairs vs single-source" |
+
+### 5 Versatile Career Story Titles for Month 3
+1. "Dijkstra on a Weighted Routing Graph — reduced route-finding latency from 4s to 40ms by replacing BFS with priority-queue Dijkstra on a 50,000-node network graph"
+2. "Two-Heap Median on a Live Data Stream — maintained running median in O(log n) per insert for a 10M-event financial feed, replacing an O(n) sort-on-demand approach"
+3. "Word Search II with Trie Pruning — cut grid search from O(m×n×4^L × W) to O(m×n×4^L) by building a shared Trie for all W words and pruning dead branches in-place"
+4. "Kafka DLQ + Outbox Pattern for a Payment Pipeline — eliminated 0.3% message loss by wrapping DB writes and Kafka publishes in a single outbox transaction with idempotent retry"
+5. "Activity-Selection Greedy for Meeting Room Scheduling — maximized room utilization by 22% by switching from earliest-start to earliest-end sort, provably optimal via exchange argument"
+
+*Each story adapts to 3+ LP questions by emphasizing different Action steps.*

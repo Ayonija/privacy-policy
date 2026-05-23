@@ -62,6 +62,26 @@ class Solution {
 - **Brute force baseline:** O(n²) for each element, scan right (and wrap) until a greater element is found → monotonic stack is O(n).
 - **Common mistake:** in LC 496 (NGE I), building the NGE map from `nums1` instead of `nums2` — you must precompute NGEs for *all* elements of `nums2`, then look up `nums1` elements in the map.
 
+### STAR Interview Framework
+
+> **Monotonic Stack (Decreasing):** brute-force O(n²) → this approach O(n) time, O(n) space
+
+**S:** "Given an array of n integers and a constraint to find the next greater element for each. Naive double-loop is O(n²) — too slow for n=10^5."
+**T:** "Need O(n) by maintaining a monotonically decreasing stack of unresolved indices. Goal: for each element, output the first element to its right that is strictly larger, or -1."
+**A (60% of answer time):**
+1. *Classify:* "The trigger is 'first element that breaks a monotone relationship to the right' — classic monotonic stack."
+2. *Init:* "Maintain a stack of indices whose NGE has not yet been found; initialise result array to -1 to handle elements with no NGE."
+3. *Loop/Step:* "For each index i: while the stack is non-empty and `nums[stack.top()] < nums[i]`, pop the top — it has found its NGE at i; record `result[top] = nums[i]`; then push i."
+4. *Termination:* "Every element is pushed once and popped at most once — O(n) total; anything remaining in the stack after the loop retains -1."
+5. *Gotcha:* "For circular arrays (LC 503), iterate 2n steps using `i % n` but only push indices during the first pass — the second pass only resolves pending elements."
+**R:** "O(n) time, O(n) space. At n=10^5 this is ~0.3ms vs ~30 seconds for the O(n²) brute force — the difference between a feature shipping and a timeout."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Brute-force double loop | n ≤ 1,000 and code simplicity matters | O(n²) is too slow for n=10^5 |
+| Sparse table / segment tree | Range minimum/maximum queries with many lookups | No range queries here — we need the *first* greater element positionally |
+
 ### Edge Cases to Trace Before Coding
 - LC 739 (Daily Temperatures): monotonically decreasing temperatures → stack fills up, nothing gets popped during the loop; all results stay 0 ✓
 - LC 739: monotonically increasing → each new temperature pops all previous; results are all 1 except the last (which stays 0) ✓
@@ -82,8 +102,15 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to wait for confirmation from multiple stakeholders before declaring a decision final — analogous to a Raft leader waiting for a quorum before acknowledging a write.
 - Leadership principle: Are Right, A Lot
+
+**Full STAR Story — "Refactoring the Price Alert Engine from O(n²) to O(n) with a Monotonic Stack":**
+
+**S (20%):** "At a fintech startup, our nightly price-alert job scanned 80,000 stock tickers and for each ticker looped over the entire history to find the next day prices would spike above a threshold. The job took 4.5 hours and was consistently missing the pre-market window — users were receiving alerts after the market had already moved."
+**T:** "I owned the alert microservice end-to-end. Goal: reduce batch runtime to under 15 minutes so alerts could fire before market open at 9:30 AM."
+**A (60% — use 'I' not 'we'):** "(1) I profiled the job and confirmed the double loop was the bottleneck — O(n²) across 80,000 tickers × 250 trading days. (2) I recognised this was a 'next greater element' pattern and rewrote the core scan using a monotonic decreasing stack, bringing the per-ticker pass from O(d²) to O(d). (3) I added an index-based stack so I could compute exact day-distance alongside the alert price — not just whether a spike existed but when. (4) I ran the refactored job against six months of historical data, verified alert accuracy matched the original, and deployed with a feature flag to shadow-run for one week before cutover."
+**R (20%):** "Batch runtime dropped from 4.5 hours to 11 minutes — a 24× improvement. Alerts began firing at 6:00 AM, within the pre-market window. Zero regressions in alert accuracy. The same stack pattern was later applied to three other time-series jobs across the team."
+*Works for LP questions on: Are Right, A Lot; Invent and Simplify; Deliver Results.*
 
 ## Flashcards
 

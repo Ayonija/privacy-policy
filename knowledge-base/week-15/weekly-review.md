@@ -233,3 +233,25 @@ LC 44 (`*` alone): matches any sequence of any character — no preceding char d
 | Problem | LC # | What blocked me | Retry date |
 |---------|------|-----------------|------------|
 | (fill in) | | | |
+
+## STAR Quick Reference — Week 15
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| Dual-state DP + monotonic stack (Odd Even Jump) | "Given an array with alternating jump rules, applied dual-state DP with precomputed next-jump indices via monotonic stack → O(n log n) vs O(n²) brute-force per-index search." |
+| Interval DP (Strange Printer) | "Given a string needing minimum print turns, applied interval DP exploiting same-character merging → O(n³) with O(n²) savings over naive scheduling." |
+| Sliding window prefix sum DP (K Inverse Pairs) | "Given n and k needing count of arrays with exactly k inverse pairs, applied prefix-sum-accelerated DP → O(nk) vs O(n²k) inner loop." |
+| 0/1 Knapsack classic | "Given items with weights/values and capacity W, applied backward-iteration 1D DP → O(nW) time O(W) space vs O(nW) space 2D table." |
+| 0/1 Knapsack 2D (Ones and Zeroes) | "Given strings with zero/one budgets, applied 2D backward-iteration knapsack → O(n·m·k) vs O(n·2^L) brute-force subset enumeration." |
+| Two-agent grid DP (Cherry Pickup) | "Given two robots collecting on a shared grid, applied joint 3D state dp(r1,c1,r2) → O(n³) vs O(n⁴) independent path search that double-counts." |
+| LCS classic | "Given two strings needing longest common subsequence, applied 2D DP → O(mn) time O(min(m,n)) space vs O(2^n) recursive." |
+| Distinct Subsequences (count variant) | "Given s and t needing count of distinct subsequence embeddings, applied LCS-style counting DP → O(mn) vs O(2^m) brute-force." |
+| Wildcard Matching | "Given string and wildcard pattern, applied 2D DP with two * transitions → O(mn) vs O(2^n) backtracking." |
+| Regular Expression Matching | "Given string and regex pattern with a*, applied 2D DP with zero-or-more transitions → O(mn) vs O(2^n) recursive branching." |
+| Edit Distance | "Given two words needing minimum edits to transform, applied 3-operation 2D DP → O(mn) time O(n) space vs O(3^n) brute-force." |
+| Scramble String (memoized interval DP) | "Given two strings needing scramble check, applied memoized recursion with anagram pruning → O(n⁴) memoized vs O(5^n) without memo." |
+
+**Career story titles:**
+1. "Two-Agent Grid DP — Redesigned a warehouse robot path optimizer from independent O(n⁴) search (double-counting shared pickups) to joint O(n³) state DP, correcting inventory accuracy from 85% to 99.7%."
+2. "LCS Plagiarism Detector — Shipped an LCS-based similarity scorer in 11 days under board deadline pressure, reducing instructor manual review from 4–6 hours to 18 minutes per submission (87% reduction)."
+3. "Edit Distance Fuzzy Search — Proposed and prototyped Edit Distance DP as an alternative to trigram Jaccard for short-query matching, contributing evidence that led to a hybrid approach improving recall from 65% to 83%."

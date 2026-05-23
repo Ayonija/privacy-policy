@@ -266,3 +266,25 @@ Complete this before moving to Month 5:
 1.
 2.
 3.
+
+---
+
+## STAR Mastery: Month 4 Review
+
+### Pattern → LP Question Mapping
+| LP Question | Best pattern story from this month | Key framing |
+|-------------|-----------------------------------|-------------|
+| "Tell me about optimizing something" | LIS from O(n²) DP to O(n log n) with binary search on tails array | Lead with before/after numbers: "Naive DP was O(n²) and TLE'd at n=10^5; replacing it with a patience-sort tails array and bisect_left cut runtime to O(n log n) — 1000× faster" |
+| "Tell me about ownership/initiative" | Bitmask DP for TSP (Shortest Superstring) — proactively precomputing overlap table | "I identified that recomputing overlaps inside the DP loop was the hidden O(n³) cost; I proposed a one-time O(n²×L) precomputation that reduced the inner loop to O(1) lookups" |
+| "Tell me about ambiguity" | Digit DP with tight flag — multiple state definitions possible (tight + prev_digit vs tight alone) | Highlight decision framework: "The state space had two defensible designs; I reasoned that adding a 'tight' boolean was necessary to avoid overcounting numbers that exceeded the limit mid-digit, and documented the invariant explicitly" |
+| "Tell me about working under pressure" | Rerooting DP (LC 834) — two-pass pattern identified under contest time pressure | Add time constraint: "With 10 minutes left in the contest, I recognized the naïve O(n²) re-rooting would TLE and quickly sketched the dfs1→dfs2 two-pass structure, which got AC with 2 minutes to spare" |
+| "Tell me about a failure" | Game DP (Stone Game III) — initially wrote bottom-up in wrong direction, got wrong answers | Focus on learning: "I assumed left-to-right fill was correct; the WA revealed the recurrence needed right-to-left iteration because each player looks forward. I now always derive the dependency direction from the recurrence before choosing fill order" |
+
+### 5 Versatile Career Story Titles for Month 4
+1. "LRU Cache in O(1) — implemented HashMap + doubly-linked-list with dummy sentinels to achieve O(1) get/put, replacing a TreeMap-based O(log n) solution that became a latency bottleneck at 500K ops/sec"
+2. "Bitmask DP for Team Assignment — solved an NP-hard scheduling problem optimally for n≤20 teams using O(2^n × n) state space, cutting assignment time from 8 hours of manual planning to 200ms"
+3. "Consistent Hashing for a Distributed Cache — reduced key remapping on node joins/leaves from O(K) to O(K/n) by switching to a virtual-node hash ring with V=150, enabling zero-downtime scaling"
+4. "Digit DP for Compliance Reporting — counted valid invoice numbers in a constrained digit range 10× faster than string enumeration by encoding the tight-flag constraint in a 3-state DP"
+5. "Tree Rerooting DP for Network Latency Analysis — computed sum-of-distances to all nodes for every root in O(n) instead of O(n²) by applying the ans[child] = ans[parent] - count[child] + (n - count[child]) rerooting formula"
+
+*Each story adapts to 3+ LP questions by emphasizing different Action steps.*

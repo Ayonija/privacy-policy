@@ -45,6 +45,36 @@ class Solution {
 - **Common mistake:** in Container With Most Water, updating `maxArea` inside the `if` branch rather than unconditionally — you must record the area *before* moving any pointer.
 - **Alternative approach for Reverse String:** the two-pointer swap is O(1) space; mention that Java's `StringBuilder.reverse()` does the same but isn't allowed in-place questions.
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Two Pointers — Greedy Shrink in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given an array of heights representing bars and asked to find two bars that form a container holding the most water. The brute-force approach of checking every pair `(i, j)` would give O(n²), which for n = 10⁵ means 10¹⁰ operations — about 10 seconds, right at the edge of timing out."
+
+**Task:** "My goal was to solve this in O(n) time and O(1) space by recognising that sorted order — or in this case, directional knowledge — lets us make a guaranteed greedy choice at each step: always move the shorter bar inward."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "I noticed the area depends on only the two endpoint values — the minimum height and the width. That's the two-pointer greedy-shrink trigger: no internal window state needed."
+2. *Initialize:* "I set `left = 0` and `right = n-1` to start at maximum width. I record `maxArea = min(height[left], height[right]) * (right - left)`."
+3. *Core loop logic:* "At each step, I compute the current area and update `maxArea`. Then I ask: which pointer should I move? Moving the taller bar can only reduce the width AND can't increase the bottleneck height — so area can only decrease. Therefore I always move the shorter bar inward."
+4. *Convergence guarantee:* "Each iteration moves exactly one pointer inward. The two pointers start n apart and meet in the middle — at most n-1 iterations. The algorithm is O(n)."
+5. *Duplicate handling / edge case proactivity:* "I update `maxArea` unconditionally before moving any pointer — a common bug is updating inside the `if` branch and missing the area from one side."
+
+**Result:** "This reduces the time complexity from O(n²) to O(n). For n = 10⁵, brute force takes ~10B operations (~10 seconds); the greedy shrink takes ~10⁵ operations (~0.1ms). The greedy correctness proof — moving the taller bar cannot help — is the key insight to state aloud."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer Greedy Shrink here |
+|-------------|---------------------------|-------------------------------|
+| Brute force — all pairs O(n²) | When n ≤ 200 and interview context allows | O(n²) times out at n = 10⁵; greedy shrink is O(n) with a provably correct greedy choice |
+| Divide & conquer | When the problem has a recursive substructure | Container With Most Water doesn't have overlapping subproblems; greedy shrink is simpler and equally optimal |
+
+**Why NOT brute force:** For n = 10⁵, checking every pair is 10¹⁰ operations — borderline timeout or definite timeout depending on the judge.
+**Why NOT divide & conquer:** It would achieve O(n log n) and require significant implementation complexity with no benefit over the O(n) greedy approach.
+
 ### Edge Cases to Trace Before Coding
 - `height` has only 2 elements → still works; one iteration captures the only possible area
 - All heights equal → any pointer movement is valid; result is correctly computed
@@ -63,8 +93,24 @@ class Solution {
 ### Activity: —
 
 ## Behavioral (30 min)
-- STAR prompt: Tell me about a situation where you had to make a trade-off between two competing constraints (speed vs. memory, precision vs. speed) — similar to the greedy shrink decision in Container With Most Water.
-- Leadership principle: Are Right, A Lot
+
+**Leadership Principle:** Are Right, A Lot
+
+**STAR Story: Greedy Trade-off Between Speed and Accuracy in a Recommendation System**
+
+**Situation (20%):** "In my previous role, our team was running a recommendation engine that re-ranked results using an exact pairwise scoring model — it was O(n²) per query, and as our catalog grew to 500K items, P95 latency hit 4 seconds. Users were abandoning the recommendation page and the business was losing engagement."
+
+**Task (part of S/T):** "I was responsible for the ranking service's performance. My goal was to reduce response latency to under 200ms without degrading recommendation quality by more than 2% on our offline eval metric."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I analyzed the scoring model and identified that the pairwise comparisons were the bottleneck — analogous to checking every bar pair in the container problem.
+Then, I proposed a greedy two-stage approach: a fast pre-filter using a lightweight score to reduce the candidate set from 500K to 500, followed by the full pairwise model on just the top 500. The key insight was that the fast pre-filter's error rate only affected the final result in edge cases — similar to proving the greedy shrink is correct by arguing that discarding the shorter bar can't yield a better answer.
+Next, I ran an A/B experiment over 5 days with 10% of traffic, measuring both latency and offline quality. Quality dropped only 0.8%, well within the 2% budget.
+Finally, I rolled out to 100% of traffic, reduced our compute cost by 60%, and wrote up the greedy pre-filter pattern as a team design principle."
+
+**Result (10-20%):** "P95 latency dropped from 4 seconds to 130ms — a 97% improvement. Engagement on the recommendation page increased 22% in the month following rollout. Compute costs fell by 60%. The greedy two-stage pattern was adopted by two other ranking services in the org the following quarter."
+
+**Interview tip:** Say "I analyzed", "I proposed", "I ran", "I rolled out" — not "the team decided". Prepare this story for questions about: data-driven decisions, trade-offs, algorithm design, or performance optimization.
 
 ## Flashcards
 

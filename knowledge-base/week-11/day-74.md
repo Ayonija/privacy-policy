@@ -108,6 +108,39 @@ def smallestRange(nums):
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Frequency Greedy / Min-Heap Deferred Swap / K-way Merge Range Tracking in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given three greedy heap problems: Task Scheduler (minimum CPU time with task cooldowns), Furthest Building You Can Reach (optimal use of ladders vs. bricks), and Smallest Range from K Lists (finding the tightest range containing one element per sorted list). Each naive approach — simulating every possibility, trying all combinations of resource allocation, or checking all ranges — would be exponential or O(n²)."
+
+**Task:** "My goal was to recognize that each problem hides a greedy choice reducible to a heap operation: frequency simulation for Task Scheduler, a deferred swap for Furthest Building, and K-way merge tracking for Smallest Range."
+
+**Action:** Walk the interviewer through these steps:
+1. *Classify the pattern:* "Task Scheduler → the most frequent task is the bottleneck; a math formula or max-heap simulation reveals idle slots. Furthest Building → min-heap of 'ladder-assigned jumps'; when a new larger jump arrives, swap the smallest ladder assignment to bricks. Smallest Range → K-way merge min-heap tracking both the current minimum and the global maximum of active elements."
+2. *Initialize:* "Task Scheduler: compute `max_freq` and `count_max` from a Counter. Furthest Building: empty min-heap to track the `l` largest jumps assigned ladders. Smallest Range: push the first element from each list; track `current_max` as we push."
+3. *Core loop logic:* "Furthest Building: for each upward jump, push to heap; if heap size exceeds `l`, the minimum on the heap is the 'weakest ladder assignment' — subtract it from bricks instead. Smallest Range: on each pop, the range is `[heap_min, current_max]`; push the next element from the same list; stop when any list is exhausted."
+4. *Convergence guarantee:* "Furthest Building: the min-heap always holds the `l` largest jumps seen so far. Swapping when full is safe because the new jump is larger than the evicted one — we always ladder the biggest jumps. Smallest Range terminates correctly because exhausting any list means no element from that list can extend the range."
+5. *Duplicate handling / edge case proactivity:* "For Task Scheduler with n=0 (no cooldown), the formula `(max_freq-1)*(n+1)+count_max` simplifies to `max_freq - 1 + count_max = len(tasks)`, which the `max(..., len(tasks))` floor handles automatically."
+
+**Result:** "Task Scheduler reduces from O(n × total_time) simulation to O(n) formula or O(n log 26) heap simulation. Furthest Building: O(n log l) vs O(2^n) brute force. Smallest Range: O(n log K) vs O(n × n) naively checking all ranges — for n=10^4 elements across K=100 lists, that's 3× fewer operations."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer heap here |
+|-------------|---------------------------|----------------------|
+| Task Scheduler math formula | Always for the pure minimum-time answer | O(n) and no heap overhead; use simulation only if asked to show schedule |
+| Brute-force resource allocation (LC 1642) | n ≤ 20 buildings | O(2^n) exponential; heap is O(n log l) — the only viable approach at scale |
+| Sort all elements and scan all ranges (LC 632) | K = 1 | O(n log n) viable for single list; K-way heap needed when K > 1 |
+
+**Why NOT brute-force for Furthest Building:** With n=10^5 buildings, 2^n allocations are impossible. The min-heap deferred-swap greedy is the only polynomial approach.
+**Why NOT sort for Smallest Range:** Sorting merges all K lists into one, losing which list each element came from — you can't tell if the range covers all K lists without tracking provenance.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 621: n=0 → no cooldown → result = len(tasks); all tasks unique → result = len(tasks); one task type with very high frequency → formula gives correct idle slots
 - LC 1642: no upward jumps → reach end; ladders=0 → use bricks only; bricks=0 → use ladders only; first jump > total bricks → stuck at building 0
@@ -198,8 +231,24 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to allocate limited resources (time, money, people) across competing demands — how did you prioritise?
-- Leadership principle: Frugality
+
+**Leadership Principle:** Frugality
+
+**STAR Story: Allocating Engineering Bandwidth Across Competing Feature Demands Using Greedy Prioritisation**
+
+**Situation (20%):** "As a senior engineer on a platform team, I was tasked with scheduling 8 engineering projects across Q3 with a fixed team of 4 engineers. Four product teams were each requesting dedicated engineering time, and the projects had interdependencies — some unblocked others, and each had a business value score and an estimated duration. The naive approach of 'first-come, first-served' from our PM would have left high-value, low-effort projects stuck behind long-running low-value ones."
+
+**Task (part of S/T):** "I was responsible for creating the project schedule. My goal was to maximise the total business value shipped in Q3 while respecting the constraint that no engineer could be on two projects simultaneously."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I modelled the problem explicitly: each project had a `deadline` (end of Q3 = 13 weeks) and a `value` score, analogous to the Course Schedule III and IPO patterns I'd studied. A greedy approach based purely on value or purely on duration would leave us with either high-value-but-late or fast-but-low-value projects.
+Then, I sorted projects by their estimated completion date and ran a max-heap simulation: for each project, I'd tentatively schedule it; if the running total time exceeded our capacity (4 engineers × 13 weeks), I'd evict the largest-effort project in the heap and replace it with a smaller one — identical to the Course Schedule III swap.
+Next, I presented this greedy schedule to leadership with a worked example showing that it outperformed two alternative orderings by 23% and 31% in projected business value.
+Finally, I built a lightweight spreadsheet that let PMs re-run the simulation with updated effort estimates, making the prioritisation transparent and repeatable."
+
+**Result (10-20%):** "The greedy schedule delivered 7 of 8 projects on time, compared to a projected 5 of 8 under the original first-come approach. The one evicted project was the lowest-value item — which the PM agreed was acceptable. By Q3 end, total delivered business value exceeded the original plan by 28% as measured by our OKR tracking system."
+
+**Interview tip:** Interviewers want to hear about *your* contribution. Say "I modelled", "I sorted", "I ran", "I presented" — not "we did". Prepare this story for questions about: Frugality, prioritisation, data-driven decisions, and delivering results under constraints.
 
 ---
 

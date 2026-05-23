@@ -164,3 +164,23 @@ Link to each weekly review for this month's flashcard decks:
 | Boundary DFS (enclosed regions) | — | — |
 
 *(Learner fills in comfort scores and marks patterns for drill)*
+
+## STAR Mastery: Month 2 Review
+
+### Pattern → LP Question Mapping
+| LP Question | Best pattern story from this month | Key framing |
+|-------------|-----------------------------------|-------------|
+| "Tell me about optimizing something" | HashMap prefix sum (O(n²) subarray scan → O(n) with count map) | Lead with before/after numbers: "reduced from O(n²) nested loop to O(n) single pass on a 50M-event stream" |
+| "Tell me about ownership/initiative" | LRU Cache implementation (identified cache miss rate issue proactively, proposed and built DLL+HashMap O(1) solution) | "I identified the cache layer was O(n) on eviction — I proposed the DLL+HashMap redesign without being asked" |
+| "Tell me about ambiguity" | Tree LCA (two valid approaches: BST value comparison vs general BT post-order DFS; chose based on tree type) | Highlight decision framework: "I chose post-order LCA because we couldn't guarantee BST property in all callers" |
+| "Tell me about working under pressure" | Tarjan's bridge finding (identified critical network edges during a live infrastructure review with a 2-hour deadline) | Add time constraint and production stakes to the story |
+| "Tell me about a failure" | Union-Find (initially skipped path compression, hit TLE on a 10K-node graph — caught in contest, fixed in 15 min) | Focus on learning: "The bug was in my find() — O(n) without compression. I added it immediately and cut runtime 100×." |
+
+### 5 Versatile Career Story Titles for Month 2
+1. "HashMap Prefix Sum — Replaced an O(n²) subarray scanner with a prefix-sum count map for a fraud detection pipeline, reducing per-transaction analysis from 800ms to 3ms and enabling real-time blocking on a 50M-event daily stream."
+2. "LRU Cache DLL+HashMap — Redesigned a session cache from O(n) eviction (list scan) to O(1) DLL+HashMap, eliminating 200ms latency spikes under peak load at a SaaS authentication service handling 80K requests/second."
+3. "Union-Find Clustering — Applied path-compressed union-find to a real-time friend-group clustering feature, processing 1M follow events in 2 seconds vs 45 seconds with naive BFS reconnection on each event."
+4. "Kahn's Topological Sort — Used Kahn's algorithm to detect and report circular dependencies in a microservice build graph, preventing a class of deployment deadlocks that had caused 3 production incidents in the prior quarter."
+5. "Multi-source BFS — Applied multi-source BFS to a proximity alert system (warehouse safety zones), processing all danger sources simultaneously in O(V+E) vs O(k·(V+E)) sequential BFS per source — cutting latency from 4 seconds to 180ms."
+
+*Tip: Each story can be adapted to 3+ LP questions by emphasizing different parts of the Action.*

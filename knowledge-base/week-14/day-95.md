@@ -237,7 +237,32 @@ Tell me about a time you had to debug a subtle bug in production. How did you is
 
 **Target LP:** *Dive Deep* (Amazon) — get to root cause; don't treat symptoms.
 
-**Tip:** Be specific about your debugging *method*, not just the outcome. "I added logging and found it was X" is weak. "I formed a hypothesis, tested it by isolating variable Y, and confirmed by checking Z" shows systematic thinking.
+**Full STAR Story — "Isolating a Word-Segmentation Cache Poisoning Bug":**
+**S (20%):** "At SearchCo, our query segmentation service began returning incorrect tokenizations for 0.8% of queries after a routine deployment — incorrect segmentations degraded search relevance for affected queries."
+**T:** "I was assigned to diagnose the root cause within 4 hours before the next release window."
+**A (60% — 'I' not 'we'):** "(1) I formed a hypothesis: the bug was in the memoized DFS path of our Word Break II implementation, not the dictionary lookup. (2) I isolated it by adding per-call logging that captured the memo dictionary state at each start index — and found that memo entries from one request were leaking into a subsequent request via a shared module-level memo dict. (3) I confirmed by running the same query twice in isolation (same result both times) vs. after another specific query (different result). (4) I fixed it by moving memo initialization into the per-request call stack rather than the module level, and added a unit test covering the exact cross-request contamination scenario."
+**R (20%):** "Error rate dropped from 0.8% to 0% within 30 minutes of the fix. The root cause — module-level mutable state shared across requests — was flagged as a pattern to audit across 3 other services, where I found 2 similar latent bugs."
+*Works for: Dive Deep, Earn Trust, Insist on the Highest Standards.*
+
+### STAR Interview Framework
+
+> **Word Break string segmentation DP:** naive O(2^n) brute-force → bottom-up DP O(n² × L) time, O(n) space
+
+**S:** "Can string s be segmented into dictionary words? Naive recursive exploration hits O(2^n) for long strings."
+**T:** "Need O(n²) bottom-up DP where dp[i]=True if s[0:i] can be formed from the dictionary."
+**A (60%):**
+1. *Classify:* "Prefix reachability with dictionary check → string segmentation 1D DP."
+2. *Init:* "dp = [False] × (n+1); dp[0]=True (empty prefix)."
+3. *Loop/Recurrence:* "For i in 1..n: for j in 0..i: if dp[j] and s[j:i] in word_set → dp[i]=True; break."
+4. *Termination:* "Return dp[n]."
+5. *Gotcha:* "Word Break II (enumerate all sentences): use memoized DFS returning list of sentences from each start index. Base case dfs(len(s)) returns [''] — empty suffix — so callers can prepend without special-casing."
+**R:** "O(n²×L) time (L=avg word length for set lookup), O(n) space. Trie alternative: O(n²) by scanning character-by-character from each position."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Trie + DP | Large dictionary with long common prefixes | Set-based is simpler to write; Trie only wins at very large dictionary sizes |
+| BFS | Find shortest segmentation | Not needed — just reachability/enumeration |
 
 ---
 

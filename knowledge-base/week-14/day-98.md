@@ -214,7 +214,32 @@ Tell me about a project where you had to balance quality and speed. How did you 
 
 **Target LP:** *Deliver Results* / *Frugality* — make hard trade-offs; deliver something valuable under constraint.
 
-**Tip:** Be concrete about *what* you cut and the reasoning. "I decided to skip unit tests for the config parser because it was a straightforward mapping with no branching logic" is a defensible trade-off. "I rushed things" is not.
+**Full STAR Story — "LIS-Based Job Scheduling Shipped in One Sprint":**
+**S (20%):** "At SchedulerCo, I had one sprint to ship a job scheduling optimization feature that reduced idle CPU in our distributed build cluster by selecting the maximum-profit non-overlapping jobs. The PM wanted it in 2 weeks; the full solution with persistence, monitoring, and rollback would take 6."
+**T:** "I needed to deliver a working, correct optimization engine in 2 weeks while explicitly choosing what to defer."
+**A (60% — 'I' not 'we'):** "(1) I implemented the core DP + binary search job scheduling algorithm first — this was the irreversible correctness decision. (2) I cut persistence (jobs recomputed on restart) and monitoring dashboards from scope, documenting these as follow-up tasks with concrete acceptance criteria. (3) I kept integration tests for the scheduling correctness but skipped unit tests for the binary search wrapper since the logic was a direct call to a well-tested library. (4) I shipped with a feature flag so the new scheduler could be enabled per-cluster without a rollback procedure."
+**R (20%):** "Shipped on day 13. Cluster CPU idle time dropped from 18% to 6% in the first week. The 4 deferred items were all completed in the following sprint — the feature flag made rollout safe. PM and engineering lead both praised the explicit scope negotiation."
+*Works for: Deliver Results, Frugality, Bias for Action.*
+
+### STAR Interview Framework
+
+> **LIS patience sort O(n log n):** naive O(n²) DP → patience sort with binary search O(n log n) time, O(n) space
+
+**S:** "Longest Increasing Subsequence. Naive O(n²): for each index, scan all prior indices for smaller values."
+**T:** "Need O(n log n) by maintaining a 'tails' array where tails[k] = smallest tail of all increasing subsequences of length k+1."
+**A (60%):**
+1. *Classify:* "LIS → patience sort with tails array and bisect_left."
+2. *Init:* "tails = [] (empty)."
+3. *Loop/Recurrence:* "For each num: pos=bisect_left(tails, num). If pos==len(tails): append (extends longest). Else: tails[pos]=num (greedy replacement — smaller tail enables future extensions)."
+4. *Termination:* "Return len(tails)."
+5. *Gotcha:* "tails is NOT a valid LIS — it's a maintenance structure. Its LENGTH equals the LIS length but its elements may not form the actual subsequence. Stating this clearly in an interview shows deep understanding."
+**R:** "O(n log n) time, O(n) space. Russian Doll Envelopes: sort by (width ASC, height DESC for equal widths) then LIS on heights — DESC sort prevents same-width pairs from extending the subsequence."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| O(n²) DP | Need to reconstruct the actual subsequence path | Only length needed — patience sort is sufficient and faster |
+| Segment tree on compressed values | LIS with custom comparators | Overkill; bisect_left handles standard LIS in 2 lines |
 
 ---
 

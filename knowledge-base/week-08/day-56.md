@@ -130,6 +130,28 @@ def slidingPuzzle(board):
 
 ---
 
+### STAR Interview Framework
+
+> **Multi-Source BFS:** brute-force O(m×n) per source cell → this approach O(m×n) total time, O(m×n) space
+
+**S:** "Given an m×n grid with multiple 0-source cells. Naive single-source BFS from each 0 is O(sources × m×n) — too slow when sources are dense."
+**T:** "Need O(m×n) total by treating all sources as a single level-0 BFS frontier."
+**A (60%):**
+1. *Classify:* "'Distance from each cell to nearest source' → multi-source BFS. All sources enqueued simultaneously at distance 0."
+2. *Init:* "Scan grid; enqueue ALL 0-cells at distance 0; set non-zero cells to `inf`."
+3. *Loop/Step:* "Standard BFS; update `dist[nr][nc] = dist[r][c] + 1` only when `dist[nr][nc] > dist[r][c] + 1`."
+4. *Termination:* "Each cell's distance is set the first time it is reached — BFS guarantees shortest distance."
+5. *Gotcha:* "Mark cells visited on enqueue (not dequeue) — prevents the same cell being enqueued multiple times."
+**R:** "O(m×n) time and space. For a 1000×1000 grid with 100K source cells: single pass vs 100K × 1M = 100B ops brute force."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Dijkstra | Weighted grid with varying costs | Unweighted — BFS is O(m×n) vs O(m×n log(m×n)) |
+| Single-source BFS per cell | Exactly one source | Correct but O(n² × m×n) for n sources |
+
+---
+
 ## System Design (1 hour)
 ### Topic: CDN + DNS + HTTP — Complete Request Lifecycle Synthesis
 
@@ -196,8 +218,14 @@ Step 6 — Subsequent Requests
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you designed or simplified a complex multi-step process — analogous to synthesising DNS, CDN, and HTTP into one end-to-end request flow.
 - Leadership principle: Are Right, A Lot
+
+**Full STAR Story — "End-to-End Latency Audit":**
+**S (20%):** "At a consumer app company, our P95 page load time was 4.1 seconds — users were abandoning at a 38% rate on first visit. Leadership assumed the database was the bottleneck, but no one had traced the full request lifecycle."
+**T:** "I was asked to diagnose and fix the latency issue within two weeks, with a target of sub-2-second P95."
+**A (60% — 'I' not 'we'):** "(1) I instrumented the full request path — DNS, TCP handshake, TLS negotiation, CDN hit/miss, server processing, and DB query — using distributed tracing headers at each layer. (2) I found that 62% of latency was in TLS negotiation (1.8s) because we were using RSA-2048 instead of ECDHE — not the DB. (3) I migrated to ECDHE cipher suites and enabled TLS 1.3 session resumption, cutting TLS to 120ms. (4) I also found that static assets had no CDN caching headers — I added `Cache-Control: public, max-age=31536000` with URL versioning, offloading 80% of asset requests to CDN edge."
+**R (20%):** "P95 page load dropped from 4.1s to 1.4s — 66% improvement. Abandonment rate fell from 38% to 21%. CDN offloading reduced origin bandwidth by 73%, saving $8,400/month."
+*Works for: Are Right, A Lot, Dive Deep, Customer Obsession.*
 
 ---
 

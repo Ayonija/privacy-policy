@@ -87,6 +87,39 @@ def mergeKLists(lists):
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Min-Heap Top-K / Binary Search K-Window / K-way Merge in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a set of problems where I needed to efficiently find or merge K-ranked elements from large datasets. The brute-force approach of sorting all data and slicing would give O(n log n) for each query, which would time out for inputs processing millions of elements or merging thousands of sorted streams."
+
+**Task:** "My goal was to solve each variant in O(n log K) or better by recognizing that a min-heap of size K is the right tool — it efficiently maintains the K-best candidates without full sorting."
+
+**Action:** Walk the interviewer through these steps (this is where you spend most time):
+1. *Classify the pattern:* "I noticed the problem asks for the K most/least frequent elements, or K closest, or merging K sorted sources — that triggers the min-heap of size K template."
+2. *Initialize:* "For Top-K: build a Counter, then push `(frequency, element)` pairs. For K-closest: push `(-distance_squared, x, y)`. For K-way merge: push one `(val, list_idx, node)` from each list head."
+3. *Core loop logic:* "For Top-K and K-closest: whenever heap size exceeds K, pop the minimum — the minimum is the weakest candidate that gets evicted. For K-way merge: pop the minimum, append to result, then push that node's `.next`."
+4. *Convergence guarantee:* "The heap maintains exactly K elements for Top-K problems and terminates when all input is processed. For K-way merge, termination is guaranteed when all streams are exhausted."
+5. *Duplicate handling / edge case proactivity:* "For K-way merge, heap comparison of ListNode objects raises TypeError — I use a `(val, list_index, node)` tuple so the integer `list_index` breaks any value ties."
+
+**Result:** "This reduces Top-K from O(n log n) to O(n log K). For n = 10^6 elements with K = 100, that's log(10^6) ≈ 20 vs log(100) ≈ 7 — roughly 3× fewer comparisons. For K-way merge of K=1000 sorted lists, heap gives O(n log 1000) vs O(n log n) on the concatenated input."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer heap here |
+|-------------|---------------------------|----------------------|
+| Full sort then slice | n is very small (n ≤ 1000) | O(n log n) vs O(n log K); heap wins when K << n |
+| Bucket sort (for Top-K by frequency) | When frequency range is bounded by n | O(n) time but O(n) space; heap wins when K is much smaller than n |
+| QuickSelect (for Kth element) | When you only need the exact Kth, not all K | O(n) average but doesn't give sorted top-K |
+
+**Why NOT full sort:** O(n log n) is unnecessary when you only need K elements — heap achieves the same in O(n log K), which is faster when K is small.
+**Why NOT QuickSelect for Top-K:** QuickSelect finds the Kth element but does not return all K elements in sorted order; requires an extra O(K log K) pass.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 347: all elements have the same frequency → any K are valid; k = len(unique elements) → return all
 - LC 658: x is less than arr[0] → closest window is arr[0:k]; x is greater than arr[-1] → arr[n-k:n]; ties: prefer smaller elements (left side is chosen when equal → binary search naturally handles this)
@@ -176,8 +209,24 @@ After each: state time complexity, space complexity, and one edge case aloud.
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to merge data from multiple sources into a single unified view — how did you handle ordering and consistency?
-- Leadership principle: Deliver Results
+
+**Leadership Principle:** Deliver Results
+
+**STAR Story: Merging Multi-Source Data Pipelines Under a Tight Release Deadline**
+
+**Situation (20%):** "In my previous role as a software engineer, our data team maintained three separate real-time telemetry streams — application logs, user events, and infrastructure metrics — each arriving as a sorted-by-timestamp stream from different services. A critical dashboard that our on-call engineers depended on was combining these streams by re-sorting the merged array every 5 seconds, creating a 3–4 second UI lag that was masking incidents during peak traffic windows."
+
+**Task (part of S/T):** "I was responsible for redesigning the merge layer. My goal was to reduce the stream-merge latency from 3–4 seconds to under 200ms while handling out-of-order arrivals across streams — without a full re-sort on every update."
+
+**Action (60-70% — be specific about what YOU did):**
+"First, I profiled the existing code and confirmed the bottleneck was O(n log n) re-sorting of 50K–80K events on each 5-second tick.
+Then, I proposed replacing the re-sort with a K-way merge using a min-heap — one pointer per stream, always advancing the globally smallest timestamp.
+Next, I implemented the min-heap merge incrementally: instead of batching 5 seconds of events, the heap maintained the live merge frontier and emitted events as they arrived, handling late-arriving events with a configurable 200ms buffer window.
+Finally, I added a tie-breaking key (stream ID + sequence number) to the heap tuple so that identical-timestamp events from different streams produced a deterministic, repeatable order — eliminating the flaky ordering bugs our on-call team had been chasing."
+
+**Result (10-20%):** "The merge latency dropped from 3–4 seconds to 60–80ms, a 95% reduction. Dashboard incident detection time improved by an average of 2.1 minutes per event, which our SRE team estimated prevented 3 SLA breaches in the following quarter. The solution handled the K=3 stream case, and when we added a fourth stream (database slow query logs), it required zero architectural changes — just adding one more entry to the heap initialization."
+
+**Interview tip:** Interviewers want to hear about *your* contribution. Say "I profiled", "I redesigned", "I benchmarked" — not "we did". Prepare this story for questions about: Deliver Results, bias for action, handling technical debt, improving system performance.
 
 ---
 

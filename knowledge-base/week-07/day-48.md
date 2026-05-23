@@ -135,6 +135,38 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining Tree DP (House Robber III) in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was given a binary tree where each node has a monetary value, and I needed to find the maximum sum of nodes such that no two selected nodes are adjacent (parent-child). The naive approach of trying all 2ⁿ subsets of nodes is exponential — for a tree with 30 nodes that's over a billion combinations."
+
+**Task:** "My goal was to solve this in O(n) using a tree DP that computes the optimal value for each subtree in a single post-order DFS, carrying just two numbers per node: the best outcome if we rob this node versus if we skip it."
+
+**Action:** Walk the interviewer through these steps:
+1. *Two-choice structure:* "At each node I have exactly two choices: rob it (gain `node.val`, but both children must be skipped) or skip it (gain nothing from this node, but children can be independently robbed or skipped)."
+2. *Postorder DFS — children before parent:* "I compute `(rob_left, skip_left)` and `(rob_right, skip_right)` for both children first, then use those to compute the current node's values."
+3. *If I rob this node:* "`rob_this = node.val + skip_left + skip_right`. I must skip both children because they're adjacent to me."
+4. *If I skip this node:* "`skip_this = max(rob_left, skip_left) + max(rob_right, skip_right)`. Each child can independently be robbed or skipped — take the better option for each side."
+5. *Return and combine:* "Return `(rob_this, skip_this)` to the parent. At the root, `answer = max(rob_root, skip_root)`."
+
+**Result:** "O(n) time — each node visited once in postorder. O(h) space for the recursion stack. The two-number return per node eliminates all recomputation. This pattern generalises to any tree DP where each node has a binary state and its optimal choice depends on children's choices."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer (rob, skip) tuple DFS |
+|-------------|---------------------------|---------------------------------|
+| Top-down DP with memoization | Easier to reason about initially | O(n) time but O(n) extra space for memo table; bottom-up (post-order) uses O(h) |
+| Brute force (all subsets) | n ≤ 20 | 2ⁿ subsets — 2³⁰ ≈ 1 billion for n=30; exponential |
+| (rob, skip) post-order DFS | Standard for tree DP | O(n) time, O(h) space; single clean pass |
+
+**Why NOT top-down memoization:** Memoization on a tree DP requires a HashMap mapping node reference to result — O(n) extra space. Post-order DFS achieves the same O(n) time with only O(h) call-stack space.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 337: single-node tree → `max(node.val, 0)` = node.val; linear chain tree → alternating rob/skip pattern
 - LC 222: single level (only root) → lh = rh = 1 → returns `2^1 - 1 = 1`; perfectly full tree → returns answer in O(log n) not O(n)
@@ -231,8 +263,18 @@ Return the stale (expired) value immediately, and trigger a background recompute
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time your system experienced a cascade failure or surge when a shared resource became unavailable — what happened, what did you do, and what did you change to prevent recurrence?
-- Leadership principle: Dive Deep
+
+**Leadership principle: Dive Deep**
+
+**STAR Story — Investigating and preventing a cascade failure from a shared resource becoming unavailable**
+
+**Situation:** On a Thursday evening our entire payment processing pipeline went down for 22 minutes. The incident log showed the root cause as "Redis connection pool exhausted," but that didn't explain why — Redis was healthy, connections should have been returned to the pool. Our on-call engineer restarted the service and it recovered, but we had no explanation for what happened. I volunteered to lead the post-mortem investigation the next morning.
+
+**Task:** My goal was to identify the exact sequence of events that caused the connection pool exhaustion, and implement a fix that prevented recurrence with the same root cause or any similar class of failure.
+
+**Action:** I pulled distributed traces from our observability platform for the 10-minute window preceding the exhaustion. I noticed that one specific checkout endpoint had started returning 504 timeouts — but only for orders where the customer had a large number of saved addresses (> 20). I traced one such request: it was calling a `getUserAddresses()` function that fetched addresses from Redis using HMGET with 20+ field names. Each call was taking 2.8 seconds — 14× the normal 200 ms. I checked Redis SLOWLOG and found HMGET on hashes with many fields was slow because one particular Redis key had grown to 4,200 fields (a bug in a schema migration that had multiplied entries). The slow HMGET calls held connections for 2.8 seconds each; at our 300 req/sec rate and a 50-connection pool, we needed the pool to turn over every 50/300 = 166 ms — but connections were held for 2,800 ms. The pool filled in under 2 seconds. I identified three fixes: immediate (expire the malformed key), short-term (add a 500 ms Redis command timeout so connections fail fast rather than blocking), long-term (add a schema validation step to the migration that caps field count per hash). I implemented all three within 4 hours.
+
+**Result:** Post-fix, no further connection pool exhaustion events occurred in the following 12 months. The 500 ms command timeout reduced average connection hold time from 2.8 seconds to 0.5 seconds (fast-fail), increasing pool effective throughput 5.6×. The schema validation caught two subsequent migration bugs before they reached production.
 
 ---
 

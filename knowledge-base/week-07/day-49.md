@@ -134,6 +134,38 @@ class Solution {
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining BST Serialization Without Null Markers in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was asked to serialize a BST to a string and deserialize it back — using as few bytes as possible. A general binary tree requires null markers (e.g., 'null') to reconstruct structure unambiguously. But a BST has an additional property that makes null markers unnecessary — the sort order uniquely determines the structure from preorder values alone."
+
+**Task:** "My goal was to serialize in O(n) and deserialize in O(n) without any null markers, exploiting the BST invariant to reconstruct structure purely from value ordering."
+
+**Action:** Walk the interviewer through these steps:
+1. *Serialize — preorder only:* "I do a standard preorder DFS and write `node.val` for each node, joined by commas. No null markers. A 3-node BST with root 2, left 1, right 3 serializes as `'2,1,3'` — 5 characters vs `'2,1,#,#,3,#,#'` with nulls."
+2. *Why preorder works for BST:* "In preorder, we always write the root first. When deserializing, the first value must be the root. The next values can be placed left or right based on BST ordering — no null markers needed to distinguish them."
+3. *Deserialize — bounds-based reconstruction:* "I process tokens left-to-right from the preorder sequence. At each recursion level, I accept the next token into the current subtree only if it falls within `(low, high)` bounds. If it doesn't fit, I don't consume it and return null — this triggers the parent to try placing it in the right subtree instead."
+4. *Why bounds work:* "The BST property guarantees that all nodes in the left subtree of a node with value v are < v, and all nodes in the right subtree are > v. These bounds propagate exactly like the Validate BST bounds (LC 98), and they partition the preorder stream into left/right subtrees without needing null markers."
+5. *Shared index:* "I use a shared mutable index `idx[0]` to advance through the token array across all recursive calls. When a call returns null (token out of bounds), the index is NOT advanced — the token is left for the parent's right subtree."
+
+**Result:** "O(n) serialize, O(n) deserialize. BST serialization produces roughly half the bytes of general binary tree serialization (no null markers). The bounds-based deserialize is the key insight — it's the same invariant as BST validation."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer bounds-based BST preorder |
+|-------------|---------------------------|--------------------------------------|
+| General BFS with null markers (LC 297) | For general binary trees (not BSTs) | Correct but produces more bytes; doesn't exploit BST property |
+| BST insertion deserialization | Simpler to implement | O(n log n) for balanced BST, O(n²) for skewed; bounds-based is O(n) |
+| Preorder + bounds | BST serialization | O(n) time; minimal output; exploits BST property |
+
+**Why NOT BST insertion deserialization:** Inserting n values one by one into a BST is O(n log n) average but O(n²) for a sorted or nearly-sorted sequence (skewed tree). Bounds-based reconstruction is always O(n).
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 449: single-node tree → serialize `"val"`, deserialize correctly with bounds `(-inf, +inf)` — one value returned, then None on next call
 - LC 652: subtree of a single leaf node (e.g., null-null-5) — canonical string is `"#,#,5"`; if leaf 5 appears twice → result contains one of those leaf nodes (added on second occurrence)
@@ -213,8 +245,18 @@ for message in p.listen():
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you designed a system for reliable message delivery where loss was unacceptable — what guarantees did you need, and how did you achieve them?
-- Leadership principle: Earn Trust
+
+**Leadership principle: Earn Trust**
+
+**STAR Story — Designing reliable message delivery where loss was unacceptable**
+
+**Situation:** Our platform sent transactional emails — order confirmations, shipping notifications, password resets — via a third-party email provider. The original implementation called the provider's API synchronously in the checkout HTTP request. When the provider had a 15-minute outage (which happened twice in the preceding quarter), all checkout requests failed with a 500 error because the email API call was timing out. Customers couldn't complete orders during these windows. Additionally, post-incident analysis revealed that in the previous 90 days we had silently dropped 340 transactional emails because of transient 429 (rate limit) errors — the synchronous call had no retry logic.
+
+**Task:** I was asked to redesign the transactional email delivery system to guarantee zero message loss for checkout-critical emails, decouple email sending from the checkout request path, and handle provider failures without affecting checkout completion.
+
+**Action:** I designed an outbox-pattern solution using Redis Streams. On order completion: the checkout service wrote an email job to a Redis Stream (`XADD emails:outbox * ...`) within the same logical commit as the order — this was the "at-least-once" guarantee since Redis Streams persisted the message. A separate email worker service used consumer groups (`XREADGROUP`) to consume jobs with at-least-once delivery semantics: it called the email provider API, and only on a 2xx response did it acknowledge the message (`XACK`). On failure (provider error or 429), the message remained in the pending list and was retried with exponential backoff up to 7 attempts over 2 hours. I added a dead-letter stream for messages that exceeded 7 attempts, with an alert that paged the on-call engineer. I verified exactly-once delivery by adding idempotency keys in the email API call — the provider ignored duplicate requests within 24 hours, so retries were safe.
+
+**Result:** Over the following six months: zero emails dropped due to transient failures (down from 340/quarter). During one 22-minute provider outage, checkout completed normally for all customers and all 1,840 pending emails were delivered within 3 minutes of provider recovery. Email delivery reliability improved from 97.6% to 99.98%. Customer trust scores for order communication improved by 14 points in the quarterly survey.
 
 ---
 

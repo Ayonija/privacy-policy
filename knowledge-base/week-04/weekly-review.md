@@ -94,3 +94,21 @@ All 35 cards for Days 22–28:
 | Date | Platform | Score / Result | Key mistake | Fixed? |
 |------|----------|---------------|-------------|--------|
 | — | — | — | — | — |
+
+## STAR Quick Reference — Week 4
+
+| Pattern | One-line STAR hook |
+|---------|-------------------|
+| Monotonic Stack (Next Greater Element) | "Given 80K stock tickers needing next-spike detection, applied monotonic stack → O(n) vs O(n²) brute force, cutting batch runtime from 4.5 hours to 11 minutes." |
+| Monotonic Stack — Span Accumulation | "Given a real-time price-span stream, applied (price, span) monotonic stack → O(1) amortised per call vs O(n) naive scan — essential for live trading dashboards." |
+| Stack — String Cancel/Undo Semantics | "Given a CI path parser failing on 15% of real-world paths, replaced repeated-replace O(n²) with stack-based O(n) simplification — shipped fix in 4 hours ahead of customer demo." |
+| Queue Simulation & Deque Ordering (Dota2 / Two-Stack Queue) | "Given a support queue serving enterprise and free-tier tickets in FIFO, redesigned to two priority-aware queues → enterprise P95 response time dropped from 4 hours to 18 minutes during incidents." |
+| Monotonic Stack — Fleet Merging & Contribution Technique | "Given a logistics dispatch system mis-merging vehicle routes, identified missing position-descending sort as root cause — zero fleet errors post-fix, saving $8K/week in re-dispatch costs." |
+| Stack String Cleanup Review (Sliding Window + Cancel Semantics) | "Given repeated-pass O(n²) string cleanup in a data pipeline, applied stack-based O(n) cleanup → all three review patterns solved in under 15 minutes, zero regressions." |
+
+**5 career story titles from this week:**
+1. "Monotonic Stack — Rewrote a fintech price-alert batch job from O(n²) to O(n), cutting nightly runtime from 4.5 hours to 11 minutes and enabling pre-market alerts."
+2. "Span Accumulation / Conflict Resolution — Mediated a database schema conflict between two teams that caused a 22-minute checkout outage; introduced a CI migration-preview check that caught 3 further conflicts."
+3. "Stack String Cleanup — Pushed back on a VP's fast-ship decision to protect path-validation correctness; delivered a 4-hour O(n) fix ahead of a live customer demo."
+4. "Queue Simulation — Redesigned a SaaS support routing queue to prioritise enterprise tickets; reduced enterprise incident response time from 4+ hours to 18 minutes."
+5. "Fleet Merging (Car Fleet) — Diagnosed a logistics dispatch fleet-merging bug caused by missing position sort; eliminated $8K/week in re-dispatch costs with a targeted algorithm fix."

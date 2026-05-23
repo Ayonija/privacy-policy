@@ -116,6 +116,38 @@ class Codec:
 
 ---
 
+### STAR Interview Framework
+
+> **How to use the STAR method when explaining BFS Serialization / Deserialization in an interview.**
+> *Time allocation: 20% on S+T, 60-70% on A, 10-20% on R.*
+
+**Situation:** "I was asked to serialize a binary tree to a string and deserialize it back to the identical tree — with no loss of structural information (nulls matter: a node with no left child is different from a node whose left child is a leaf). A naive preorder approach without null sentinels is ambiguous — the same string could represent multiple different trees."
+
+**Task:** "My goal was to design a serialization scheme that encodes structure unambiguously so that the deserialized tree is a byte-for-byte replica of the original, in O(n) time for both directions."
+
+**Action:** Walk the interviewer through these steps:
+1. *Choose BFS serialization:* "I use BFS because level-order with null sentinels uniquely encodes the tree. Every node's position in the output string corresponds directly to its position in the queue — no ambiguity."
+2. *Serialize — enqueue even null children:* "I enqueue `node.left` and `node.right` even when they are None. For a None node, I write `'null'` and do not enqueue its (non-existent) children. For a real node, I write `str(node.val)` and enqueue both children."
+3. *Serialize output:* "The result is `','.join(result)`. A 3-node balanced tree with root 1, left 2, right 3 serializes as `'1,2,3,null,null,null,null'`."
+4. *Deserialize — queue of parents:* "I split on `','` and build an iterator over tokens. I create the root from the first token and put it in a deque. For each node dequeued, I pop two tokens — its left child value and right child value. If not `'null'`, I create the child node and enqueue it. This naturally reconstructs the tree in the same level-order the serializer produced."
+5. *Why queue-based deserialization:* "The queue of 'parents awaiting children' mirrors the BFS queue of the serializer. Each real node in the queue consumes exactly two tokens in the correct order — left before right. No index arithmetic needed."
+
+**Result:** "O(n) time, O(n) space for both serialize and deserialize. The scheme handles arbitrarily deep trees, trees with nulls in the middle (not just at leaves), and empty trees. It is the exact design used in LeetCode's built-in tree serialization format."
+
+---
+
+**Alternative Approaches & Trade-offs**
+
+| Alternative | When you might consider it | Why prefer BFS serialization |
+|-------------|---------------------------|-------------------------------|
+| Preorder (root, left, right) with null markers | DFS-based encoding, slightly shorter strings | Deserialization is recursive — stack overflow for trees with depth > 10,000 |
+| Preorder + Inorder (two sequences) | Reconstruct from two traversals | Only works for trees with unique values; fails on duplicates |
+| BFS with null sentinels | Any binary tree, any values | Unambiguous, iterative, handles duplicates and deep trees |
+
+**Why NOT preorder + inorder:** This classic reconstruction requires unique values. The BFS serialization approach has no such restriction and works for any tree including duplicates.
+
+---
+
 ### Edge Cases to Trace Before Coding
 - LC 102: empty tree → `[]`; single node → `[[root.val]]`
 - LC 103: even-indexed levels (0-based) go left-to-right, odd go right-to-left; trace a 3-level tree manually
@@ -184,8 +216,18 @@ class Codec:
 ---
 
 ## Behavioral (30 min)
-- STAR prompt: Describe a time you had to design a system that needed to faithfully record and reproduce structured state — analogous to serializing a tree and being able to deserialize it exactly.
-- Leadership principle: Are Right, A Lot
+
+**Leadership principle: Are Right, A Lot**
+
+**STAR Story — Designing a system that faithfully records and reproduces structured state**
+
+**Situation:** Our platform ran multi-step onboarding workflows that could span several days — users might complete step 1, return the next day for step 2, and finish on day 3. Each workflow had a tree-like decision structure: the path a user followed depended on their answers to earlier questions. We stored only the final completed state in the database, not the intermediate tree of decisions taken. When users abandoned a session mid-flow, the system had no way to resume them — they had to restart from scratch. About 23% of users who started onboarding abandoned it and never returned, and user interviews revealed the forced restart was the primary reason.
+
+**Task:** I was asked to design a session-resume feature: when a user returned, they should be dropped back at exactly the step where they left off, with all previous answers preserved. My goal was to design the serialization and storage of the in-progress workflow state so it could be fully reconstructed across sessions.
+
+**Action:** I analysed the workflow data structure: each active session was a tree of visited nodes (steps), with each node storing the question answered, the chosen option, and references to child nodes (subsequent steps unlocked by that choice). I designed a BFS serialization of the active session tree: I serialized the tree node-by-node in level order, writing null sentinels for branches the user had not yet taken. This produced a compact JSON string for any partial or complete session. I stored this string in a `session_state` column in our Redis session store with a 30-day TTL. On resume, I deserialized the string by reconstructing the tree in BFS order — parsing the token list and assigning children in queue order, exactly analogous to LC 297. I verified round-trip fidelity with property-based tests: I generated 10,000 random partial workflows, serialized and deserialized each, and asserted the resulting tree matched the original at every node and edge.
+
+**Result:** Session resume launched to 100% of users within two sprints. The 23% abandonment rate dropped to 9% within 30 days — a 61% reduction. Completed onboarding increased by 18% in the same period, which translated to a measurable lift in 30-day retention. Serialization and deserialization each ran in under 2 ms even for the deepest workflows (15 levels), well within our 20 ms budget for session restoration.
 
 ---
 

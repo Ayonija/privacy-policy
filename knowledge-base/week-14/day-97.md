@@ -199,7 +199,32 @@ Tell me about a time you disagreed with a technical decision made by someone mor
 
 **Target LP:** *Have Backbone; Disagree and Commit* (Amazon) — voice disagreement professionally; then fully commit once decided.
 
-**Tip:** The key is showing that you (1) raised the concern with evidence, (2) listened to their reasoning, (3) committed fully after the decision was made regardless of outcome. Avoid ending the story with "I was right" — that's not the point.
+**Full STAR Story — "Greedy Heap vs. DP for Refueling Cost Optimization":**
+**S (20%):** "At LogisticsCo, the tech lead proposed an O(n²) DP solution for route fuel optimization. I believed an O(n log n) greedy heap approach was correct and worth the debate — the DP was failing on large routes (20K stations, 3-second timeout)."
+**T:** "I needed to make my case respectfully, get a decision, and commit to whichever approach was chosen."
+**A (60% — 'I' not 'we'):** "(1) I formalized the greedy correctness argument in writing: when you run out of fuel, picking the largest past station is always at least as good as any other choice — provable by exchange argument. (2) I presented this to the tech lead with a complexity comparison and benchmarks: O(n log n) greedy ran 20K stations in 18ms vs. O(n²) DP in 3.1 seconds. (3) I acknowledged the DP's advantage — it naturally handles edge cases and is easier to reason about — and offered to write exhaustive edge case tests for both. (4) The tech lead chose the greedy approach; I wrote the full test suite covering empty heap scenarios, unreachable targets, and all-equal-fuel stations."
+**R (20%):** "Greedy solution shipped, passing all 43 test cases. Route optimization latency dropped from 3.1s to 18ms. The exchange argument writeup became a team reference for future greedy vs. DP debates."
+*Works for: Have Backbone Disagree and Commit, Are Right A Lot, Earn Trust.*
+
+### STAR Interview Framework
+
+> **Interval DP (Minimum Cost to Cut a Stick):** naive O(m! × m) → interval DP O(m³) time, O(m²) space
+
+**S:** "Stick of length n, make cuts at given positions. Cost of each cut = current stick length. Naive: try all cut orderings O(m! × m) is infeasible."
+**T:** "Need O(m³) interval DP by thinking of the 'last cut' in each subinterval as the choice variable."
+**A (60%):**
+1. *Classify:* "Optimal cost for cuts on a 1D range → interval DP."
+2. *Init:* "Add sentinels: cuts = sorted([0] + cuts + [n]). dp[i][j] = 0 for adjacent cuts."
+3. *Loop/Recurrence:* "For length 2..m: for i in 0..m-length: j=i+length. dp[i][j]=min(dp[i][k]+dp[k][j]+(cuts[j]-cuts[i])) for k in (i,j)."
+4. *Termination:* "Return dp[0][m-1]."
+5. *Gotcha:* "The cost of a cut is cuts[j]-cuts[i] — the CURRENT stick length at the time of that cut (the enclosing interval), not the original n. Forgetting the enclosing length is the most common bug."
+**R:** "O(m³) time, O(m²) space where m = len(cuts)+2. 'Last cut' framing: splitting [i,j] at k costs cuts[j]-cuts[i] plus the cost of both sub-intervals."
+
+**Alternatives & why not:**
+| Alternative | Use when | Why not here |
+|------------|----------|-------------|
+| Greedy (cut smallest first) | Uniform cost | Non-uniform stick lengths make greedy suboptimal |
+| Memoized top-down | Deep recursion with repeated states | Both work; bottom-up by length avoids stack overflow |
 
 ---
 
