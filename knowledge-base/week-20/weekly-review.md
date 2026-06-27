@@ -1,169 +1,125 @@
-# Week 20 Review — LLD Foundations
-**Week 20 | Phase: LLD Mastery | Month 4**
+# Week 20 Review — Days 134–140
+**Phase 3 — Mock Interviews | Month 5**
 
-## Focus
-Consolidate OOP pillars, SOLID principles, and creational design patterns. Identify gaps before moving to structural patterns next week. Every item in this review should be answerable in under 30 seconds.
-
----
-
-## Summary Table: Everything Covered This Week
-
-### OOP — 4 Pillars
-
-| Pillar | One-liner | Key analogy | Confusion pair |
-|---|---|---|---|
-| Encapsulation | Bundle data + behavior; restrict direct field access | ATM — you use the keypad, not the cash mechanism | vs. Abstraction |
-| Abstraction | Expose *what*, hide *how* | Steering wheel — you turn it, not the hydraulics | vs. Encapsulation |
-| Inheritance | Child acquires parent's properties; IS-A relationship | Parent–child traits | Inheritance vs. Composition (HAS-A) |
-| Polymorphism | One interface, type-specific behavior | `run` command to human / dog / robot | Overriding vs. Overloading |
-
-**Abstraction vs. Encapsulation in one breath:** Abstraction hides implementation; Encapsulation hides data.
-
-**Overriding vs. Overloading in one breath:** Overriding = runtime dispatch in subclass; Overloading = compile-time signature difference in same class.
+> **Note:** This is the second week of Slot 14 (Trees Hard closeout + Graphs Hard + Uber/Lyft design closeout). Day 134 finishes Trees Hard; Days 135–140 cover Graphs Hard and the Uber/Lyft capstone mock.
 
 ---
 
-### SOLID — 5 Principles
-
-| Principle | One-liner | Smell it fixes | Analogy |
-|---|---|---|---|
-| S — Single Responsibility | One class, one reason to change | God class | Chai dukaan owner makes chai only |
-| O — Open/Closed | Open for extension, closed for modification | if-else chain grows every sprint | Plug socket — never rewired |
-| L — Liskov Substitution | Subclass must honor parent's contract | `Penguin.fly()` throws exception | Penguin IS-A Bird (biologically) but breaks Bird.fly() |
-| I — Interface Segregation | No class forced to implement unused methods | Fat interface with stub/exception impls | Café doesn't need the hotel spa menu |
-| D — Dependency Inversion | High-level depends on abstractions, not concretions | `new ConcreteClass()` inside business logic | USB-C socket — laptop never rewired for a new charger |
+## Phase
+Phase 3 — Mock Interviews, Month 5. Full interview simulation fluency week — every session includes at least one cold-solve under timer with narration, system design from memory, and behavioral STAR response.
 
 ---
 
-### Creational Patterns — 4 + Prototype
+## Patterns Covered This Week
 
-| Pattern | One-liner | Machine coding trigger |
-|---|---|---|
-| Singleton | Exactly one instance; global access point | "There should be only one X" |
-| Factory Method | Delegate type selection; caller never calls `new` | "Create the right type of X" |
-| Abstract Factory | Family of compatible objects from one factory | "Create a compatible set of X, Y, Z" |
-| Builder | Step-by-step assembly; fluent chaining; immutable output | "Build configurable X with many optional parts" |
-| Prototype | Clone existing object instead of rebuilding | "Create a new X similar to this existing X" |
-
----
-
-## Most-Tested Interview Questions This Week
-
-1. "What is the difference between abstraction and encapsulation?"
-2. "Explain polymorphism. What is the difference between overriding and overloading?"
-3. "What is SRP? How do you identify a violation?"
-4. "How does the Liskov Substitution Principle relate to inheritance?"
-5. "What is Dependency Inversion? How is it different from Dependency Injection?"
-6. "What is the Singleton pattern? How do you make it thread-safe?"
-7. "When would you use Builder over Factory?"
-8. "Design a parking lot." (machine coding)
-9. "Walk me through the SOLID principles with a real example for each."
-10. "Which creational pattern would you use for an HTTP client with optional headers?"
+- Post-Order BST Validation with Sum Tracking (Max Sum BST — Day 134)
+- Stack-Based Tree Reconstruction from Depth Encoding (Recover Tree from Preorder — Day 134)
+- Topological Sort from Pairwise Word Constraints (Alien Dictionary — Day 135)
+- DFS + Memoization on Grid with Strict Monotone Constraint (Longest Increasing Path — Day 135)
+- Union-Find with Directed Two-Candidate Edge Analysis (Redundant Connection II — Day 136)
+- Union-Find Island Labeling + Neighbor Size Aggregation (Making A Large Island — Day 136)
+- Two-Level Topological Sort (Items Within Groups — Day 137)
+- Topological Sort + DP Critical Path (Parallel Courses III — Day 137)
+- Topological Sort + Color Frequency DP on DAG (Largest Color Value — Day 138)
+- BFS Min-Heap Boundary Expansion (Trapping Rain Water II — Day 138)
+- Post-Order Tree DP Cold Solve × 2 (Days 139–140)
+- Topological Sort from Constraints Cold Solve (Day 140)
 
 ---
 
-## Common Mistakes to Avoid
+## System Design Topics Covered
 
-| Mistake | Correction |
+**Uber / Lyft — Days 134–140:**
+- **Day 134 — Dynamic Pricing & Surge:** Supply/demand per H3 zone in Redis; surge multiplier formula; ML inference overlay; fare lock with `fare_lock_id` in Redis (2-min TTL); rule-based floor + ML ceiling.
+- **Day 135 — Trip Service & State Machine:** 5-state machine (REQUESTED → DRIVER_ACCEPTED → DRIVER_ARRIVED → IN_PROGRESS → COMPLETED/CANCELLED); PostgreSQL optimistic locking (version column); Kafka event per transition; idempotent state transitions.
+- **Day 136 — ETA & Route Calculation:** Contraction Hierarchies for sub-millisecond routing; zone-pair route cache in Redis (15-min time bucket, 5-min TTL); traffic weight updates from GPS traces; Google Maps API fallback.
+- **Day 137 — Notification Service:** Kafka `trip-events` → channel workers (push/SMS/in-app); dedup via Redis NX key `notif:{trip_id}:{event_type}` EX 60; APNs/FCM with delivery tracking; retry with exponential backoff.
+- **Day 138 — Payment Service:** Idempotency key = `trip_id + attempt_seq`; tokenized card storage (no PAN); async charge with "processing" UI; driver payout via ACH batch (daily/weekly options); ML fraud scoring.
+- **Day 139 — Driver App Backend:** WebSocket Driver Gateway (sticky sessions via consistent hash); adaptive GPS polling (4s in-trip, 8s idle); buffered batch on reconnect; geofencing push for surge/restricted zones.
+- **Day 140 — Full End-to-End Integration:** Complete Uber/Lyft architecture diagram; critical path (request → match → notify); location update pipeline; all key numbers; two deep dives practiced.
+
+---
+
+## Problems to Revisit
+
+| Problem | LC # | What blocked me | Retry date |
+|---------|------|-----------------|------------|
+| (fill in after each session) | | | |
+
+---
+
+## Strength / Gap Assessment
+
+| Pattern | Comfort (1–5) | Action |
+|---------|--------------|--------|
+| Post-Order BST Validation (Max Sum BST) | | |
+| Stack-Based Tree Reconstruction | | |
+| Topo Sort from Word Constraints (Alien Dict) | | |
+| DFS + Memo on Grid (Longest Increasing Path) | | |
+| Union-Find with Two-Candidate Directed Edge | | |
+| Union-Find Island Labeling + Expansion | | |
+| Two-Level Topological Sort | | |
+| Topo Sort + DP Critical Path | | |
+| Topo Sort + Color DP on DAG | | |
+| BFS Min-Heap Boundary Expansion (3D Water) | | |
+
+---
+
+## Weekly Flashcard Deck
+*(Days 134–140 = 35 cards — 5 per day)*
+
+| Q | A |
 |---|---|
-| Confusing abstraction and encapsulation | Abstraction = hiding *implementation* (what it does); Encapsulation = hiding *data* (what it holds) |
-| Saying LSP is just "inheritance" | LSP is about *behavioral contracts* — subclass must not break what callers expect from the parent type |
-| Using lazy Singleton without `volatile` | Instruction reordering allows a partially-constructed object to be read; `volatile` prevents this |
-| Writing Factory as a growing switch-case | Use registration map (`Map<String, Supplier<T>>`) to honor OCP |
-| Building a Builder without final fields in product | Product must have `private final` fields; no setters; all set in `build()` only |
-| ISP = OCP confusion | ISP is about *interfaces being too fat*; OCP is about *classes being modified to add behavior* |
-| Calling DIP the same as DI | DIP is the principle (depend on abstractions); Dependency Injection is the implementation pattern |
-| Abstract Factory vs. Factory method mix-up | Factory Method = one product type; Abstract Factory = family of compatible products |
+| In LC 1373, why does a null node return MAX_VALUE for min and MIN_VALUE for max? | A null node imposes no BST constraint; any real node value satisfies comparison with MAX/MIN sentinels |
+| In LC 1373, what four values does the post-order helper return? | (isBST: 1/0, minVal, maxVal, subtreeSum) |
+| In LC 1028, what does the number of dashes before a value represent? | The depth of that node in the reconstructed tree |
+| In LC 1028, when does a new node become the right child vs left child? | Right child if the parent already has a left child; otherwise left child |
+| In Uber's surge pricing, what triggers the multiplier to increase? | Demand (open requests per zone) exceeds supply (available drivers per zone) by a threshold ratio |
+| In LC 269, what is the edge case that invalidates the input before graph construction? | A word that is a proper prefix of the next word but appears before it (e.g., "abc" before "ab") |
+| In LC 269, why break after the first differing character in adjacent words? | Only the first difference gives a definitive ordering constraint; later characters have unknown relative order |
+| In LC 329, why is no visited array needed? | Strictly increasing values prevent cycles — each DFS step increases the grid value, making revisit impossible |
+| In LC 329, what does `memo[r][c]` represent? | Length of the longest increasing path starting at cell (r, c) |
+| In Uber's Trip Service, how does optimistic locking prevent race conditions? | Each trip row has a version column; update only succeeds WHERE version = expected_version; concurrent update fails (stale version) → 409 Conflict |
+| In LC 685, what are the two failure modes for the extra directed edge? | (1) Node has two parents (two candidate edges); (2) cycle with all nodes having single parents |
+| In LC 685, why try removing candidate2 first? | Candidate2 is the last edge pointing to the double-parent node; if graph is valid without it, that's the answer |
+| In LC 827, why use a HashSet of roots when summing neighbor islands? | Deduplicates — same island may have multiple cells bordering the 0 cell; root ID is canonical representative |
+| In LC 827, what is returned when there are no zero cells? | `n * n` — the entire grid is already one island |
+| In Uber's ETA service, what is Contraction Hierarchies? | Preprocessing step adding shortcut edges; bidirectional Dijkstra visits O(s) important nodes (100-1000) vs millions in plain Dijkstra |
+| In LC 1203, why assign unique group IDs to items with group == -1? | Allows group-level topo sort to handle their ordering without special-casing ungrouped items |
+| In LC 1203, how is a group-level edge derived? | If item `pre` (group A) must come before item `next` (group B) and A ≠ B, add edge A → B in the group graph |
+| In LC 2050, what does `earliest[course]` represent? | Earliest completion time for `course` — accounts for the longest prerequisite chain |
+| In LC 2050, why is the answer `max(earliest[i])` rather than `sum`? | Courses run in parallel; bottleneck is the longest (critical path), not the total of all durations |
+| In Uber's notification service, what does Redis NX key `notif:{trip_id}:{event_type}` prevent? | Duplicate notifications for the same event within 60 seconds |
+| In LC 1857, how do you detect a cycle? | If `processed < n` after Kahn's BFS — some nodes never reached in-degree 0 due to cycle |
+| In LC 1857, why initialize `dp[node][color] = 1` only when entering the queue? | The node's own color contributes 1 to paths ending at it; initializing before queue entry would be premature |
+| In LC 407, why push `max(boundary_height, neighbor_height)` to the heap? | Water cannot escape below the current boundary; max ensures the inward boundary never drops below the current water level |
+| In LC 407, why start with boundary cells rather than interior? | Water flows outward; computing from boundary inward captures all cells sealed by higher surrounding walls |
+| In Uber's Payment Service, how does idempotency prevent double charges? | Each charge uses `payment_intent_id = trip_id + attempt_seq`; gateway deduplicates by this key and returns original result on retry |
+| In Uber's critical match path, what is the order of operations after a rider requests a ride? | (1) Fare estimate + fare_lock; (2) Redis Geo search for nearby drivers; (3) Redis NX lock on first candidate; (4) Notify driver; (5) Driver accepts → Trip record created; (6) Notify rider |
+| In LC 297 deserialization, why use a Queue of tokens rather than an index? | Queue naturally advances on each token consumption; index tracking is error-prone for recursive calls with shared mutable state |
+| What Uber component prevents a driver from being matched to two riders at once? | Redis NX lock: `SET driver:{id}:status MATCHED NX PX 30000`; atomic; only one Matching Service instance wins |
+| Name the 5 states in Uber's trip state machine. | REQUESTED → DRIVER_ACCEPTED → DRIVER_ARRIVED → IN_PROGRESS → COMPLETED (or CANCELLED at any state) |
+| In Uber's driver app, what happens when connectivity is lost mid-trip? | GPS pings are buffered locally (up to ~60); sent as batch on reconnect; server processes in sequence; trip state mutations retry with exponential backoff until acknowledged |
+| What is the GPS ping interval in Uber's driver app and when does it change? | 4 seconds when in a trip or near a ride request; 8 seconds when idle (adaptive polling to conserve battery) |
+| In LC 560 (revision), what is the map initialized with and why? | `{0: 1}` — represents the empty prefix with sum 0; handles subarrays starting from index 0 whose sum equals k |
+| In LC 543 (warm-up), how is `depth` different from `diameter` at each node? | `depth` = 1 + max(left, right) — returned to parent; `diameter` = left + right — updated globally, never returned |
+| What are the two deep dives practiced in the Uber capstone mock (Day 140)? | (1) Ride request to match critical path (Redis Geo + NX lock + Kafka notify); (2) Location update pipeline (WebSocket → Kafka → Redis Geo → Cassandra) |
+| What is the fare lock mechanism in Uber's pricing and why does it exist? | A `fare_lock_id` in Redis with 2-min TTL stores the estimated fare; on trip completion, Payment Service retrieves it to charge the locked price; prevents bait-and-switch after rider commits |
 
 ---
 
-## Quick-Fire Quiz — 10 Questions
+## Mock / Contest Log
 
-Attempt each from memory before checking answers below.
-
-1. Which OOP pillar does `private` field + `getBalance()` represent?
-2. A `Bird.fly()` interface is implemented by `Penguin` which throws `UnsupportedOperationException`. Which SOLID principle is violated?
-3. `new MySQLRepo()` inside `OrderService`. Which SOLID principle? What's the fix?
-4. You have a `WorkerInterface` with 8 methods and `RobotWorker` can only do 3 of them. Which principle? Fix?
-5. You add a new payment type but must edit `processPayment()`. Which principle? Fix?
-6. You need exactly one `ConfigManager`. Which pattern?
-7. You need a `Pizza` with 10 optional toppings. Which pattern?
-8. You need `WindowsButton` + `WindowsCheckbox` to always match. Which pattern?
-9. An existing `Document` object took 2 seconds to construct from a DB. You need 50 copies. Which pattern?
-10. You need to create `Car`, `Truck`, or `Motorcycle` from a type string. Which pattern?
-
-### Answers
-
-| # | Answer |
-|---|---|
-| 1 | Encapsulation |
-| 2 | LSP — subclass violates parent's behavioral contract |
-| 3 | DIP — fix: introduce `OrderRepository` interface; inject via constructor |
-| 4 | ISP — fix: split into role interfaces; `RobotWorker` implements only what it can |
-| 5 | OCP — fix: Strategy pattern or registration map; new type = new class, not modified existing |
-| 6 | Singleton |
-| 7 | Builder |
-| 8 | Abstract Factory |
-| 9 | Prototype |
-| 10 | Factory Method |
-
-Score yourself: 9–10 = ready to move on; 7–8 = review weak areas; <7 = re-read days 131–137.
+| Date | Platform | Score / Result | Key mistake | Fixed? |
+|------|----------|---------------|-------------|--------|
+| | | | | |
 
 ---
 
-## STAR Stories Ready to Deploy
+## Week 20 → Slot 15 Transition
 
-| Topic | Story summary |
-|---|---|
-| OOP | Refactored monolithic payment processor into 4-layer design using all 4 pillars |
-| SRP | Decomposed 1,200-line `UserService` into 6 focused services; zero cross-concern failures |
-| DIP | Introduced `NotificationChannel` interface; went from 12% to 78% test coverage |
-| Singleton | Thread-safe async logger with `BlockingQueue`; 99% log correlation |
-| Factory | Notification factory with registration map; new channel in 2 hours |
-| Builder | HTTP client config; replaced 12-arg constructor; zero misconfiguration incidents |
-| Parking Lot | Machine coding: Singleton + Factory + Strategy; interviewer noted correct pattern instinct |
-
----
-
-## Next Week Preview: Structural Patterns
-
-| Day | Pattern |
-|---|---|
-| Day 138 | Adapter Pattern — interface compatibility shim |
-| Day 139 | Decorator Pattern — runtime behavior layering |
-| Day 140 | Facade Pattern — simplified interface over complex subsystem |
-| Day 141 | Proxy Pattern — access control, lazy init, logging proxy |
-| Day 142 | Composite Pattern — tree structures of objects |
-| Day 143 | Bridge Pattern — decoupling abstraction from implementation |
-| Day 144 | Structural Patterns Review + Machine Coding: Library Management System |
-
-**Heads-up:** Decorator and Proxy are the most-confused pair next week — know the distinction before Day 139.
-
----
-
-## Week 20 Completion Checklist
-
-**OOP:**
-- [ ] Can define all 4 pillars + write a code example for each from memory
-- [ ] Can clearly distinguish abstraction vs. encapsulation
-- [ ] Can distinguish method overriding from method overloading
-
-**SOLID:**
-- [ ] Can state all 5 principles with smell-it-fixes and analogy
-- [ ] Can identify which principle a given code smell violates (full table)
-- [ ] Can write bad + fixed code for each principle
-
-**Creational Patterns:**
-- [ ] Can write thread-safe Singleton (double-checked locking) from memory
-- [ ] Can write Factory with registration map
-- [ ] Can write PizzaBuilder with fluent chaining and immutability
-- [ ] Can design Abstract Factory for two product families
-- [ ] Can describe Prototype with clone() use case
-
-**Machine Coding:**
-- [ ] Can apply the 4-step method (nouns/verbs/varies/simple) to any new problem
-- [ ] Can design Parking Lot entities, methods, patterns, and edge cases without notes
-
-**STAR:**
-- [ ] Have at least 3 STAR stories ready: OOP/SOLID, Singleton/Factory, Builder/Parking Lot
-- [ ] Each story has specific metrics (lines of code, test coverage %, time saved)
+**Consolidate before moving on:**
+- Uber/Lyft: draw the full architecture from memory in 5 minutes — API Gateway, 8 backend services, their data stores, and the two key Kafka topics (`trip-events`, `driver-location`).
+- Trees Hard patterns (Days 131–134): post-order DP, serialization, inorder violation, greedy state DP, coordinate BFS, re-rooting — all should trigger in ≤ 60 seconds on sight.
+- Graphs Hard patterns (Days 135–140): topo sort variants (constraint-derived, two-level, color DP), DFS+memo grid, Union-Find directed/island — identify and code without warm-up.
+- Slot 15 begins: DP Hard + Backtracking Hard (Days 141–150) + YouTube/Netflix full design. DP Hard includes interval DP, bitmask DP, digit DP, and tree DP at the hardest level.

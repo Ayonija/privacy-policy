@@ -1,214 +1,139 @@
-# Week 22 Review — Days 145–151
-**Phase: LLD Mastery | Month 4**
-
----
+# Week 22 Review — Days 148–154
 
 ## Phase
-LLD Mastery, Month 4. This week completed the full behavioral pattern catalog and synthesized it into two canonical machine-coding problems. The shift from "can I name the patterns" to "can I code them from memory and pick the right one under interview pressure" is the target of this week's work.
+Phase 3 → Phase 4 Transition | Month 5 (Days 148–150) → Month 6 (Days 151–154)
 
 ---
 
 ## Patterns Covered This Week
 
-- **Day 145 — Strategy:** Family of interchangeable algorithms; caller swaps from outside; composition over inheritance
-- **Day 146 — Observer:** Subject auto-notifies all observers; push vs pull model; thread-safety snapshot rule; Kafka/SNS as Observer at scale
-- **Day 147 — State:** Object transitions its own behavior; eliminates status if-else chains; state machine diagrams for Order and Vending Machine
-- **Day 148 — Command:** Request as object; undo/redo via history stack; Invoker/Receiver/ConcreteCommand roles + Template Method: skeleton fixed, subclass fills steps; hook methods
-- **Day 149 — Confusion Pairs:** Strategy vs State, Observer vs Mediator, Command vs Strategy, Decorator vs Template Method, Decorator vs Proxy — side-by-side pseudocode + diagnostic tests
-- **Day 150 — Remaining GoF:** Chain of Responsibility, Iterator, Mediator, Memento, Visitor, Interpreter, Abstract Factory (deeper), Prototype (deeper)
-- **Day 151 — Machine Coding:** Full 12-pattern cheat sheet; Vending Machine (State + Strategy); Splitwise (Strategy + Observer); 6 common LLD interview mistakes
+### From Slot 15 (Days 148–150) — Backtracking Hard
+
+| Day | Pattern |
+|-----|---------|
+| 148 | Grid Backtracking (Counting Paths with Obstacles) |
+| 148 | Trie-Augmented Backtracking (Multi-Word Search) |
+| 149 | Exhaustive Expression Evaluation Backtracking (24 Game) |
+| 149 | Trie-Constrained Grid Partition (Word Squares) |
+| 149 | Combination Backtracking with element reuse |
+| 150 | 3D Interval DP on Groups — `dp[l][r][k]` (Remove Boxes) |
+| 150 | Backtracking on Unknown Environment with virtual coordinate system (Robot Room Cleaner) |
+| 150 | Palindrome Partitioning Backtracking + DP precomputation |
+
+### From Slot 16 (Days 151–154) — Final Sprint Revision Begins
+
+| Day | Pattern |
+|-----|---------|
+| 151 | Two Pointers (sort + shrink window) |
+| 151 | Variable Sliding Window |
+| 151 | Prefix Sum + Suffix Product (array-as-hash index placement) |
+| 152 | Iterative Linked List Reversal in K-Chunks |
+| 152 | Fast/Slow Pointer (find Nth from end) |
+| 152 | Monotonic Decreasing Stack (next greater element) |
+| 153 | Post-order DFS Arm Pattern (combine top-2 child arms) |
+| 153 | BFS Level-Order (queue size snapshot per level) |
+| 153 | LCA (post-order null propagation) |
+| 154 | BFS with Two Distance Arrays (first + second minimum) |
+| 154 | Union-Find (path compression + union by rank) |
+| 154 | Kahn's BFS Topological Sort (cycle detection via order size) |
+| 154 | Reverse Multi-Source BFS (ocean border flood-fill) |
 
 ---
 
-## Complete GoF Pattern Reference
+## System Design Topics Covered
 
-### Creational (5)
-
-| Pattern | One-Line Recall |
-|---|---|
-| Singleton | One instance, global access point |
-| Factory Method | Subclass decides which object to create |
-| Abstract Factory | Families of related objects, cross-product consistency guaranteed |
-| Builder | Step-by-step construction, optional fields, readable DSL |
-| Prototype | Clone expensive object instead of rebuilding |
-
-### Structural (7)
-
-| Pattern | One-Line Recall |
-|---|---|
-| Adapter | Bridge two incompatible interfaces, neither changes |
-| Bridge | Decouple abstraction from implementation; vary both independently |
-| Composite | Tree of objects; clients treat leaf and composite identically |
-| Decorator | Add behavior at runtime via stackable composition wrappers |
-| Facade | Single clean entry point hiding complex subsystem |
-| Flyweight | Share intrinsic state to support large numbers of fine-grained objects |
-| Proxy | Control access to object (lazy load, protection, caching) |
-
-### Behavioral (11)
-
-| Pattern | One-Line Recall |
-|---|---|
-| Chain of Responsibility | Pass request along handler chain; each handles or passes on |
-| Command | Wrap request as object; enables undo/queue/log |
-| Interpreter | Grammar as class hierarchy; evaluate by composing expressions |
-| Iterator | Walk collection without exposing its internal structure |
-| Mediator | All participants communicate through one hub; O(n) vs O(n²) connections |
-| Memento | Opaque state snapshot; restore without exposing internals |
-| Observer | Subject auto-notifies all registered watchers |
-| State | Object transitions its own behavior as lifecycle status changes |
-| Strategy | Caller swaps interchangeable algorithm from outside |
-| Template Method | Base fixes skeleton; subclasses override specific steps |
-| Visitor | Add operation to stable hierarchy without modifying it |
+| Day | Topic |
+|-----|-------|
+| 148 | YouTube / Netflix — Full HLD Architecture Diagram with all components integrated |
+| 149 | YouTube / Netflix — Full Mock Interview Round (45-minute design-from-scratch prompt) |
+| 150 | YouTube / Netflix — Full Integration, Key Trade-offs & Numbers to Memorize |
+| 151 | Load Balancing & API Gateway — L4 vs L7, algorithms, sticky sessions, health checks |
+| 152 | Caching Strategies — Cache-aside, Write-through, Write-behind, TTL, thundering herd |
+| 153 | Database Design — SQL vs NoSQL, sharding strategies, replication, leader election |
+| 154 | Message Queues & Event-Driven Architecture (Kafka) — partitions, delivery semantics, DLQ, backpressure |
 
 ---
 
-## The 5 Mix-Ups — Screenshot-Worthy Table
+## Problems to Revisit
 
-| Pair | Pattern A | Pattern B | One-Line Tell |
-|---|---|---|---|
-| Strategy vs State | Caller injects algo externally | Object transitions itself | "Who switches?" — caller = Strategy; self = State |
-| Observer vs Mediator | Subject broadcasts to passive watchers | All route through central hub | "Direct participant-to-participant talk?" — No = Mediator |
-| Command vs Strategy | Wraps REQUEST (has undo/queue/receiver) | Wraps ALGORITHM choice (no undo) | "Need undo or queue?" → Command. "Need algo swap?" → Strategy |
-| Decorator vs Template Method | Runtime composition, stackable | Compile-time inheritance, fixed sequence | "Runtime wrapping?" = Decorator. "Fixed skeleton, vary step?" = Template Method |
-| Decorator vs Proxy | Adds behavior (enhancement) | Controls access (protection/lazy-load) | "Adding?" = Decorator. "Controlling?" = Proxy |
-
----
-
-## Machine Coding Pattern Map
-
-| Problem | Patterns | Key Entities |
-|---|---|---|
-| Vending Machine | State, Strategy | VendingMachine, IdleState/HasMoneyState/DispensingState, PaymentStrategy |
-| Splitwise | Strategy, Observer | User, Expense, EqualSplit/ExactSplit/PercentSplit, BalanceSheet |
-| Parking Lot | Strategy (pricing), Factory (vehicle), Singleton (ParkingLot) | ParkingLot, ParkingSpot, Vehicle, PricingStrategy, Ticket |
-| Elevator | State (IDLE/MOVING/MAINTENANCE), Strategy (scheduling: SCAN/FCFS) | Elevator, Request, ElevatorState, DispatchStrategy |
-| Library Management | Observer (due-date notify), Strategy (fine calculation) | Book, Member, Loan, FineStrategy |
-| Hotel Booking | Strategy (pricing/loyalty), Builder (booking builder) | Room, Booking, PricingStrategy, BookingBuilder |
-| ATM | State (IDLE/CARD_INSERTED/AUTHENTICATING/DISPENSING), Strategy (auth method) | ATM, ATMState, AuthStrategy |
-| Chess | Command (move + undo), Strategy (piece movement) | Board, Piece, MoveCommand, MovementStrategy |
-
----
-
-## Interview Trigger → Pattern Table (12-Row Cheat Sheet)
-
-| Interviewer Says | Pattern |
-|---|---|
-| "Only one instance across the system" | Singleton |
-| "Create objects without naming the exact class" | Factory Method |
-| "Families of related objects, consistent together" | Abstract Factory |
-| "Too many constructor parameters, optional fields" | Builder |
-| "Clone an expensive object instead of rebuilding" | Prototype |
-| "Incompatible interface, can't change either side" | Adapter |
-| "Add behavior at runtime, stackable" | Decorator |
-| "Hide a complex subsystem behind one clean entry" | Facade |
-| "Multiple ways to do the same thing, swap at runtime" | Strategy |
-| "Notify many when one changes, pub-sub" | Observer |
-| "Object behavior changes as lifecycle status changes" | State |
-| "Support undo/redo, queue operations" | Command |
-
----
-
-## 10-Question Quick-Fire Quiz
-
-Answer without notes. Check answers at the bottom.
-
-1. You have a checkout service that must support credit card, UPI, and wallet payments, with new methods added every quarter. The checkout service must never change when a new method is added. Which pattern?
-
-2. An Order moves through PLACED → SHIPPED → DELIVERED → RETURNED. Adding a RETURN_REQUESTED status currently requires modifying 4 methods. Which pattern eliminates this?
-
-3. Your system needs to notify email, push, and SMS services whenever a product's price drops. Adding a WhatsApp notifier must require zero changes to the product service. Which pattern?
-
-4. You need undo/redo for a text editor. Ctrl+Z must reverse the last 10 operations. Which pattern?
-
-5. A report pipeline has the fixed sequence: fetch data → format → export. Fetch is always the same; format and export vary by report type. Which pattern?
-
-6. In an LLD interview, the interviewer asks about a payment system. You say "Strategy." They ask: "How is that different from State?" What is your one-line answer?
-
-7. You are building a chat system where users send messages to each other. As the system grows, every user needs a direct reference to every other user, creating an O(n²) connection problem. Which pattern fixes this?
-
-8. Your vending machine needs to handle cash, card, and UPI payment. You also need to model the machine's behavior in IDLE, HAS_MONEY, and DISPENSING states. Name both patterns and which part of the design each handles.
-
-9. You want to add a PDF export operation to a document model (Paragraph, Table, Image) without modifying those classes. Which pattern?
-
-10. A new subclass is added: `ExcelReport extends Report`. It uses the same fetch pipeline but only overrides `format()`. What pattern is in use, and what is the method the base class declares final?
-
-**Answers:**
-1. Strategy
-2. State
-3. Observer
-4. Command (history stack of Command objects with undo())
-5. Template Method
-6. "Strategy: external caller injects the algorithm. State: object transitions its own behavior based on internal status."
-7. Mediator
-8. State handles IDLE/HAS_MONEY/DISPENSING; Strategy handles cash/card/UPI payment
-9. Visitor
-10. Template Method; the base class declares `generate()` final
+| Problem | LC # | What blocked me | Retry date |
+|---------|------|-----------------|------------|
+| (learner fills in) | | | |
 
 ---
 
 ## Strength / Gap Assessment
 
 | Pattern | Comfort (1–5) | Action |
+|---------|--------------|--------|
+| Grid Backtracking | | |
+| Trie-Augmented Backtracking | | |
+| Exhaustive Expression Evaluation | | |
+| Trie-Constrained Grid Partition | | |
+| 3D Interval DP (`dp[l][r][k]`) | | |
+| Backtracking on Unknown Environment | | |
+| Two Pointers | | |
+| Variable Sliding Window | | |
+| Prefix Sum / Suffix Product | | |
+| Iterative Linked List Reversal (K-Group) | | |
+| Fast/Slow Pointer | | |
+| Monotonic Stack | | |
+| Post-order DFS Arm Pattern | | |
+| BFS Level-Order (queue size snapshot) | | |
+| LCA (post-order null propagation) | | |
+| BFS with Two Distance Arrays | | |
+| Union-Find (path compression + rank) | | |
+| Kahn's Topological Sort | | |
+| Reverse Multi-Source BFS | | |
+
+---
+
+## Weekly Flashcard Deck (35 cards — Days 148–154)
+
+Cards 1–5 are from Day 148. Cards 6–10 are from Day 149. Cards 11–15 are from Day 150. Cards 16–20 are from Day 151. Cards 21–25 are from Day 152. Cards 26–30 are from Day 153. Cards 31–35 are from Day 154.
+
+| # | Q | A |
 |---|---|---|
-| Strategy | | |
-| Observer | | |
-| State | | |
-| Command | | |
-| Template Method | | |
-| Chain of Responsibility | | |
-| Mediator | | |
-| Memento | | |
-| Strategy vs State distinction | | |
-| Observer vs Mediator distinction | | |
-| Vending Machine end-to-end | | |
-| Splitwise end-to-end | | |
+| 1 | How do you track visited cells in Unique Paths III without a separate visited array? | Modify the grid in-place: set `grid[r][c] = -1` (or another sentinel) when visiting, restore to original value when backtracking. |
+| 2 | Why does Trie-augmented backtracking make Word Search II efficient? | All words share a single DFS pass. The Trie prunes paths early: if no word has the current prefix, that DFS branch is abandoned immediately without exploring further. |
+| 3 | What does removing a found word from the Trie accomplish? | Prevents the same word from being added to the result multiple times if it appears at multiple starting positions in the grid. |
+| 4 | In the full YouTube HLD, why is Cassandra chosen for video metadata over MySQL? | Video metadata is write-heavy (new uploads, view count updates, comment writes) and can tolerate eventual consistency. Cassandra scales writes horizontally by partitioning on video_id. |
+| 5 | What are the two CDN caching TTL strategies for video content and why? | Encoded segments: 1-year TTL (immutable; URL includes content hash). Manifest files: 5–30 seconds TTL (must reflect current segment list after live/new uploads). |
+| 6 | How do you handle the 24 Game recursion when two numbers remain? | Pick any 2 remaining numbers, apply all operators (a+b, a-b, b-a, a×b, a÷b, b÷a where divisor≠0); add result to list; recurse on list of 1. If result equals 24 (within 1e-6), return true. |
+| 7 | What symmetry constraint makes Word Squares prunable? | `square[i][j] == square[j][i]` — the k-th character of the j-th word equals the j-th character of the k-th word. This means the prefix of each new word is determined by the column of already-placed words. |
+| 8 | What is the Combination Sum backtracking rule to allow element reuse? | When recursing after picking `candidates[i]`, pass `i` (not `i+1`) as the start index. This allows picking the same element again. |
+| 9 | In the YouTube mock interview, what three paths should you describe first? | Upload path (client → S3 → transcode → CDN origin), Streaming path (client → CDN edge → ABR), Discovery path (search via Elasticsearch, recommendations via two-tower). |
+| 10 | Why use epsilon comparison (`< 1e-6`) instead of `== 24` in the 24 Game? | Floating-point arithmetic on doubles accumulates rounding errors. Division especially: `8 / (3 - 8/3) = 24.000000000000004`. Epsilon comparison handles this correctly. |
+| 11 | What does the `k` dimension represent in Remove Boxes `dp[l][r][k]`? | `k` = the number of extra boxes identical to `boxes[l]` already attached to the left of box l (from previous merges). Removing the left group scores `(k+1)²` points. |
+| 12 | How do you implement backtracking in Robot Room Cleaner without a map? | Virtual coordinate tracking: maintain `(row, col)` in a visited set. To go back: `turnRight x2`, `move`, `turnRight x2` (180° turn + move + 180° turn restores original position and direction). |
+| 13 | In Palindrome Partitioning, how do you precompute `isPalin[i][j]`? | `isPalin[i][j] = (s[i] == s[j]) && (j-i <= 2 || isPalin[i+1][j-1])`. Fill from bottom-right to top-left (decreasing i, increasing j). |
+| 14 | State three YouTube numbers that anchor CDN architecture decisions. | 1B hours/day watched → need 450 PB/day CDN egress. 95%+ CDN hit rate → origin traffic is < 5%. 17,000+ Netflix OCAs embedded in ISPs → sub-50ms latency globally. |
+| 15 | What is the hybrid fan-out strategy for YouTube subscription feeds and when does it switch? | Push (fan-out on write) for channels with < 1M subscribers. Pull (fan-out on read) for channels > 1M subscribers — 100M write fan-outs per upload is too expensive synchronously. |
+| 16 | What is the key invariant that makes LC 41 First Missing Positive O(n) despite the nested while loop? | Each element is swapped into its correct position at most once. Once `nums[i] == i+1`, that element is never moved again. So total swaps across all iterations of the outer loop is at most n. |
+| 17 | In 3Sum, after finding a zero-sum triplet, how do you skip duplicates before moving left and right pointers? | Skip while `nums[left] == nums[left+1]` (increment left) and while `nums[right] == nums[right-1]` (decrement right), then do the final `left++; right--`. |
+| 18 | How does LC 238 Product of Array Except Self achieve O(1) extra space? | Use the output array as the left-pass accumulator: `output[i] = product of all nums[0..i-1]`. Then do a right pass with a single `right` variable: `output[i] *= right; right *= nums[i]`. No extra arrays needed. |
+| 19 | What is the difference between L4 and L7 load balancers? | L4 operates at TCP/UDP (sees IP + port only, cannot inspect HTTP). L7 operates at HTTP (sees headers, URL, cookies; can route by path or cookie; enables sticky sessions by cookie). |
+| 20 | Why do sticky sessions via IP hash break when auto-scaling adds a new backend node? | Adding a node changes the hash ring mapping; the same client IP now hashes to a different backend that does not have the session. Fix: externalize session state to Redis so any node can serve any client. |
+| 21 | In LC 25 Reverse Nodes in K-Group, after reversing k nodes, what does the original head node become and what should its `next` pointer be set to? | The original head becomes the tail of the reversed chunk. Its `next` should point to the result of recursively calling `reverseKGroup` on the remaining list starting at `curr`. |
+| 22 | In Daily Temperatures (LC 739), what invariant does the monotonic stack maintain? | The stack always holds indices of days in decreasing order of temperature. When a warmer day is found at index i, all indices with temperature less than `temperatures[i]` are popped and their wait time is computed as `i - poppedIndex`. |
+| 23 | Why do you move the fast pointer n+1 steps (not n) in LC 19 Remove Nth From End? | The slow pointer must stop at the node just before the one to delete. Moving fast n+1 steps creates a gap of n+1 between fast and slow, so when fast reaches null, slow is at the predecessor of the target node. |
+| 24 | What is the key risk of write-behind (write-back) caching? | If the cache crashes before the async flush reaches the database, writes that were acknowledged to the client are permanently lost. Mitigation: use a durable write-ahead log or write-behind queue on persistent storage. |
+| 25 | What is cache stampede (thundering herd) and what is the Redis-native solution? | When a hot cache key expires simultaneously for many clients, all miss and query the DB at once, overwhelming it. Redis solution: `SET lock:key 1 NX EX 5` — only one process wins the lock and regenerates the key; others wait and read the freshly populated value. |
+| 26 | In the post-order DFS arm pattern, what is the difference between the value returned from `dfs(node)` and the value used to update `maxResult`? | `dfs(node)` returns `1 + max(left, right)` — the longest single arm from this node upward (for the parent to extend). `maxResult` is updated with `left + right` — the path that passes through this node as the peak, which cannot extend further upward. |
+| 27 | In LC 2246, why do you skip a child arm if the child's character equals the parent's character? | The problem requires adjacent characters in the path to be different. A child with the same character as its parent cannot be part of the same path, so its arm length contribution is set to 0 (skipped entirely). |
+| 28 | In BFS level-order traversal, why must you snapshot `int size = q.size()` at the start of each level loop? | Because you add new children to the queue inside the same loop. If you check `q.isEmpty()` or `q.size()` dynamically, you would process next-level nodes as part of the current level. Snapshotting size isolates exactly the current level. |
+| 29 | When should you shard a database instead of just adding read replicas? | When write throughput exceeds what a single primary can handle (roughly > 10K writes/sec). Read replicas copy the primary's data and only help read load — they do not reduce write load on the primary. Sharding distributes writes across multiple primaries. |
+| 30 | In Cassandra with replication factor 3 and QUORUM consistency, how many node failures can the cluster survive for reads and writes? | QUORUM requires (3/2)+1 = 2 responses. With 3 nodes and needing 2, the cluster can survive 1 node failure and still satisfy QUORUM reads and writes. |
+| 31 | In LC 2045 Second Minimum Time, how do you compute the wait time at a node when you arrive at time `t` and the signal change period is `change`? | `int period = t / change; int waitTime = (period % 2 == 1) ? (period + 1) * change : t;` — if you arrive during a red phase (odd period), wait until the next green; if already green, proceed immediately. |
+| 32 | In LC 417 Pacific Atlantic Water Flow, why do you do BFS from the ocean borders instead of BFS from each cell toward the ocean? | Forward flow from each cell would require checking all possible paths downhill. Reverse flow from the ocean border is simpler: BFS uphill (to cells with height >= current) naturally finds all cells that can drain to that ocean. Intersection of the two reachable sets gives the answer. |
+| 33 | What is the Union-Find path compression optimization and what does it achieve? | During `find(x)`, set `parent[x] = find(parent[x])` recursively, making every node on the path point directly to the root. This flattens the tree so future finds are O(1). Combined with union by rank, amortized cost per operation is O(α(n)) ≈ constant. |
+| 34 | In Kahn's topological sort, how do you detect a cycle in the graph? | After BFS completes, if `order.size() != n`, there is a cycle. Nodes in the cycle never reach in-degree 0, so they are never added to the queue and never appear in the result. |
+| 35 | What is a Dead Letter Queue (DLQ) in Kafka and what problem does it solve? | A DLQ is a separate topic to which messages are routed after N failed processing retries. It solves the poison-pill problem: without a DLQ, a message that always fails blocks all subsequent messages in the same partition, halting the consumer indefinitely. |
 
 ---
 
-## Problems to Revisit
+## Mock / Contest Log
 
-| Problem | What blocked me | Retry date |
-|---|---|---|
-| (fill in after each session) | | |
-
----
-
-## 20 Minutes Before the Round — LLD Exam Prep
-
-**Run through these in order, out loud, without notes:**
-
-1. State the one-line recall for Strategy, Observer, State, Command — 30 seconds
-2. Say the Strategy vs State diagnostic test: "Who switches?"
-3. Say the Decorator vs Proxy diagnostic test: "Adding vs Controlling"
-4. Name the 4 roles in Command: Command interface, ConcreteCommand, Receiver, Invoker
-5. Trace the Vending Machine from `insertMoney()` to `dispense()`: Idle → HasMoney → Dispensing → Idle
-6. Trace Splitwise `addExpense()`: validate → calculateSplit → updateBalances → notifyMembers
-7. Remind yourself: code to interfaces, not concrete classes. No god classes. No forced Singletons.
-8. Remind yourself: when stuck, narrate your thinking — "I'm choosing Strategy here because the algorithm needs to be swappable from outside."
-
-**If you have 5 more minutes:** draw the State machine diagram for Vending Machine on paper. No code needed — just the bubbles and arrows.
-
----
-
-## Week 22 → Week 23 Transition
-
-**Consolidate before moving on:**
-- Any pattern with comfort < 3/5 in the table above: schedule a 30-minute targeted re-drill before Week 23
-- Code Vending Machine from scratch in a blank editor, timing yourself — target: under 20 minutes
-- Code Splitwise `addExpense()` + `BalanceSheet.addDebt()` from memory — target: under 15 minutes
-- Review all 50 flashcards from Days 145–151 as one deck
-- Week 23 focus: system design deep dives and concurrency patterns in LLD
-
----
-
-## Week 22 STAR Quick Reference
-
-| Pattern | One-line STAR hook |
-|---|---|
-| Strategy | "Checkout team added BNPL by writing one class — Strategy pattern meant zero changes to CheckoutService." |
-| Observer | "Price-drop notification fan-out decoupled from product service via Observer — added WhatsApp channel in 30 minutes." |
-| State | "Order lifecycle refactor: State pattern eliminated 6 scattered if-else blocks, added RETURN_REQUESTED in one class." |
-| Command | "Undo/redo feature shipped in 2 days using Command + history stack — zero regression to existing editor flows." |
-| Template Method | "Report pipeline deduplication: Template Method eliminated 4 copy-pasted 200-line pipelines, Excel export in 30 minutes." |
-| Vending Machine | "Machine coding: State for lifecycle + Strategy for payment — added out-of-stock state as one new class." |
-| Splitwise | "Machine coding: Strategy for split types + Observer for balance updates — simplify debts in O(n log n) greedy." |
+| Date | Platform | Score / Result | Key mistake | Fixed? |
+|------|----------|---------------|-------------|--------|
+| | | | | |

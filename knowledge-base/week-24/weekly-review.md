@@ -1,240 +1,117 @@
-# Week 24 Review — HLD Advanced + Classic System Design Reference
-**Week 24 | Phase: HLD Mastery | Month 5**
+# Week 24 Review — Days 162–168
 
-## Focus
-Consolidate two weeks of HLD content: distributed systems coordination from Week 24 advanced topics and all eight classic system design problems. Exit this review with instant recall of the decision cheat sheet, all benchmark numbers, and the 5-step framework. Self-assess with the 10-question quiz at the bottom.
+## Phase
+Phase 4 — Final Sprint | Month 6 | Timed OA Simulation + LLD Deep Dive
 
----
+## Patterns Covered This Week
 
-## What Was Covered This Week
+- **Day 162:** Sweep Line + Binary Search on Event Arrays
+- **Day 163:** Min-Heap Enumeration of Ranked Sums / Combinations
+- **Day 164:** Prefix/Suffix DP with Heap-Maintained Running Optimum
+- **Day 165:** Binary Search on Answer Value (Feasibility Check)
+- **Day 166:** Sliding Window on Positions (Collect → Prefix Sum → Median Cost)
+- **Day 167:** Two-Pass DFS (Precompute + Propagate)
+- **Day 168:** Offline Queries + Min-Heap (Sort + Sweep)
 
-| Day | Topic | Key Takeaway |
-|-----|-------|-------------|
-| 159 | Distributed Systems Advanced | Saga replaces 2PC; Redlock + fencing tokens; hot standby for RPO near zero |
-| 160 | Infrastructure & Deployment | Canary limits blast radius; service mesh = mTLS + tracing for free; chaos engineering builds resilience |
-| 161 | URL Shortener + Notification | Base62 + Redis cache + DynamoDB; Kafka fan-out + DLQ + Redis idempotency key |
-| 162 | Twitter + Instagram | Fan-out hybrid; Redis sorted-set timeline; Cassandra for tweets; presigned S3 |
-| 163 | Uber + BookMyShow | Redis Geo + WebSocket; Redis SET NX EX seat lock; State + Strategy patterns |
-| 164 | WhatsApp + Google Drive | Snowflake ordering + Cassandra; 4MB chunks + delta sync + Signal Protocol |
-| 165 | Full HLD Review | 5-step framework; numbers cheat sheet; decision table; all 8 problems mapped |
+## System Design Topics Covered (LLD)
 
----
+| Day | LLD Topic | Key Design Decision |
+|-----|-----------|---------------------|
+| 162 | Library Management System ER Diagram | Use `SELECT available_copies FROM Books WHERE isbn=? FOR UPDATE` inside a transaction to prevent two patrons checking out the last copy simultaneously; the row-level lock ensures atomicity |
+| 163 | Movie Ticket Booking DB Schema (BookMyShow) | `PRIMARY KEY (seat_id, showtime_id)` on BookingSeats acts as a uniqueness constraint — the second concurrent INSERT fails with a duplicate key error, preventing double-booking without application-level locking |
+| 164 | Hotel Booking DB Schema | For high-demand bookings, use a Redis distributed lock (`SET room:{hotel_id}:{room_type_id}:{check_in} LOCKED NX EX 30`) — NX ensures mutual exclusion, EX prevents deadlock if the lock holder crashes |
+| 165 | ATM Machine State Machine Design | Use the State pattern so each state's behavior is fully encapsulated in its own class; adding new states (e.g., MaintenanceModeState) requires only a new class implementing ATMState — no changes to ATM or existing state classes (Open/Closed Principle) |
+| 166 | LRU Cache + LFU Cache Class Design | LFU uses a `LinkedHashSet` per frequency bucket — insertion order within the set gives O(1) LRU tie-breaking among keys at the same frequency, enabling O(1) eviction without an extra linked list |
+| 167 | Social Media Platform DB Schema | Hybrid fan-out strategy: push (fan-out on write) for users with < 1,000,000 followers; pull (fan-out on read) for celebrity accounts; at read time merge the pre-computed push feed with freshly pulled celebrity posts |
+| 168 | REST API Design Patterns | Idempotency keys turn non-idempotent POST operations into effectively-idempotent ones — the server caches the response (Redis TTL 24h) so retries on network failure never double-process; cursor pagination uses a composite index seek (O(log N)) vs offset pagination which degrades at depth |
 
-## 5-Step Framework One-Pager
+## Problems to Revisit
+| Problem | LC # | What blocked me | Retry date |
+|---------|------|-----------------|------------|
+| (learner fills in after each session) | | | |
 
-```
-1. REQUIREMENTS (5 min)
-   Functional:     what it does | what APIs it exposes
-   Non-functional: QPS, read:write ratio, latency SLO, consistency, availability
+## Strength / Gap Assessment
+| Pattern | Comfort (1–5) | Action |
+|---------|--------------|--------|
+| Sweep Line + Binary Search on Event Arrays | | |
+| Min-Heap Enumeration of Ranked Sums / Combinations | | |
+| Prefix/Suffix DP with Heap-Maintained Running Optimum | | |
+| Binary Search on Answer Value (Feasibility Check) | | |
+| Sliding Window on Positions (Collect → Prefix Sum → Median Cost) | | |
+| Two-Pass DFS (Precompute + Propagate) | | |
+| Offline Queries + Min-Heap (Sort + Sweep) | | |
 
-2. SCALE (5 min)
-   QPS     = DAU x actions/day / 86,400  (x2-3 for peak)
-   Storage = records x record size x retention
-   Cache   = total records x 20% x record size (80/20 rule)
-   Bandwidth = QPS x avg payload size
+## Weekly Flashcard Deck (35 cards — Days 162–168)
 
-3. HIGH-LEVEL DESIGN (10 min)
-   [Client] --> [LB] --> [API Servers] --> [Cache] --> [DB]
-                                                 |
-                                            [Queue] --> [Worker] --> [Storage]
-   Trace write path. Trace read path. Justify DB + cache choices.
+### Day 162 Flashcards (5 cards)
+| Q | A |
+|---|---|
+| In LC 2251, what is the difference between upperBound and lowerBound and why does each apply to starts vs ends? | upperBound(starts, t) counts elements ≤ t (intervals that have started by time t, inclusive). lowerBound(ends, t) counts elements < t (intervals whose end is strictly before t, meaning they finished before the person arrived). Active = started - finished_before. |
+| What is the critical mistake to avoid in LC 1905 (Count Sub Islands)? | Do not return early from DFS when you discover a cell where grid2==1 but grid1==0. You must continue the DFS to mark all cells of the island as visited, otherwise future DFS calls will re-enter those cells and double-count islands. |
+| How does multi-source BFS work in LC 994 (Rotting Oranges)? | Enqueue all rotten oranges (value 2) into the queue simultaneously before starting BFS. This ensures all rotten oranges spread in the same time step, simulating simultaneous rot. The level (time) counter increments after each full BFS level is processed. |
+| What SQL construct prevents two concurrent checkouts of the last library book? | SELECT available_copies FROM Books WHERE isbn=? FOR UPDATE inside a transaction. The FOR UPDATE clause acquires a row-level exclusive lock; only one transaction proceeds; others wait; the second transaction reads the updated (decremented to 0) value after the first commits. |
+| Name the two indexes that make active-loan queries fast for a library system. | idx_loans_patron on Loans(patron_id) — for "how many books does patron X have?"; idx_loans_active on Loans(isbn, return_date) WHERE return_date IS NULL — partial index covering only active loans for a given ISBN, avoiding full table scan. |
 
-4. DEEP DIVES (20 min)
-   Pick the hardest component. Have opinions.
-   State trade-offs explicitly with numbers.
-   Common areas: fan-out, sharding, ordering, locking, sync, real-time delivery
+### Day 163 Flashcards (5 cards)
+| Q | A |
+|---|---|
+| What are the two heap pushes in LC 2386's reduction enumeration and what does each represent? | Extend push: (reduction + sorted[i+1], i+1) — adds the next element to the current subset, increasing the reduction from maxSum. Swap push: (reduction - sorted[i] + sorted[i+1], i+1) — replaces sorted[i] with sorted[i+1] in the subset, keeping subset size the same but swapping to the next element. |
+| In LC 373, why do you only seed the heap with (nums1[i]+nums2[0]) and not all (i, j) pairs? | nums2[0] is the smallest element in nums2, so (nums1[i], nums2[0]) gives the smallest possible sum for each fixed i. All other pairs (nums1[i], nums2[j]) with j>0 can be reached by expanding from (i, 0) via the heap, ensuring we enumerate pairs in ascending sum order without redundancy. |
+| What is the invariant that makes the PRIMARY KEY on (seat_id, showtime_id) sufficient to prevent double-booking? | The database engine enforces uniqueness atomically — two concurrent INSERTs with the same (seat_id, showtime_id) cannot both succeed; exactly one will get a duplicate key error, causing the losing transaction to roll back. This requires no application-level locking. |
+| What is the greedy invariant maintained in LC 1405 (Longest Happy String)? | At each step, always pick the most frequent available character unless the last two characters in the result are already that character. In that case, pick the second most frequent. This greedy choice maximizes string length because not using the most frequent character now would waste it — it must be used as soon as possible. |
+| What does the expires_at column in the Bookings table accomplish in the BookMyShow schema? | It implements a time-boxed seat lock: a seat reserved (status=LOCKED) must be paid for before expires_at; if not, a background job releases the lock by deleting from BookingSeats and marking the booking CANCELLED. This prevents seats from being held indefinitely by users who abandon checkout. |
 
-5. WRAP UP (5 min)
-   Biggest bottleneck + how to address at 10x scale
-   Monitoring: RED metrics, p99 SLO alert, distributed tracing
-```
+### Day 164 Flashcards (5 cards)
+| Q | A |
+|---|---|
+| In LC 2163, why do you use a max-heap for prefix and a min-heap for suffix? | Prefix = min sum of n elements → keep the n smallest → evict the largest when size exceeds n, so use a max-heap (the root is the largest, easy to evict). Suffix = max sum of n elements → keep the n largest → evict the smallest when size exceeds n, so use a min-heap (the root is the smallest, easy to evict). |
+| What is the valid split point range in LC 2163 and why? | i ranges from n-1 to 2n-1 (inclusive). At i=n-1: left half is nums[0..n-1] (exactly n elements, the minimum needed). At i=2n-1: right half is nums[2n..3n-1] (exactly n elements, the minimum needed). Outside this range, one half has fewer than n elements and cannot contribute a valid n-element selection. |
+| In LC 416 (Partition Equal Subset Sum), why must the inner loop run from target down to num? | The inner loop processes the current num only once per knapsack iteration (0/1 knapsack — each element used at most once). Iterating from high to low ensures that when dp[j] is updated using dp[j-num], dp[j-num] still reflects the state before the current num was considered. Iterating low to high would allow num to be used multiple times (unbounded knapsack). |
+| In LC 1027 (Longest Arithmetic Subsequence), what does dp[i][diff] store? | The length of the longest arithmetic subsequence ending at index i with common difference diff. The value includes both endpoints, so a two-element subsequence [nums[j], nums[i]] stores 2. When computing dp[i][diff]: dp[j].getOrDefault(diff, 1) + 1 — the 1 default represents nums[j] alone (length 1 before appending nums[i]). |
+| What two Redis lock properties make SET NX EX safe for hotel booking concurrency? | NX (Not eXists): only sets the key if it does not already exist — ensures mutual exclusion, only one request acquires the lock. EX (EXpiry in seconds): automatically releases the lock after the TTL even if the lock holder crashes — prevents deadlock where a crashed process holds the lock forever. |
 
----
+### Day 165 Flashcards (5 cards)
+| Q | A |
+|---|---|
+| In LC 2040, how do you count pairs with product ≤ mid when nums1[i] is negative? | When nums1[i] < 0, dividing both sides of nums1[i]*nums2[j] ≤ mid by nums1[i] flips the inequality: nums2[j] ≥ ceil(mid / nums1[i]). Count = nums2.length - lowerBound(nums2, ceil(mid / nums1[i])). Use long arithmetic and handle Java's round-toward-zero division carefully for negative operands. |
+| What are the lo and hi bounds for LC 875 (Koko Eating Bananas) and why? | lo=1 (Koko eats at least 1 banana/hour), hi=max(piles) (eating faster than the largest pile is wasteful — it provides no benefit and the answer cannot exceed max(piles)). The feasibility check is sum(ceil(pile/k)) ≤ h. |
+| What are the lo and hi bounds for LC 1011 (Capacity To Ship) and why? | lo=max(weights): the ship must be able to carry the heaviest single package or shipping is impossible. hi=sum(weights): a ship with this capacity ships everything in exactly 1 day — always feasible. The feasibility check is the greedy day-counting simulation. |
+| What is the Open/Closed Principle and how does the State pattern in ATM satisfy it? | Open/Closed: classes should be open for extension but closed for modification. State pattern satisfies it by encapsulating each state's behavior in its own class. Adding a new state (e.g., MaintenanceModeState) requires creating a new class implementing ATMState — no existing state classes or the ATM class itself need modification. |
+| In the ATM State pattern, which state must be stateful and why? | CardInsertedState must be stateful — it stores cardId (needed for PIN validation with BankService) and pinAttempts (needed to decide whether to retry or capture/eject the card). All other states can be stateless singletons because they do not need to remember per-session data between method calls. |
 
-## Classic Problems Quick Reference
+### Day 166 Flashcards (5 cards)
+| Q | A |
+|---|---|
+| What data structure enables O(1) LRU eviction? | A doubly linked list with sentinel head/tail; the node just before the tail sentinel is always the LRU item and can be removed in O(1). |
+| Why use `LinkedHashSet` instead of `HashSet` in LFU frequency buckets? | `LinkedHashSet` preserves insertion order, making the first element the oldest at that frequency — enabling O(1) LRU tie-breaking without an extra linked list. |
+| In "minimum adjacent swaps for K consecutive ones," why collect positions into array P instead of working on the raw array? | It reduces the problem from O(N) array swaps to O(K) median-cost on positions, and prefix sums make each window cost O(1). |
+| What is the offset term in LC 1703 and why must it be subtracted? | The positions P[l..r] have gaps between them; adjacent swaps cannot skip indices. The offset `P[l]*K + K*(K-1)/2` accounts for the non-swap positional spread, leaving only the true swap count. |
+| In the sliding-window frequency diff approach (LC 567), what does `nonZero` count and when is the answer found? | `nonZero` counts characters whose frequency differs between the current window and s1. The answer is found when `nonZero == 0` (all 26 character frequencies match). |
 
-| System | DB | Cache | Queue | Real-time | Key Pattern |
-|--------|----|-------|-------|-----------|-------------|
-| URL Shortener | DynamoDB | Redis (10GB hot) | Kafka (analytics) | — | Cache-aside + Base62 |
-| Notifications | PostgreSQL | Redis (prefs) | Kafka (per channel) | — | Observer + Strategy + DLQ |
-| Twitter Feed | Cassandra | Redis sorted-set | Kafka (fan-out) | — | Fan-out hybrid |
-| Instagram | Cassandra (stories) + S3 | Redis timeline | Kafka (fan-out) | — | Presigned S3 + CDN |
-| Uber | PostgreSQL (trips) | Redis Geo | Kafka (trip events) | WebSocket (driver) + SSE (rider) | State + Strategy |
-| BookMyShow | PostgreSQL | Redis (seat lock) | SQS FIFO (spike) | — | Distributed lock + Observer |
-| WhatsApp | Cassandra (messages) | Redis (presence) | Internal routing | WebSocket | Snowflake IDs + Signal |
-| Google Drive | PostgreSQL (metadata) | Redis (hot chunks) | Kafka (sync events) | WebSocket (sync) | Delta sync + ACL |
+### Day 167 Flashcards (5 cards)
+| Q | A |
+|---|---|
+| In LC 2458, what two things does DFS pass 1 compute and what does DFS pass 2 propagate? | Pass 1 computes `depth[node]` (root-to-node distance) and `height[node]` (node-to-deepest-leaf). Pass 2 propagates `maxHeightWithout` downward — the best tree height achievable if this node's subtree were removed. |
+| Why track top-2 child heights in the two-pass DFS instead of just the best? | Each child's complement needs the best height from its siblings. If you only stored the best, the child with the best height would get an incorrect complement (it cannot use its own height). Top-2 lets you serve both children correctly in O(1). |
+| What index is essential for paginated feed queries and why? | `INDEX (user_id, created_at DESC)` on the Feeds table — it lets the DB seek directly to the user's latest posts without a full table scan, making page N as fast as page 1. |
+| What prevents a user from liking the same post twice at the DB level? | `PRIMARY KEY (user_id, post_id)` on the Likes table — inserting a duplicate throws a unique constraint violation, which the application catches and returns "already liked". |
+| In LC 1443 (Collect All Apples), when do you add 2 to the child's cost? | When `childCost > 0` (the child's subtree has at least one apple) OR `hasApple[child]` is true — in both cases you must make the round trip (2 edges) to that child. If neither is true, you can skip the child entirely. |
 
----
+### Day 168 Flashcards (5 cards)
+| Q | A |
+|---|---|
+| In the offline-query-min-heap pattern, what two things happen at each query step? | (1) Add all intervals with `start <= query` to the heap. (2) Expire (pop) all intervals with `right < query`. The heap top is then the smallest valid covering interval. |
+| Why must queries be processed in sorted order in LC 1851? | Because the interval pointer only moves forward (sweep), and the heap only accepts intervals with `start <= current query`. Processing out of order would require resetting the pointer, making it O(N*Q). |
+| What is the SQL equivalent of cursor pagination and why is it fast? | `WHERE (created_at, id) < (cursor_ts, cursor_id) ORDER BY created_at DESC LIMIT N` — uses a composite index seek, which is O(log N) regardless of how deep into the dataset you are. |
+| What header should a 429 Too Many Requests response include? | `Retry-After: <seconds>` (or an HTTP-date) — tells the client exactly how long to wait before retrying, enabling polite back-off without guessing. |
+| In multi-source BFS (LC 1162, LC 542), why initialize all source cells in the queue before starting BFS? | It ensures all sources expand simultaneously at distance 0, so the BFS wave front correctly represents the shortest distance from any source — the same as a single-source BFS from a virtual super-source connected to all real sources with zero-weight edges. |
 
-## HLD Decision Tree
+## Mock / Contest Log
+| Date | Platform | Score / Result | Key mistake | Fixed? |
+|------|----------|---------------|-------------|--------|
+| | | | | |
 
-```
-DATA STORAGE
-
-Is data relational with complex joins or ACID transactions?
-  YES --> SQL: PostgreSQL (default), MySQL
-  NO  --> What is the primary access pattern?
-      Key-value (sessions, counters, cache)?
-        --> Redis (in-memory) or DynamoDB (durable)
-      Time-series / append-only / high write throughput?
-        --> Cassandra / InfluxDB
-      Document with flexible schema?
-        --> MongoDB or DynamoDB
-      Full-text search with relevance ranking?
-        --> Elasticsearch (plus primary DB as source of truth)
-      Graph traversal (social network, fraud detection)?
-        --> Neo4j or Amazon Neptune
-
-TRAFFIC PATTERN
-
-Read-heavy (>80% reads)?
-  YES --> Redis cache + read replicas + CDN for static assets
-Write-heavy (>80% writes)?
-  YES --> Message queue to absorb spikes + CQRS + DB sharding
-
-REAL-TIME REQUIREMENT
-
-Bidirectional (chat, collaborative editing, gaming)?
-  --> WebSocket
-Unidirectional server push (feeds, live scores, notifications)?
-  --> SSE (simpler, built on HTTP, auto-reconnect)
-Async, decoupled (event fan-out, task processing)?
-  --> Kafka (multiple consumers, replay) or SQS (point-to-point)
-
-CONSISTENCY REQUIREMENT
-
-Financial data, inventory, leader election?
-  --> Strong consistency (CP): PostgreSQL, ZooKeeper, etcd
-Social feeds, caches, presence, product catalog?
-  --> Eventual consistency (AP): Cassandra, DynamoDB, Redis
-```
-
----
-
-## Numbers Cheat Sheet
-
-| Conversion | Value |
-|-----------|-------|
-| 1M requests/day | ~12/sec |
-| 10M requests/day | ~116/sec |
-| 100M requests/day | ~1,200/sec |
-| 1B requests/day | ~11,600/sec |
-| 99% SLA | 87.6 hours/year downtime |
-| 99.9% SLA | 8.76 hours/year downtime |
-| 99.99% SLA | 52.6 minutes/year downtime |
-| 99.999% SLA | 5.26 minutes/year downtime |
-| Redis | ~100K ops/sec per instance |
-| MySQL write | ~1K/sec sustained |
-| MySQL read | ~10K/sec |
-| Cassandra write | ~50K/sec per node |
-| Kafka | ~1M messages/sec across all partitions |
-| S3 PUT | ~3,500/sec per prefix |
-| S3 GET | ~5,500/sec per prefix |
-| RAM access | ~100 ns |
-| SSD random read | ~100 microseconds |
-| HDD random read | ~10 ms |
-| Same-DC network | ~1 ms RTT |
-| US to EU cross-region | ~80 ms RTT |
-
----
-
-## Full Knowledge Base Completion Checklist
-
-### LLD (Weeks 20-22)
-- [ ] OOP 4 pillars — can explain each with code example
-- [ ] SOLID — can name all 5 and identify violations in code
-- [ ] Singleton — thread-safe with enum or double-checked locking
-- [ ] Factory + Abstract Factory — registration map, not if-else chain
-- [ ] Builder — fluent chain, immutable result, validation in .build()
-- [ ] Adapter — Object Adapter via composition, not inheritance
-- [ ] Decorator — same interface, stackable wrapping, no subclass explosion
-- [ ] Facade — single entry point over complex subsystem
-- [ ] Proxy — lazy load, access control, caching proxy
-- [ ] Strategy — external algorithm swap, composition over inheritance
-- [ ] Observer — subject notifies all observers; push vs pull model
-- [ ] State — state object owns its own transition logic
-- [ ] Command — execute + undo, history stack for undo/redo
-- [ ] Template Method — base class fixes skeleton, subclass overrides steps
-- [ ] Can code all 5 core patterns from memory: Singleton, Factory, Strategy, Observer, Decorator
-- [ ] Know all 5 confusion pairs and one-line distinguishing tells
-
-### HLD Foundations (Week 23)
-- [ ] CAP theorem — CP vs AP examples with real system names
-- [ ] SQL vs NoSQL decision framework — can walk through decision tree
-- [ ] Database sharding — shard key selection, hotspot avoidance, consistent hashing
-- [ ] Caching — write strategies (cache-aside, write-through, write-back), eviction policies, stampede prevention
-- [ ] Kafka vs SQS — know when to use each; at-least-once + idempotent consumer
-- [ ] REST vs gRPC vs GraphQL — decision by context (external/internal/mobile)
-- [ ] Rate limiting — token bucket vs sliding window; Redis implementation
-- [ ] Circuit breaker — three states (CLOSED/OPEN/HALF-OPEN) and transitions
-
-### HLD Advanced + Classic Design (Week 24)
-- [ ] Saga pattern — choreography vs orchestration with compensating transactions
-- [ ] Consistent hashing — virtual nodes; only K/N keys remap on node change
-- [ ] Redlock + fencing tokens — algorithm steps and clock-skew mitigation
-- [ ] Raft consensus — leader election + log replication step-by-step
-- [ ] DR strategies — backup/restore vs pilot light vs warm vs hot standby; RPO and RTO for each
-- [ ] Can design URL Shortener — Base62, Redis cache, DynamoDB, 302 vs 301
-- [ ] Can design Notification System — Kafka fan-out, idempotency, DLQ, scheduling
-- [ ] Can design Twitter Feed — fan-out hybrid, Redis sorted set, Cassandra tweets
-- [ ] Can design Uber — Redis Geo, WebSocket, state machine, surge pricing strategy
-- [ ] Can design BookMyShow — Redis SET NX EX, optimistic locking, waitlist observer
-- [ ] Can design WhatsApp — Snowflake ordering, Cassandra, offline delivery, Signal
-- [ ] Can design Google Drive — chunked upload, delta sync, PostgreSQL metadata, ACL
-- [ ] Know all numbers in cheat sheet from memory
-- [ ] Can execute 5-step framework from blank canvas in 45 minutes
-
----
-
-## 10-Question Quick-Fire Quiz
-
-Answer these without looking at notes. Check answers below.
-
-1. Fan-out on write vs read — which approach does Twitter use for celebrity accounts?
-2. What Redis command atomically sets a seat lock only if it does not already exist?
-3. Which SLA gives approximately 52 minutes per year of downtime?
-4. Kafka vs SQS — which retains messages for replay by multiple consumer groups?
-5. What is RPO and how does it differ from RTO?
-6. When does a circuit breaker transition from CLOSED to OPEN?
-7. What design pattern does BookMyShow's waitlist notification use?
-8. Why is Cassandra chosen for tweet storage over PostgreSQL?
-9. How does Google Drive avoid uploading unchanged parts of a large edited file?
-10. What delivery semantic requires idempotent consumers to be safe?
-
----
-
-### Answers
-
-1. **Fan-out on read.** Celebrity accounts (> 1M followers) do not have tweets pre-pushed to follower timelines. At feed read time, celebrity tweets are lazily queried and merged with the precomputed Redis sorted-set cache.
-
-2. **`SET seatId lockToken NX EX 600`** — NX means "only set if Not eXists"; EX 600 sets a 10-minute TTL. Single round-trip, atomic; eliminates the check-then-set race condition.
-
-3. **99.99% SLA** — 52.6 minutes per year, 4.4 minutes per month. Know all four: 99% = 87.6 hrs, 99.9% = 8.76 hrs, 99.99% = 52.6 min, 99.999% = 5.26 min.
-
-4. **Kafka.** Kafka is an append-only log; messages are retained for a configurable period (default 7 days) and any number of consumer groups can read independently. SQS deletes the message once it is consumed — point-to-point only.
-
-5. **RPO = Recovery Point Objective** — the maximum acceptable data loss measured in time (e.g., RPO = 1 hour means at most 1 hour of data can be lost). **RTO = Recovery Time Objective** — the maximum acceptable downtime (e.g., RTO = 4 hours means the system must be back up within 4 hours). Lower = more expensive.
-
-6. The circuit breaker transitions CLOSED → OPEN when **the error rate or failure count exceeds a configured threshold** within a time window (e.g., 5 failures in 10 seconds, or error rate > 50%). Once OPEN, all requests fail fast without calling the downstream service.
-
-7. **Observer pattern.** Booking Service (subject) publishes a SEAT_RELEASED event to Kafka on cancellation. Notification Service (observer) consumes the event, queries the waitlist for the first user, and sends notification. The first user receives a 5-minute exclusive Redis lock to complete the booking.
-
-8. Cassandra suits tweet storage because: (1) tweet workload is append-only (no updates), matching Cassandra's LSM-tree write path; (2) partitioning by userId enables fast user timeline queries without scans; (3) Snowflake clustering key gives time-ordered rows within a partition; (4) horizontal scaling handles 50K writes/sec per node; (5) no joins are needed — tweets are self-contained.
-
-9. **Delta sync with SHA256 chunk hashing.** The Google Drive client splits every file into 4MB chunks and computes the SHA256 hash of each. It maintains a local index of chunk hashes. On file change, only chunks whose hash changed are uploaded. A 1GB presentation with one edited slide = upload 1 chunk (4MB) instead of 1GB.
-
-10. **At-least-once delivery.** At-least-once guarantees a message is delivered at least one time but may deliver it multiple times (on retry after consumer crash before ack). Consumers must be idempotent — processing the same message twice produces the same result as processing it once. Implement via idempotency key checked in Redis before processing.
-
-**Score guide: 9-10 = interview-ready | 6-8 = review the weak areas' day files | < 6 = re-read weeks 23-24 before the next interview**
-
----
-
-## Week 24 Checklist
-- [ ] Quiz completed and scored — reviewed any missed topics against the corresponding day file
-- [ ] 5-step framework recited cold without notes
-- [ ] Availability nines stated from memory (99% through 99.999%)
-- [ ] All benchmark numbers stated: Redis 100K, MySQL 1K write / 10K read, Cassandra 50K, Kafka 1M
-- [ ] Can draw architecture for at least 3 classic problems from memory without notes
-- [ ] HLD decision cheat sheet reviewed — can identify correct solution for each problem type
-- [ ] Weak areas marked in `knowledge-base/revision-log.md`
-- [ ] STAR stories reviewed for at least 3 problems (Twitter, Uber, WhatsApp recommended)
+## Week 24 Debrief
+- Which hard OA problem type (sweep line / heap / binary search / offline query) needs more practice?
+- Which LLD system could you not whiteboard from scratch in 10 minutes?
+- Log your answers in `knowledge-base/revision-log.md`.
