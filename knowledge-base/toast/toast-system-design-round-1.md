@@ -227,7 +227,7 @@ private static Double search(List<MenuGroup> groups, Double inherited, MenuItem 
     return null;                                                       // keep searching siblings
 }
 ```
-**3 bugs candidates make (don't):** returning `0.0` instead of `null` for not-found; `return`ing on the first group instead of searching siblings; `==` on names. **O(N) time, O(H) space.** Full trace + this exact problem live in [toast-system-design-round-2.md](toast-system-design-round-2.md) Part B.
+**3 bugs candidates make (don't):** returning `0.0` instead of `null` for not-found; `return`ing on the first group instead of searching siblings; `==` on names. **O(N) time, O(H) space.** Full trace + this exact problem live in [toast-system-design-round-2.md](toast-system-design-round-2.md) Part D — and since you already did this in R1, see Part A there for the **extensions** (find-all, path, iterative, service) they'll likely ask next.
 
 ### Pattern 2 — "Fetch items from the menu" (the *vegan salads* question)
 They give a menu data structure, then *"fetch a specific item / all items in a category (e.g. vegan salads)."* Same DFS as `getPrice` but **collect-all instead of find-first**:
@@ -251,10 +251,10 @@ public static List<MenuItem> findByCategory(List<MenuGroup> groups, String categ
 - Idempotency on writes; meaningful error responses (not `RuntimeException`).
 
 ### Pattern 4 — Code review of sample code
-*"Review this code."* Lead **security → correctness → resources → API/design → tests**, prioritized. (SSRF, path traversal, `byte[]` equals/hashCode, unclosed streams, GET-with-side-effects, no pagination.) Full worked review in [toast-system-design-round-2.md](toast-system-design-round-2.md) Part A.
+*"Review this code."* Lead **security → correctness → resources → API/design → tests**, prioritized. (SSRF, path traversal, `byte[]` equals/hashCode, unclosed streams, GET-with-side-effects, no pagination.) Full worked review in [toast-system-design-round-2.md](toast-system-design-round-2.md) Part C.
 
 ### Pattern 5 — Concurrency LLD (multi-threaded alarm clock)
-*"Multi-threaded alarm clock: `setAlarm`, `ringAlarm`."* `ScheduledExecutorService` + `ConcurrentHashMap` registry; be ready for the from-scratch `PriorityQueue` + `Condition.awaitNanos` version, and to explain concurrency vs parallelism / deadlock / `volatile`. Full code in [toast-system-design-round-2.md](toast-system-design-round-2.md) Part C.
+*"Multi-threaded alarm clock: `setAlarm`, `ringAlarm`."* `ScheduledExecutorService` + `ConcurrentHashMap` registry; be ready for the from-scratch `PriorityQueue` + `Condition.awaitNanos` version, and to explain concurrency vs parallelism / deadlock / `volatile`. Full code in [toast-system-design-round-2.md](toast-system-design-round-2.md) Part B.
 
 ### Pattern 6 — Stock profit with 5-second gap (DSA warm-up)
 Some loops open with a pure DSA question. The known Toast one: max single buy/sell profit where `sell_index − buy_index ≥ 5`. One-pass with a lagged running-min. Covered in [toast-sde-prep.md](toast-sde-prep.md).
