@@ -92,6 +92,99 @@ class ParkingLot {             // Facade/orchestrator over levels
 
 ---
 
+## PART C2 — UKG-SPECIFIC LLD (🔥 most likely tomorrow — Pune 2026)
+
+> UKG LLD rounds favor **workforce-domain** problems. The parking lot proves you can model anything; this proves you understand *their* domain. The standout patterns here are **State** (approval/shift lifecycle) and **Strategy/Chain** (pluggable business rules). Bring up **concurrency** (two approvers, double-booking) and **audit trail** unprompted — that's the P5 signal.
+
+### UKG LLD 1 — Leave / Time-off Management System 🔥 #1 likely
+
+**Clarify:** Leave types (casual/sick/earned)? Approval chain (manager → HR)? Balance per type? Carry-forward/accrual? Cancellation? Half-days? Multi-tenant?
+
+**The lifecycle is a state machine → use the State pattern** (cleaner than enum + switch):
+```
+   submit          approve            (auto on start date)
+DRAFT ───▶ PENDING ───────▶ APPROVED ──────────▶ TAKEN
+             │   ▲                │
+       reject│   │withdraw  cancel│
+             ▼   │                ▼
+          REJECTED            CANCELLED   (balance refunded)
+```
+
+**Core classes (responsibilities, not nouns):**
+```java
+enum LeaveType { CASUAL, SICK, EARNED }
+
+class LeaveRequest {                 // the aggregate
+    String id, tenantId, employeeId;
+    LeaveType type;
+    LocalDate from, to; boolean halfDay;
+    LeaveState state;                // State pattern, not an enum+switch
+    List<AuditEntry> history;        // append-only: who/what/when (compliance)
+    void submit(); void approve(Approver a); void reject(...); void cancel();
+}
+
+interface LeaveState {               // STATE PATTERN — each transition validated per state
+    LeaveState approve(LeaveRequest r, Approver a);   // illegal transitions throw
+    LeaveState reject(LeaveRequest r, String reason);
+    LeaveState cancel(LeaveRequest r);
+}
+class PendingState implements LeaveState { ... }   // only PENDING allows approve/reject
+class ApprovedState implements LeaveState { ... }  // only APPROVED allows cancel→refund
+
+interface LeavePolicy {              // STRATEGY/CHAIN — pluggable business rules
+    void validate(LeaveRequest r, LeaveBalance bal);  // throws if violated
+}
+class SufficientBalancePolicy implements LeavePolicy { ... }
+class NoOverlapPolicy        implements LeavePolicy { ... }   // no overlapping requests
+class BlackoutDatePolicy     implements LeavePolicy { ... }   // e.g. no leave at month-end
+class NoticePeriodPolicy     implements LeavePolicy { ... }   // min N days advance
+
+class LeaveBalance {                 // per (employee, type, year)
+    int entitledMinutes, usedMinutes, pendingMinutes;
+    int available() { return entitledMinutes - usedMinutes - pendingMinutes; }
+    // reserve on submit, commit on approve, release on reject/cancel
+}
+
+interface ApprovalWorkflow { List<Approver> approversFor(LeaveRequest r); } // manager→HR chain
+
+class LeaveService {                 // facade/orchestrator
+    List<LeavePolicy> policies;      // validation chain
+    LeaveRequest submit(LeaveRequest r) {
+        policies.forEach(p -> p.validate(r, balanceOf(r)));   // Open/Closed: add a rule = new class
+        balance.reserve(r);          // reserve so concurrent requests can't oversubscribe
+        return r.submit();
+    }
+}
+```
+
+**Why this is "senior":**
+- **State pattern** makes illegal transitions *impossible* — you can't approve a CANCELLED request because that state object has no valid `approve()`. Cleaner and safer than a giant switch.
+- **Policy chain (Strategy/Open-Closed):** labor rules vary by tenant/country → each is a class; adding "no leave during blackout week" is additive, zero edits.
+- **Concurrency (call out unprompted):** two requests racing against the same balance → **reserve `pendingMinutes` atomically** (DB row lock / optimistic version on the balance row) so you can't approve two leaves that together exceed the balance. *Balance must be strongly consistent — it's an entitlement ledger.*
+- **Audit trail:** every transition appends to `history` (immutable) — compliance + dispute resolution.
+- **Balance lifecycle:** reserve-on-submit → commit-on-approve → release-on-reject — prevents the "approved over balance" race.
+
+🎤 **Walk it:** *"A leave request is fundamentally a state machine, so I model it with the State pattern — each state is a class that only permits its legal transitions, which makes 'approve a cancelled request' impossible by construction rather than by an if-check I might forget. The business rules — sufficient balance, no overlap, blackout dates, notice period — vary by tenant and country, so each is a Strategy in a validation chain; a new rule is a new class, never an edit. The part juniors miss is the balance race: two requests could each pass the balance check and both get approved over the limit, so I reserve pending minutes atomically with an optimistic version on the balance row, and treat the balance as a strongly-consistent ledger. And because this is payroll-adjacent, every transition appends to an immutable audit history."*
+
+**Follow-up ladder:**
+- *Multi-level approval (manager → HR)?* `ApprovalWorkflow` returns the ordered approver chain; request stays PENDING until the last approves (Chain of Responsibility).
+- *Accrual (earn 1.5 days/month)?* An `AccrualStrategy` run by a scheduled job credits `entitledMinutes` — pluggable per leave type.
+- *Make balance update safe under load?* Optimistic lock (version) on the balance row; on conflict, re-read and retry.
+
+---
+
+### UKG LLD 2 — Shift Scheduler (quick model, if they pivot)
+```java
+class Shift { String id, tenantId; LocalDateTime start, end; Set<String> requiredSkills;
+              String assignedEmployeeId; int version; }   // version → optimistic concurrency
+interface SchedulingRule { void check(Shift s, Employee e, Schedule ctx); } // Chain
+class MaxHoursRule, MinRestRule, SkillMatchRule, AvailabilityRule implements SchedulingRule;
+class Schedule { assign(Shift s, Employee e){ rules.forEach(r->r.check(s,e,this)); /* CAS on version */ } }
+```
+- **Same backbone:** rules as a **Chain/Strategy**, **optimistic version** on a shift so two managers (or an open-shift grab) can't double-assign — last writer fails and retries. Mention both unprompted.
+
+---
+
 ## PART D — API / contract design (LLD for services)
 - **Resource-oriented, noun URLs, verbs via HTTP** (`POST /reviews`, not `/createReview`).
 - **Versioning** (`/v1`), **pagination** (cursor > offset at scale), **consistent error shape** (`{code, message, traceId}`), **idempotency keys** on unsafe writes.

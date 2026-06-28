@@ -134,6 +134,186 @@ Aggregate update on new review: `sum += rating; count += 1; avg = sum/count` (at
 
 ---
 
+## PART E — UKG-SPECIFIC DESIGNS (🔥 most likely tomorrow — Pune 2026 loop)
+
+> **Why this section:** UKG (Ultimate Kronos Group) builds **workforce-management / HCM SaaS** — timekeeping, scheduling, payroll, leave, HR. Pune system-design rounds this year have been **domain-flavored**: they hand you a UKG-shaped problem and watch how you handle **multi-tenancy, eventual consistency, audit/compliance, and spiky load (everyone clocks in at 9 AM)**. Lead with the domain framing below and you signal "I understand the business," which is exactly what gets the select.
+>
+> 🎤 **Opening line for any UKG design:** *"Since UKG is multi-tenant SaaS for workforce management, three constraints shape everything I design: every record is **tenant-scoped** and isolated, the data is **compliance-grade** (payroll/labor law → immutable audit trail, correct timezones), and load is **bursty** — clock-ins spike at shift boundaries. I'll design for those explicitly."*
+
+### Cross-cutting UKG concerns (name these in *every* answer)
+- **Multi-tenancy:** `tenant_id` on every row, every cache key, every index. Shared-DB-shared-schema for SMB tenants, DB-per-tenant for enterprise/compliance. (See Part B.)
+- **Timezone & DST correctness:** store all timestamps in **UTC**; convert at the edge using the **location's** timezone, not the server's. A punch at "9 AM" means 9 AM *local*. This is a classic UKG gotcha — mention it unprompted.
+- **Audit & immutability:** payroll/time data is legally sensitive → **append-only event log**, never hard-delete; corrections are new versioned records. Who-changed-what-when.
+- **Bursty load:** shift boundaries (7/9 AM, lunch) create thundering-herd writes → **queue + async**, idempotent punches.
+
+---
+
+### UKG DESIGN 1 — Employee Time & Attendance (Punch-Clock) system 🔥 #1 likely
+
+This is UKG's flagship product. If they ask one design, it's probably this.
+
+**0. Clarify:** Punch sources (web, mobile, physical clock/kiosk, biometric)? Offline support on kiosks? Real-time attendance dashboard for managers? Feeds payroll? Geofencing? Scale (employees, tenants, punches/day)?
+
+**1. Requirements**
+- *Functional:* punch in/out (+ breaks/transfers), view timecard, manager approves/edits, compute worked hours + overtime, export to payroll, real-time "who's in" dashboard.
+- *Non-functional:* **bursty writes** (millions punch within minutes at 9 AM), **durable & auditable** (never lose a punch — it's someone's pay), tenant-isolated, eventual consistency OK for dashboards, **strong/exactly-once for the payroll feed**, timezone-correct.
+
+**2. Estimate:** 10M employees, ~4 punches/day = 40M punches/day ≈ **460/s average but ~50k/s peak** at shift change (the real number). Each punch ~200 B. Spiky → **must buffer**.
+
+**3. API**
+```
+POST /v1/punches      body {employeeId, type:IN|OUT|BREAK, deviceTs, geo}
+                      + Idempotency-Key   (offline retries must not double-punch)
+GET  /v1/timecards/{employeeId}?period=2026-06
+POST /v1/timecards/{id}/approve
+GET  /v1/sites/{siteId}/attendance/live      (manager dashboard)
+```
+
+**4. HLD / data flow**
+```
+                                        ┌─────────────────────┐
+  [Web]  [Mobile]  [Kiosk/Clock]        │  Payroll Service     │
+     │       │          │               │  (exactly-once feed) │
+     └───────┴────┬─────┘               └──────────▲──────────┘
+                  │ HTTPS                           │
+            ┌─────▼──────┐    enqueue    ┌──────────┴──────────┐
+            │ API Gateway│──────────────▶│  Kafka: punch-events│ (durable buffer,
+            │ authN/Z,   │   (absorbs    │  partitioned by     │  absorbs the 9AM
+            │ ratelimit, │    the burst) │  tenant_id)         │  spike)
+            │ tenant ctx │               └──────────┬──────────┘
+            └─────┬──────┘                          │
+                  │ ack fast (202)        ┌─────────┴─────────┐
+                  │                       ▼                   ▼
+                  │              ┌─────────────────┐  ┌──────────────────┐
+                  │              │ Timecard        │  │ Aggregation/      │
+                  │              │ Consumer        │  │ Dashboard Consumer│
+                  │              │ → Timecard DB   │  │ → Redis "who's in"│
+                  │              │  (append-only,  │  │  (live counts)    │
+                  │              │   per tenant)   │  └────────┬─────────┘
+                  │              └────────┬────────┘           │
+                  └──────read timecards──▶│                    ▼
+                                          ▼            [Manager dashboard]
+                                  [Timecard DB +
+                                   read replicas]
+```
+
+- **Punch write path:** Gateway validates + stamps tenant context → **publishes to Kafka and returns 202 immediately**. The kiosk never waits on the DB. Kafka is the durable shock-absorber for the burst — punches are *never* lost even if the DB is briefly slow.
+- **Idempotency key** = `(employeeId, deviceTs, type)` so offline kiosks replaying queued punches don't double-count → **at-least-once delivery + idempotent consumer = effectively exactly-once**.
+- **Timecard consumer** writes an **append-only** punch log per tenant; a timecard is the *derived* view (hours = sum of IN/OUT pairs, with overtime rules).
+- **Dashboard consumer** maintains live "who's clocked in" counts in Redis — eventual consistency is fine for a dashboard.
+- **Payroll feed** reads the immutable log at period close → exactly-once (dedupe on punch id).
+
+**5. Data model**
+```
+punch_events(id, tenant_id, employee_id, type, event_ts_utc, tz,
+             source, geo, idempotency_key, created_at)      -- APPEND-ONLY, immutable
+   UNIQUE(tenant_id, idempotency_key)        -- race-safe dedupe
+   INDEX(tenant_id, employee_id, event_ts_utc)
+timecard(tenant_id, employee_id, period, worked_minutes, ot_minutes,
+         status:DRAFT|APPROVED, version)      -- DERIVED, versioned (corrections = new version)
+```
+
+**6. Deep dives & trade-offs**
+- **Why a queue, not direct DB write?** The 50k/s shift-boundary spike would topple a relational DB on direct writes. Kafka absorbs it, smooths to the consumers' pace, and gives durability + replay. *This is the single biggest decision — lead with it.*
+- **Offline kiosks:** buffer locally, sync on reconnect; idempotency key makes replay safe. Use the **device** timestamp (when the punch happened), not server receive time.
+- **Timezone:** store UTC + the site's IANA tz; "did they clock in late?" is computed in *local* time. DST transitions are where naive designs break.
+- **Audit/compliance:** punches are immutable; a manager edit is a *new* event referencing the original ("adjustment"), so payroll disputes have a full trail.
+- **Consistency split:** dashboard = eventual; **payroll feed = exactly-once/strong** (money). Say which, and why.
+- **Sharding:** partition Kafka and shard the DB by **tenant_id** (natural isolation boundary; a tenant's data co-locates).
+
+🎤 **Walk the panel:** *"The defining property here is bursty, mission-critical writes — everyone punches at 9 AM and a lost punch is someone's missing pay. So I don't write punches straight to the DB; the gateway validates, stamps the tenant context, publishes to Kafka partitioned by tenant, and acks immediately. Kafka is my durable shock-absorber for the spike and gives me replay. Consumers then write an append-only, immutable punch log — the timecard is a derived, versioned view, so corrections never overwrite history, which is what payroll compliance and audits demand. Punches carry an idempotency key of employee-plus-device-timestamp, so an offline kiosk replaying its queue can't double-punch — at-least-once plus an idempotent consumer gives me effectively exactly-once. Everything is UTC stored and converted in the site's local timezone, because 'late at 9 AM' is a local-time question and DST is where naive systems break. I split consistency deliberately: the manager's live dashboard is eventual via a Redis projection, but the payroll feed is exactly-once. And I shard by tenant_id throughout, which is both my scaling axis and my isolation boundary."*
+
+---
+
+### UKG DESIGN 2 — Employee Scheduling / Shift Management (🔥 #2 likely)
+
+**0. Clarify:** Who builds schedules (manager) vs views (employee)? Constraints (max hours, skills/certifications, labor laws, availability, min rest between shifts)? Shift swapping/open-shift bidding? Notifications? Scale?
+
+**1. Requirements**
+- *Functional:* manager creates/publishes shifts, assign employees respecting constraints, employees view + request swaps + bid on open shifts, conflict detection, notify on changes.
+- *Non-functional:* constraint validation is the hard part; read-heavy (employees check schedules constantly); changes must notify reliably; tenant-isolated.
+
+**2. HLD**
+```
+[Manager] ─create/publish─▶┌──────────────────┐     ┌─────────────────────┐
+                           │ Scheduling Service│────▶│ Constraint Engine   │
+[Employee] ─view/swap/bid─▶│ (stateless)       │◀────│ (rules: max-hours,  │
+                           └────────┬──────────┘     │ skills, rest, law)  │
+                                    │                 └─────────────────────┘
+                    ┌───────────────┼────────────────┐
+                    ▼               ▼                 ▼
+            ┌──────────────┐ ┌────────────┐  ┌──────────────────┐
+            │ Schedule DB  │ │ Redis cache│  │ Kafka: schedule- │
+            │ (per tenant) │ │ (hot reads:│  │ changed events   │
+            └──────────────┘ │ my-week)   │  └────────┬─────────┘
+                             └────────────┘           ▼
+                                              ┌──────────────────┐
+                                              │ Notification Svc │
+                                              │ (push/email/SMS) │
+                                              └──────────────────┘
+```
+
+- **Constraint engine** is the senior signal: model labor rules as **pluggable rule objects** (Strategy/Chain) — "no more than 40h/week," "8h rest between shifts," "must hold certification X." Adding a rule = new class.
+- **Publishing a schedule** emits `ScheduleChanged` → Notification service fans out → employees get push/email. Async so the manager's "publish" is instant.
+- **Open-shift bidding / swaps:** treat as a request with **optimistic concurrency** (version on the shift) so two employees can't grab the same open shift — last writer fails and retries.
+- **Read path:** "my week" is cached per employee (read-through, invalidate on ScheduleChanged).
+
+🎤 **One-liner:** *"The interesting part isn't CRUD on shifts — it's the constraint engine. I model each labor rule as a pluggable validator in a chain, so legal/skill/rest rules compose and adding one is a new class, not an edit. Publishing fans out asynchronously through Kafka to a notification service, and open-shift grabs use optimistic version checks so two people can't claim the same slot."*
+
+---
+
+### UKG quick-hit: other designs they may throw (1-line attack each)
+- **Notification system** (shift change, approval, reminder): producer → Kafka → notification service → per-channel adapters (push/email/SMS) with **user preferences**, **dedup**, **retry with backoff**, template service. (Adapter + Strategy patterns.)
+- **Leave / Time-off management:** request → **approval workflow** (state machine) → balance ledger. *Strong* consistency on balance (can't over-spend leave), audit trail. (Full LLD in sheet 13.)
+- **Payroll calculation engine:** batch over the immutable timecard log at period close; **idempotent + exactly-once**; pluggable pay rules (overtime, shift differentials) as strategies; reproducible (re-run same period → same result).
+- **Multi-tenant rate limiting / noisy-neighbor:** token bucket **per tenant** in Redis so one big tenant can't starve others.
+- **Reporting / analytics over workforce data:** CQRS — writes to OLTP, async to a columnar store (Redshift/BigQuery) for manager reports; don't run heavy analytics on the transactional DB.
+
+---
+
+## PART F — TIMED MOCK RUN (rehearse out loud against a clock) ⏱️
+
+> Do this **once tonight, out loud, with a timer.** Prompt: *"Design UKG's employee time & attendance system."* The goal is muscle memory for **pacing** — the #1 reason strong candidates fail is running out of time before the deep dive. Target **~45 min**. Say the 🎤 lines verbatim; fill the rest in your words.
+
+**⏱️ 0:00–0:02 — Frame (don't skip, it's the whole differentiator)**
+> *"Since UKG is multi-tenant workforce SaaS, three constraints shape this: tenant isolation, compliance-grade auditable data, and bursty load — everyone clocks in at 9 AM. Let me clarify, estimate, sketch the HLD, then go deep on the write path and consistency."*
+
+**⏱️ 0:02–0:06 — Clarify (ask 4–5, then state your assumptions)**
+Punch sources (web/mobile/kiosk)? Offline kiosk support? Real-time manager dashboard? Feeds payroll? Scale? → *"I'll assume web + mobile + offline-capable kiosks, a live dashboard, a payroll feed, ~10M employees across thousands of tenants."*
+
+**⏱️ 0:06–0:10 — Estimate (show the math, land the peak number)**
+*"10M employees × ~4 punches/day = 40M/day ≈ 460/s average — but that's misleading. The real number is the **shift-boundary peak: tens of thousands/sec in a few minutes at 9 AM**. That single fact drives the architecture: I cannot write punches straight to a DB."*
+
+**⏱️ 0:10–0:14 — API + data model**
+The 4 endpoints (POST /punches with Idempotency-Key, GET timecard, approve, live attendance) + the two tables: append-only `punch_events` and derived `timecard`. Call out `UNIQUE(tenant_id, idempotency_key)`.
+
+**⏱️ 0:14–0:22 — HLD (draw the diagram from Design 1)**
+Walk the data flow: gateway validates + stamps tenant → publishes to Kafka (partitioned by tenant) → acks 202 → consumers fan out to Timecard DB (append-only) and Redis dashboard projection → payroll reads the log at close. **Narrate *why* the queue, not just that it's there.**
+
+**⏱️ 0:22–0:38 — Deep dives (this is where you win; spend the most here)**
+Hit these four in order, ~4 min each:
+1. **Burst handling** — Kafka as durable shock-absorber; ack fast, process at consumer pace; replay safety.
+2. **Idempotency / offline** — key = employee + device-ts + type; at-least-once + idempotent consumer = effectively exactly-once; use device time not receive time.
+3. **Consistency split** — dashboard eventual, **payroll exactly-once**; say which and why.
+4. **Timezone + audit** — UTC storage, local-tz computation, DST gotcha; immutable log, edits = adjustment events.
+
+**⏱️ 0:38–0:43 — Failure modes (the P5 unhappy-path signal)**
+Consumer lag/backpressure, Kafka partition outage, duplicate punches, a hot tenant (noisy neighbor → per-tenant rate limit), DB failover + replication lag on reads.
+
+**⏱️ 0:43–0:45 — Close with the trade-off summary**
+> *"To summarize the key decisions: a queue absorbs the shift-boundary burst and makes punches durable; idempotency keys make offline replay safe; the punch log is immutable for audit while the timecard is a derived, versioned view; I split consistency — eventual for dashboards, exactly-once for payroll; and I shard by tenant, which is both my scaling axis and isolation boundary. The harder I'd push next is exactly-once into payroll and multi-region failover."*
+
+**Self-scoring checklist (tick after your run):**
+- [ ] Framed the domain constraints in the first 2 min
+- [ ] Landed the *peak* QPS number, not just the average
+- [ ] Reached deep dives by minute ~22 (pacing!)
+- [ ] Named the queue-not-direct-write decision *with its reason*
+- [ ] Said which data is eventual vs exactly-once
+- [ ] Raised concurrency/idempotency + a failure mode *unprompted*
+- [ ] Closed with an explicit trade-off recap
+
+---
+
 ## ⚠️ Pitfalls & seniority signals (system design)
 - **Freezing / jumping to components** before clarifying scale. Always clarify + estimate first.
 - **No trade-offs** — naming tech without "here's the cost." Every choice must have a "but."
